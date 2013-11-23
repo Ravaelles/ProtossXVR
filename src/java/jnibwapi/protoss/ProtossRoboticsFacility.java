@@ -6,6 +6,7 @@ import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.ShouldBuildCache;
 import jnibwapi.xvr.UnitCounter;
 
 public class ProtossRoboticsFacility {
@@ -15,7 +16,7 @@ public class ProtossRoboticsFacility {
 	public static UnitTypes SHUTTLE = UnitTypes.Protoss_Shuttle;
 
 	private static final int MINIMUM_OBSERVERS = 6;
-	private static final double REAVERS_TO_INFANTRY_RATIO = 0.16;
+	private static final double REAVERS_TO_INFANTRY_RATIO = 0.2;
 	
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Robotics_Facility;
 	private static XVR xvr = XVR.getInstance();
@@ -32,9 +33,11 @@ public class ProtossRoboticsFacility {
 				&& UnitCounter.getNumberOfUnits(buildingType) <= 1
 				&& !Constructing.weAreBuilding(buildingType)) {
 			if (UnitCounter.getNumberOfBattleUnits() >= 3) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
 		}
+		ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 		return false;
 	}
 

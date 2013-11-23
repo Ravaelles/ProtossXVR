@@ -1,5 +1,7 @@
 package jnibwapi.xvr;
 
+import java.util.ArrayList;
+
 import jnibwapi.RUtilities;
 import jnibwapi.XVR;
 import jnibwapi.model.Unit;
@@ -31,7 +33,7 @@ public class UnitManager {
 		}
 
 		// ===============================
-		// Act with buildings
+		// Act with buildings, globally.
 		ProtossNexus.act();
 		ArmyCreationManager.act();
 
@@ -56,6 +58,9 @@ public class UnitManager {
 		if (unitType == null) {
 			return;
 		}
+
+		// Wounded units should avoid being killed if possible
+		handleWoundedUnitBehaviourIfNecessary(unit);
 
 		// ======================================
 		// OVERRIDE COMMANDS FOR SPECIFIC UNITS
@@ -93,9 +98,14 @@ public class UnitManager {
 				}
 			}
 
+			// If unit is still idle, try to do something
+			actWhenUnitIsStillIdle(unit);
+
 			// ==================================
 			// Anti-HERO-One-fights-the-army code
-			decideSkirmishIfToFightOrRetreat(unit);
+			if (unit.isDetected()) {
+				decideSkirmishIfToFightOrRetreat(unit);
+			}
 
 			// ==================================
 
@@ -104,7 +114,8 @@ public class UnitManager {
 		}
 
 		// ======================================
-		// SPECIFIC ACTIONS for units, but DON'T FULLY OVERRIDE standard behavior
+		// SPECIFIC ACTIONS for units, but DON'T FULLY OVERRIDE standard
+		// behavior
 
 		// Reaver
 		if (unitType.getID() == UnitTypes.Protoss_Reaver.ordinal()) {
@@ -116,7 +127,7 @@ public class UnitManager {
 			ProtossDarkTemplar.act(unit);
 			return;
 		}
-		
+
 		// Arbiter
 		else if (unit.getTypeID() == UnitTypes.Protoss_Arbiter.ordinal()) {
 			ProtossArbiter.act(unit);
@@ -124,6 +135,27 @@ public class UnitManager {
 		}
 
 		avoidSeriousSpellEffectsIfNecessary(unit);
+	}
+
+	private static void actWhenUnitIsStillIdle(Unit unit) {
+
+		// get enemies "nearby"
+		ArrayList<Unit> enemiesNearby = xvr.getUnitsInRadius(unit.getX(),
+				unit.getY(), 25, xvr.getEnemyUnitsVisible());
+		if (!enemiesNearby.isEmpty()) {
+			Unit enemy = enemiesNearby.get(0);
+
+			// If you have less than X to the enemy, attack him
+			if (xvr.getDistanceBetween(unit, enemy) <= 20) {
+				UnitActions.attackTo(unit, enemy);
+			}
+		}
+	}
+
+	private static void handleWoundedUnitBehaviourIfNecessary(Unit unit) {
+		if (unit.getHitPoints() <= 30 || unit.getShields() <= 9) {
+			UnitActions.actWhenLowHitPointsOrShields(unit, false);
+		}
 	}
 
 	private static void avoidHiddenUnitsIfNecessary(Unit unit) {
@@ -175,6 +207,12 @@ public class UnitManager {
 		// || !unit.isMoving()) {
 		// return;
 		// }
+
+		// Disallow wounded units to attack distant targets.
+		if (unit.getShields() < 15
+				|| (unit.getShields() < 40 && unit.getHitPoints() < 40)) {
+			return;
+		}
 
 		Unit enemyToAttack;
 

@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 
@@ -946,6 +947,21 @@ public class RUtilities {
 		}
 
 		return normalized;
+	}
+
+	/**
+	 * Returns index-th element of the given set or null if there's no element
+	 * "at" given index.
+	 * @return 
+	 * */
+	public static Object getSetElement(Set<?> set, int index) {
+		int counter = 0;
+		for (Object object : set) {
+			if (counter++ == index) {
+				return object;
+			}
+		}
+		return null;
 	}
 
 }

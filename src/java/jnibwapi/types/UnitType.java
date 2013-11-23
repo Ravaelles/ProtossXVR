@@ -550,6 +550,10 @@ public class UnitType {
 		return getID() == UnitTypes.Protoss_High_Templar.ordinal();
 	}
 	
+	public boolean isDarkTemplar() {
+		return getID() == UnitTypes.Protoss_Dark_Templar.ordinal();
+	}
+	
 	public boolean isMissileTurret() {
 		return getID() == UnitTypes.Terran_Missile_Turret.ordinal();
 	}

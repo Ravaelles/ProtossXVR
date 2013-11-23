@@ -6,6 +6,7 @@ import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.ShouldBuildCache;
 import jnibwapi.xvr.UnitCounter;
 
 public class ProtossStargate {
@@ -34,9 +35,11 @@ public class ProtossStargate {
 				&& xvr.canAfford(150, 150)
 				&& !Constructing.weAreBuilding(buildingType)) {
 			// if (UnitCounter.getNumberOfBattleUnits() >= 15) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
 			// }
 		}
+		ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 		return false;
 	}
 

@@ -23,7 +23,7 @@ public class MapExploration {
 
 	private static XVR xvr = XVR.getInstance();
 	private static JNIBWAPI bwapi = XVR.getInstance().getBwapi();
-	public static ArrayList<ChokePoint> chokePointsInitial = new ArrayList<ChokePoint>();
+	private static ArrayList<ChokePoint> chokePointsInitial = new ArrayList<ChokePoint>();
 
 	private static TreeSet<BaseLocation> baseLocationsDiscovered = new TreeSet<BaseLocation>();
 	private static HashMap<Integer, Unit> enemyBasesDiscovered = new HashMap<Integer, Unit>();
@@ -440,12 +440,13 @@ public class MapExploration {
 
 		return bases;
 	}
-	
+
 	public static void updateInfoAboutHiddenUnits() {
 		_hiddenEnemyUnits.clear();
 		for (Unit unit : enemyUnitsDiscovered.values()) {
 			if (unit.isEnemy()
-					&& (unit.isCloaked() || unit.isBurrowed() || !unit.isDetected())) {
+					&& (unit.isCloaked() || unit.isBurrowed() || !unit
+							.isDetected())) {
 				_hiddenEnemyUnits.add(unit);
 			}
 		}
@@ -458,9 +459,9 @@ public class MapExploration {
 	public static Unit getHiddenEnemyUnitNearbyTo(Unit unit) {
 		if (_hiddenEnemyUnits.isEmpty()) {
 			return null;
-		}
-		else {
-			Unit nearestHiddenEnemy = xvr.getUnitNearestFromList(unit, _hiddenEnemyUnits);
+		} else {
+			Unit nearestHiddenEnemy = xvr.getUnitNearestFromList(unit,
+					_hiddenEnemyUnits);
 			if (xvr.getDistanceBetween(unit, nearestHiddenEnemy) < 12) {
 				return nearestHiddenEnemy;
 			}
@@ -468,6 +469,23 @@ public class MapExploration {
 		}
 	}
 
+	public static void processInitialChokePoints() {
+
+		// Store initial choke points
+		for (ChokePoint choke : bwapi.getMap().getChokePoints()) {
+
+			// Filter out gigantic choke points
+			if (choke.getRadius() / 32 <= 15) {
+				MapExploration.chokePointsInitial.add(choke);
+			}
+		}
+		int percentSkipped = 100 * (bwapi.getMap().getChokePoints().size() - chokePointsInitial
+				.size()) / bwapi.getMap().getChokePoints().size();
+		if (percentSkipped > 0) {
+			System.out.println("Skipped " + percentSkipped
+					+ "% of choke points because being too big.");
+		}
+	}
 	// xvr.getBwapi().getMap().getRegions().get(0).
 	// xvr.getBwapi().isExplored(tx, ty)
 	// for (int x = tx - currDist; x < tx + currDist; x++) {

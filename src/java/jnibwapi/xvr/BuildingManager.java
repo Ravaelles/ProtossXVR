@@ -47,6 +47,11 @@ public class BuildingManager {
 		// }
 		// }
 		// // }
+		
+//		// Shield Battery
+//		if (buildingType.getID() == ProtossShieldBattery.getBuildingType().ordinal()) {
+//			ProtossShieldBattery.act(building);
+//		}
 	}
 
 	private static void checkIfShouldCancelConstruction(Unit building,

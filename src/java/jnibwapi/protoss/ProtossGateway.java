@@ -6,6 +6,7 @@ import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.ShouldBuildCache;
 import jnibwapi.xvr.UnitCounter;
 import jnibwapi.xvr.UnitManager;
 
@@ -65,8 +66,10 @@ public class ProtossGateway {
 
 	public static void buildIfNecessary() {
 		if (shouldBuild()) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			Constructing.construct(xvr, buildingType);
 		}
+		ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 	}
 
 	public static void act(Unit barracks) {

@@ -6,6 +6,7 @@ import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.ShouldBuildCache;
 import jnibwapi.xvr.UnitCounter;
 
 public class ProtossArbiterTribunal {
@@ -15,8 +16,10 @@ public class ProtossArbiterTribunal {
 
 	public static void buildIfNecessary() {
 		if (shouldBuild()) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			Constructing.construct(xvr, buildingType);
 		}
+		ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 	}
 
 	public static boolean shouldBuild() {

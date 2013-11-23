@@ -1,6 +1,5 @@
 package jnibwapi;
 
-import jnibwapi.model.ChokePoint;
 import jnibwapi.model.Player;
 import jnibwapi.model.Unit;
 import jnibwapi.protoss.ProtossGateway;
@@ -68,10 +67,7 @@ public class XVRClient implements BWAPIEventListener {
 			XVR.setENEMY_RACE("Zerg");
 		}
 
-		// Store initial choke points
-		for (ChokePoint choke : bwapi.getMap().getChokePoints()) {
-			MapExploration.chokePointsInitial.add(choke);
-		}
+		MapExploration.processInitialChokePoints();
 
 		// ==========
 		// HotFix

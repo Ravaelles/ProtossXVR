@@ -3,6 +3,7 @@ package jnibwapi.protoss;
 import jnibwapi.XVR;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.ShouldBuildCache;
 import jnibwapi.xvr.UnitCounter;
 import jnibwapi.xvr.UnitManager;
 
@@ -29,8 +30,10 @@ public class ProtossAssimilator {
 
 	public static void buildIfNecessary() {
 		if (shouldBuild()) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			Constructing.construct(xvr, buildingType);
 		}
+		ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 	}
 
 	public static UnitTypes getBuildingtype() {

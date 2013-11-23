@@ -18,6 +18,11 @@ public class UnitActions {
 	}
 
 	public static void moveTo(Unit unit, Unit destination) {
+		if (unit == null || destination == null) {
+			System.err.println("moveTo # unit: " + unit + " # destination: "
+					+ destination);
+			return;
+		}
 		moveTo(unit, destination.getX(), destination.getY());
 	}
 
@@ -157,13 +162,16 @@ public class UnitActions {
 
 	public static boolean runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
 			Unit unit, boolean isAirUnit) {
+		final int RUN_DISTANCE = 6;
+
 		boolean isEnemyDetector = xvr.isEnemyDetectorNear(unit.getX(),
 				unit.getY());
 		if (isEnemyDetector) {
 
 			// Try to move away from this enemy detector on N tiles.
 			UnitActions.moveAwayFromUnitIfPossible(unit,
-					xvr.getEnemyDetectorNear(unit.getX(), unit.getY()), 7);
+					xvr.getEnemyDetectorNear(unit.getX(), unit.getY()),
+					RUN_DISTANCE);
 			return true;
 		}
 
@@ -176,11 +184,73 @@ public class UnitActions {
 					.getEnemyDefensiveAirBuildingNear(unit.getX(), unit.getY())
 					: xvr.getEnemyDefensiveGroundBuildingNear(unit.getX(),
 							unit.getY());
-			UnitActions.moveAwayFromUnitIfPossible(unit, enemyBuilding, 7);
+			UnitActions.moveAwayFromUnitIfPossible(unit, enemyBuilding,
+					RUN_DISTANCE);
 			return true;
 		}
 
 		return false;
+	}
+
+	public static void actWhenLowHitPointsOrShields(Unit unit,
+			boolean isImportantUnit) {
+		Unit goTo = null;
+
+		// If there's massive attack and unit has more than 60% of initial
+		// shields, we treat it as healthy, as there's nothing to do about it.
+		if (MassiveAttack.isAttackPending()
+				&& unit.getShields() >= 0.6 * unit.getType().getMaxShields()) {
+			if (!isImportantUnit) {
+				return;
+			}
+		}
+
+		// =====================================================================
+
+		// First try to go to the nearest shield battery, if exists.
+		goTo = xvr.getUnitOfTypeNearestTo(UnitTypes.Protoss_Shield_Battery,
+				xvr.getLastBase());
+		if (goTo.isUnpowered()) {
+			goTo = null;
+		}
+
+		if (goTo != null) {
+
+			// We can heal at this point! Right click *should* do it.
+			if (goTo.getEnergy() >= 13
+					&& unit.getShields() <= 0.8 * unit.getType()
+							.getMaxShields()) {
+				UnitActions.rightClick(unit, goTo);
+				return;
+			}
+
+			// We cannot heal, just go there and hope it will heal the poor unit
+			// ;_;
+		}
+
+		// Then try to go to cannon nearest to the last base, if exists.
+		else {
+			goTo = xvr.getUnitOfTypeNearestTo(UnitTypes.Protoss_Photon_Cannon,
+					xvr.getLastBase());
+		}
+
+		// If not, go to the first base.
+		if (goTo == null) {
+			goTo = xvr.getFirstBase();
+		}
+
+		if (goTo != null) {
+			UnitActions.moveTo(unit, goTo);
+		}
+	}
+
+	private static void rightClick(Unit unit, Unit clickTo) {
+		if (unit == null || clickTo == null) {
+			System.err.println("rightClick # unit: " + unit + " # clickTo: "
+					+ clickTo);
+			return;
+		}
+		xvr.getBwapi().rightClick(unit.getID(), clickTo.getID());
 	}
 
 }

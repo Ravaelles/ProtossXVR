@@ -20,11 +20,14 @@ import jnibwapi.protoss.ProtossPhotonCannon;
 import jnibwapi.protoss.ProtossPylon;
 import jnibwapi.protoss.ProtossRoboticsFacility;
 import jnibwapi.protoss.ProtossRoboticsSupportBay;
+import jnibwapi.protoss.ProtossShieldBattery;
 import jnibwapi.protoss.ProtossStargate;
 import jnibwapi.protoss.ProtossTemplarArchives;
 import jnibwapi.types.UnitType.UnitTypes;
 
 public class Constructing {
+	
+	private static final int MIN_DIST_FROM_CHOKE_POINT = 5;
 
 	private static XVR xvr = XVR.getInstance();
 
@@ -44,9 +47,11 @@ public class Constructing {
 		}
 
 		// Check all the time
+		
+		
 
-		// Check only every N seconds
-		if (RUtilities.rand(0, 1) == 0) {
+//		// Check only every N seconds
+//		if (RUtilities.rand(0, 1) == 0) {
 			ProtossObservatory.buildIfNecessary();
 			ProtossGateway.buildIfNecessary();
 			ProtossNexus.buildIfNecessary();
@@ -55,7 +60,7 @@ public class Constructing {
 			ProtossAssimilator.buildIfNecessary();
 			ProtossPhotonCannon.buildIfNecessary();
 			ProtossArbiterTribunal.buildIfNecessary();
-		} else {
+//		} else {
 			ProtossPylon.buildIfNecessary();
 			ProtossTemplarArchives.buildIfNecessary();
 			ProtossStargate.buildIfNecessary();
@@ -63,7 +68,8 @@ public class Constructing {
 			ProtossCitadelOfAdun.buildIfNecessary();
 			ProtossRoboticsFacility.buildIfNecessary();
 			ProtossRoboticsSupportBay.buildIfNecessary();
-		}
+			ProtossShieldBattery.buildIfNecessary();
+//		}
 	}
 
 	private static Point getTileAccordingToBuildingType(UnitTypes building) {
@@ -211,6 +217,12 @@ public class Constructing {
 			return new int[] { mineralsRequired + 8, gasRequired,
 					buildingsToBuildTypesNumber };
 		}
+		if (ProtossShieldBattery.shouldBuild()) {
+			mineralsRequired += 100;
+			buildingsToBuildTypesNumber++;
+			return new int[] { mineralsRequired + 8, gasRequired,
+					buildingsToBuildTypesNumber };
+		}
 
 		if (buildingsToBuildTypesNumber > 0) {
 			return new int[] { mineralsRequired + 8, gasRequired,
@@ -333,7 +345,7 @@ public class Constructing {
 						if (isBuildTileFreeFromUnits(builderID, i, j)) {
 							if (xvr.getDistanceBetween(MapExploration
 									.getNearestChokePointFor(i * 32, j * 32),
-									i * 32, j * 32) >= 6) {
+									i * 32, j * 32) >= MIN_DIST_FROM_CHOKE_POINT) {
 								return new Point(i, j);
 							}
 						}

@@ -13,6 +13,7 @@ import jnibwapi.xvr.Constructing;
 import jnibwapi.xvr.MapExploration;
 import jnibwapi.xvr.MapPoint;
 import jnibwapi.xvr.MapPointInstance;
+import jnibwapi.xvr.ShouldBuildCache;
 import jnibwapi.xvr.UnitCounter;
 import jnibwapi.xvr.UnitManager;
 
@@ -44,10 +45,13 @@ public class ProtossPylon {
 
 		// !Constructing.weAreBuilding(buildingType)
 		// &&
-		return ((total <= 10 && free <= 2)
+		boolean shouldBuild = ((total <= 10 && free <= 2)
 				|| (total > 10 && total <= 18 && free <= 4)
 				|| (total > 18 && total <= 45 && free <= 7)
 				|| (total > 45 && free <= 10) || (total > 90 && total < 200 && free <= 20));
+		
+		ShouldBuildCache.cacheShouldBuildInfo(buildingType, shouldBuild);
+		return shouldBuild;
 	}
 
 	public static Point findTileNearPylonForNewBuilding() {

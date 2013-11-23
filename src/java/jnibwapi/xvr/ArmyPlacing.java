@@ -1,5 +1,7 @@
 package jnibwapi.xvr;
 
+import java.util.ArrayList;
+
 import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.protoss.ProtossGateway;
@@ -9,7 +11,7 @@ public class ArmyPlacing {
 
 	private static XVR xvr = XVR.getInstance();
 
-	public static MapPoint getRetreatPointFor(Unit unit) {
+	public static MapPoint getArmyGatheringPointFor(Unit unit) {
 		// Unit runTo = xvr.getUnitOfTypeNearestTo(
 		// UnitManager.BASE, xvr.getFirstBase());
 		Unit runTo = null;
@@ -17,8 +19,11 @@ public class ArmyPlacing {
 		// If only one base, then go to nearest cannon
 		if (UnitCounter.getNumberOfUnits(UnitManager.BASE) == 1
 				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Photon_Cannon)) {
-			runTo = xvr.getUnitOfTypeNearestTo(UnitTypes.Protoss_Photon_Cannon,
-					xvr.getFirstBase());
+			Unit base = xvr.getFirstBase();
+			ArrayList<Unit> allCannons = xvr.getUnitsOfGivenTypeInRadius(
+					UnitTypes.Protoss_Photon_Cannon, 300, base.getX(),
+					base.getY(), true);
+			runTo = allCannons.get(allCannons.size() - 1);
 		}
 
 		// Try to go to the base nearest to enemy
@@ -45,7 +50,7 @@ public class ArmyPlacing {
 		// }
 
 		// First, just escape.
-		MapPoint safePlace = getRetreatPointFor(unit);
+		MapPoint safePlace = getArmyGatheringPointFor(unit);
 
 		// Calculate distance to it
 		// double distance = xvr.getDistanceBetween(unit, safePlace);

@@ -19,7 +19,17 @@ import jnibwapi.model.Map;
 import jnibwapi.model.Player;
 import jnibwapi.model.Region;
 import jnibwapi.model.Unit;
-import jnibwapi.types.*;
+import jnibwapi.types.BulletType;
+import jnibwapi.types.DamageType;
+import jnibwapi.types.ExplosionType;
+import jnibwapi.types.OrderType;
+import jnibwapi.types.RaceType;
+import jnibwapi.types.TechType;
+import jnibwapi.types.UnitCommandType;
+import jnibwapi.types.UnitSizeType;
+import jnibwapi.types.UnitType;
+import jnibwapi.types.UpgradeType;
+import jnibwapi.types.WeaponType;
 
 /**
  * JNI interface for the Brood War API.<br>

@@ -1,51 +1,168 @@
 package jnibwapi.protoss;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
+import jnibwapi.Debug;
 import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.xvr.ArmyPlacing;
+import jnibwapi.xvr.MapPoint;
+import jnibwapi.xvr.MapPointInstance;
 import jnibwapi.xvr.UnitActions;
 import jnibwapi.xvr.UnitCounter;
 import jnibwapi.xvr.UnitManager;
 
 public class ProtossObserver {
 
+	private static final int MIN_DIST_BETWEEN_OBSERVERS = 6;
+
 	private static final UnitTypes OBSERVER = UnitTypes.Protoss_Observer;
 	private static XVR xvr = XVR.getInstance();
 
+	/**
+	 * Mapping of individual assignments of observers e.g. to scan hidden units.
+	 */
+	private static final HashMap<Unit, MapPoint> observersToPoints = new HashMap<Unit, MapPoint>();
+
 	public static void tryToScanPoint(int x, int y) {
-		Unit observer = getNearestObserverTo(x, y);
+		Unit observer = getNearestFreeObserverTo(x, y);
 		if (observer != null) {
+			assignObserverToScan(observer, new MapPointInstance(x, y));
 			UnitActions.moveTo(observer, x, y);
 		}
 	}
 
-	private static Unit getNearestObserverTo(int x, int y) {
-		return xvr.getUnitOfTypeNearestTo(OBSERVER, x, y);
-	}
+	public static void tryToScanUnit(Unit enemy) {
+		Unit observer = getNearestFreeObserverTo(enemy);
+		if (observer != null) {
+			Debug.message(xvr, "Trying to scan: " + enemy.getName() + ", with: "
+					+ observer.getName());
 
-	public static void hiddenUnitDetected(Unit unit) {
-		if (unit.isEnemy() && (unit.isCloaked() || unit.isBurrowed())) {
-			if (UnitCounter.getNumberOfUnits(OBSERVER) > 0) {
-				tryToScanPoint(unit.getX(), unit.getY());
+			// Check whether this unit isn't already being scanned by some
+			// observer
+			if (!isEnemyUnitAlreadyBeingScanned(enemy)) {
+				assignObserverToScan(observer, enemy);
+				UnitActions.moveTo(observer, enemy);
 			}
 		}
 	}
 
+	private static void markEnemyUnitAsNoLongerScanned(Unit enemy) {
+		Debug.message(xvr, "No longer scanning: " + enemy.getName());
+
+		// Find the key (observer) that was scanning this enemy
+		Unit observerKey = null;
+		for (Unit observer : observersToPoints.keySet()) {
+			if (observersToPoints.get(observer).equals(enemy)) {
+				observerKey = observer;
+				break;
+			}
+		}
+
+		// Remove the mapping (info about scanning this unit)
+		observersToPoints.remove(observerKey);
+	}
+
+	private static boolean isEnemyUnitAlreadyBeingScanned(Unit enemy) {
+		return observersToPoints.values().contains(enemy);
+	}
+
+	private static void assignObserverToScan(Unit observer,
+			MapPoint pointOrUnitToScan) {
+		observersToPoints.put(observer, pointOrUnitToScan);
+	}
+
+	private static Unit getNearestFreeObserverTo(int x, int y) {
+		return getNearestFreeObserverTo(new MapPointInstance(x, y));
+	}
+
+	private static Unit getNearestFreeObserverTo(
+			MapPoint sortByDistanceToThisPoint) {
+		for (Unit observer : xvr.getUnitsInRadius(
+				sortByDistanceToThisPoint.getX(),
+				sortByDistanceToThisPoint.getY(), 300,
+				xvr.getUnitsOfType(OBSERVER))) {
+			if (isObserverFreeFromScanMissions(observer)) {
+				return observer;
+			}
+		}
+		return null;
+	}
+
+	private static boolean isObserverFreeFromScanMissions(Unit observer) {
+		return !observersToPoints.containsKey(observer);
+	}
+
+	public static void hiddenUnitDetected(Unit unit) {
+		if (unit.isEnemy() && unit.isHidden()) {
+			if (UnitCounter.getNumberOfUnits(OBSERVER) > 0) {
+				tryToScanUnit(unit);
+			}
+		}
+	}
+
+	/**
+	 * Observer can be acting in several ways:<br />
+	 * <br />
+	 * - fully normal, standard behavior, going from choke to choke randomly<br />
+	 * - following specific army unit (to ensure army has observers support)<br />
+	 * - trying to scan hidden enemy unit or some point<br />
+	 * */
 	public static void act(Unit observer) {
 
 		// TOP PRIORITY: Act when enemy detector or some AA building is nearby:
-		// just run away
-		if (UnitActions.runFromEnemyDetectorOrDefensiveBuildingIfNecessary(observer, true)) {
+		// just run away, no matter what.
+		if (UnitActions.runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
+				observer, true)) {
 			return;
 		}
 
-		if (isIndividualTaskAssigned(observer)) {
+		// Choose behavior according to current mission for of this observer
+		if (isObserverSupposedToScanSomePoint(observer)) {
+			System.out.println("OBS: 1");
+			actWhenScanningSomePoint(observer);
+		} else if (isIndividualTaskAssigned(observer)) {
+			System.out.println("OBS: 2");
 			actIndividual(observer);
 		} else {
+			System.out.println("OBS: 3");
 			actNormally(observer);
+		}
+
+		trySpreadingOutIfObserversTooClose(observer);
+	}
+
+	private static void actWhenScanningSomePoint(Unit observer) {
+		MapPoint mapPointToScan = observersToPoints.get(observer);
+
+		// Check whether or not the enemy unit we were supposed to scout exists
+		// and/or should we stop scanning this location.
+		if (mapPointToScan instanceof Unit) {
+			Unit enemyToScan = (Unit) mapPointToScan;
+			if (!enemyToScan.isHidden()) {
+				markEnemyUnitAsNoLongerScanned(enemyToScan);
+				return;
+			}
+		}
+
+		// If everything is okay, go to the given location.
+		UnitActions.moveTo(observer, mapPointToScan);
+	}
+
+	private static boolean isObserverSupposedToScanSomePoint(Unit observer) {
+		return observersToPoints.containsKey(observer);
+	}
+
+	private static void trySpreadingOutIfObserversTooClose(Unit observer) {
+		ArrayList<Unit> observersNearby = xvr.getUnitsOfGivenTypeInRadius(
+				OBSERVER, MIN_DIST_BETWEEN_OBSERVERS, observer, true);
+
+		// If there is at least one observer nearby, move away from it
+		if (!observersNearby.isEmpty()) {
+			UnitActions.moveAwayFromUnitIfPossible(observer,
+					observersNearby.get(0), MIN_DIST_BETWEEN_OBSERVERS);
 		}
 	}
 

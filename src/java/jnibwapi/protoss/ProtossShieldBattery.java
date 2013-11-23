@@ -1,5 +1,7 @@
 package jnibwapi.protoss;
 
+import java.util.ArrayList;
+
 import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
@@ -7,11 +9,16 @@ import jnibwapi.xvr.Constructing;
 import jnibwapi.xvr.ShouldBuildCache;
 import jnibwapi.xvr.UnitCounter;
 
-public class ProtossRoboticsSupportBay {
+public class ProtossShieldBattery {
 
-	private static final UnitTypes buildingType = UnitTypes.Protoss_Robotics_Support_Bay;
+	private static final UnitTypes buildingType = UnitTypes.Protoss_Shield_Battery;
 	private static XVR xvr = XVR.getInstance();
 
+//	public static void act(Unit battery) {
+//		if (battery.getEnergy() >= 10) {
+//		}
+//	}
+	
 	public static void buildIfNecessary() {
 		if (shouldBuild()) {
 			Constructing.construct(xvr, buildingType);
@@ -19,11 +26,9 @@ public class ProtossRoboticsSupportBay {
 	}
 
 	public static boolean shouldBuild() {
-		if (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Robotics_Facility)
-				&& !UnitCounter.weHaveBuilding(buildingType)
-				&& !Constructing.weAreBuilding(buildingType)
-				&& xvr.canAfford(150, 100)) {
-			if (UnitCounter.getNumberOfBattleUnits() >= 15) {
+		if (!UnitCounter.weHaveBuilding(buildingType)
+				&& !Constructing.weAreBuilding(buildingType)) {
+			if (UnitCounter.getNumberOfBattleUnits() >= 3) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
@@ -32,9 +37,9 @@ public class ProtossRoboticsSupportBay {
 		return false;
 	}
 
-	public static Unit getOneNotBusy() {
+	public static Unit getOneWithEnergy() {
 		for (Unit unit : xvr.getUnitsOfType(buildingType)) {
-			if (unit.isBuildingNotBusy()) {
+			if (unit.getEnergy() >= 13) {
 				return unit;
 			}
 		}
@@ -44,5 +49,9 @@ public class ProtossRoboticsSupportBay {
 	public static UnitTypes getBuildingType() {
 		return buildingType;
 	}
-	
+
+	public static ArrayList<Unit> getAllObjects() {
+		return xvr.getUnitsOfTypeCompleted(buildingType);
+	}
+
 }

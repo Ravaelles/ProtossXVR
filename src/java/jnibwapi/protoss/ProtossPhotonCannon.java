@@ -8,6 +8,7 @@ import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.xvr.Constructing;
 import jnibwapi.xvr.MapExploration;
+import jnibwapi.xvr.ShouldBuildCache;
 import jnibwapi.xvr.UnitCounter;
 import jnibwapi.xvr.UnitManager;
 import jnibwapi.xvr.WorkerManager;
@@ -17,7 +18,7 @@ public class ProtossPhotonCannon {
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Photon_Cannon;
 	private static XVR xvr = XVR.getInstance();
 
-	private static final double MAX_DIST_FROM_CHOKE_POINT_MODIFIER = 1.9;
+	private static final double MAX_DIST_FROM_CHOKE_POINT_MODIFIER = 1.8;
 	// private static final int MAX_DIST_FROM_CHOKE_POINT = 1;
 	// private static final int MAX_DIST_FROM_OTHER_CANNON = 5;
 	private static final int MAX_CANNON_STACK = 4;
@@ -69,10 +70,12 @@ public class ProtossPhotonCannon {
 
 	public static void buildIfNecessary() {
 		if (shouldBuild()) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			for (Unit base : ProtossNexus.getBases()) {
 				tryToBuildFor(base);
 			}
 		}
+		ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 	}
 
 	private static void tryToBuildFor(Unit base) {

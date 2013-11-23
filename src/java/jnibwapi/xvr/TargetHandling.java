@@ -21,8 +21,9 @@ public class TargetHandling {
 			UnitType type = unit.getType();
 			if (unit.isExists()
 					&& unit.getHitPoints() > 0
-					&& (type.isLurker() || type.isTank() || type.isReaver() || type
-							.isHighTemplar())
+					&& (type.isLurker() || type.isTank() || type.isReaver()
+							|| type.isHighTemplar() || (type.isDarkTemplar() && unit
+							.isDetected()))
 					&& xvr.getDistanceBetween(unit, point) <= 20) {
 				if (isProperTarget(unit)) {
 					return unit;

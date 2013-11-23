@@ -3,14 +3,9 @@ package jnibwapi;
 import java.awt.Point;
 
 import jnibwapi.model.ChokePoint;
+import jnibwapi.model.Region;
 import jnibwapi.model.Unit;
-import jnibwapi.protoss.ProtossAssimilator;
-import jnibwapi.protoss.ProtossCybernetics;
-import jnibwapi.protoss.ProtossGateway;
 import jnibwapi.protoss.ProtossNexus;
-import jnibwapi.protoss.ProtossObservatory;
-import jnibwapi.protoss.ProtossPhotonCannon;
-import jnibwapi.protoss.ProtossPylon;
 import jnibwapi.types.UnitCommandType.UnitCommandTypes;
 import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
@@ -18,6 +13,7 @@ import jnibwapi.util.BWColor;
 import jnibwapi.xvr.ArmyCreationManager;
 import jnibwapi.xvr.MassiveAttack;
 import jnibwapi.xvr.NukeHandling;
+import jnibwapi.xvr.ShouldBuildCache;
 import jnibwapi.xvr.UnitCounter;
 import jnibwapi.xvr.UnitManager;
 
@@ -35,32 +31,60 @@ public class Debug {
 		if (FULL_DEBUG) {
 			paintNextBuildingsPosition(xvr);
 		}
-		paintWorkers(xvr);
-		if (FULL_DEBUG) {
+		paintUnitsDetails(xvr);
 
-			// // Draw regions
-			// for (Region region : xvr.getBwapi().getMap().getRegions()) {
-			// int[] bounds = region.getCoordinates();
-			// xvr.getBwapi().drawBox(bounds[0] - bounds[2],
-			// bounds[1] - bounds[3], 2 * bounds[2], 2 * bounds[3],
-			// BWColor.TEAL, false, false);
-			// xvr.getBwapi()
-			// .drawText(
-			// region.getCenterX(),
-			// region.getCenterY(),
-			// String.format("Region [%d]", region
-			// .getChokePoints().size()), false);
-			// }
+		// // Draw regions
+		// for (Region region : xvr.getBwapi().getMap().getRegions()) {
+		// int[] bounds = region.getCoordinates();
+		// xvr.getBwapi().drawBox(bounds[0] - bounds[2],
+		// bounds[1] - bounds[3], 2 * bounds[2], 2 * bounds[3],
+		// BWColor.TEAL, false, false);
+		// xvr.getBwapi()
+		// .drawText(
+		// region.getCenterX(),
+		// region.getCenterY(),
+		// String.format("Region [%d]", region
+		// .getChokePoints().size()), false);
+		// }
 
-			// Draw choke points
-			paintChokePoints(xvr);
-		}
+		// Draw choke points
+		paintChokePoints(xvr);
+
+		// Draw where to attack
+		paintAttackLocation(xvr);
 
 		// Statistics
 		paintStatistics(xvr);
 
 		// ========
 		mainMessageRowCounter = oldMainMessageRowCounter;
+	}
+
+	private static void paintAttackLocation(XVR xvr) {
+		JNIBWAPI bwapi = xvr.getBwapi();
+		if (MassiveAttack.getTargetUnit() != null) {
+			bwapi.drawCircle(MassiveAttack.getTargetUnit().getX(),
+					MassiveAttack.getTargetUnit().getY(), 33, BWColor.BLUE,
+					false, false);
+			bwapi.drawCircle(MassiveAttack.getTargetUnit().getX(),
+					MassiveAttack.getTargetUnit().getY(), 32, BWColor.BLUE,
+					false, false);
+			bwapi.drawCircle(MassiveAttack.getTargetUnit().getX(),
+					MassiveAttack.getTargetUnit().getY(), 2, BWColor.BLUE,
+					true, false);
+		}
+
+		if (NukeHandling.nuclearDetectionPoint != null) {
+			Point nuclearPoint = NukeHandling.nuclearDetectionPoint;
+			bwapi.drawCircle(nuclearPoint.x, nuclearPoint.y, 20, BWColor.RED,
+					false, false);
+			bwapi.drawCircle(nuclearPoint.x, nuclearPoint.y, 18, BWColor.RED,
+					false, false);
+			bwapi.drawCircle(nuclearPoint.x, nuclearPoint.y, 16, BWColor.RED,
+					false, false);
+			bwapi.drawCircle(nuclearPoint.x, nuclearPoint.y, 14, BWColor.RED,
+					false, false);
+		}
 	}
 
 	private static void paintNextBuildingsPosition(XVR xvr) {
@@ -108,35 +132,62 @@ public class Debug {
 	// }
 
 	private static void paintChokePoints(XVR xvr) {
-		for (ChokePoint chokePoint : xvr.getBwapi().getMap().getChokePoints()) {
+		for (ChokePoint choke : xvr.getBwapi().getMap().getChokePoints()) {
 			// xvr.getBwapi().drawBox(bounds[0], bounds[1],
 			// bounds[2], bounds[3], BWColor.TEAL, false, false);
 			// xvr.getBwapi().drawCircle(chokePoint.getFirstSideX(),
 			// chokePoint.getFirstSideY(), 3, BWColor.RED, true, false);
 			// xvr.getBwapi().drawCircle(chokePoint.getSecondSideX(),
 			// chokePoint.getSecondSideY(), 3, BWColor.BLUE, true, false);
-			xvr.getBwapi().drawCircle(chokePoint.getCenterX(),
-					chokePoint.getCenterY(), (int) chokePoint.getRadius(),
-					BWColor.BLACK, false, false);
+			xvr.getBwapi().drawCircle(choke.getCenterX(), choke.getCenterY(),
+					(int) choke.getRadius(), BWColor.BLACK, false, false);
 			// xvr.getBwapi().drawText(
 			// chokePoint.getCenterX(),
 			// chokePoint.getCenterY(),
 			// String.format("Choke [%d,%d]",
 			// chokePoint.getCenterX() / 32,
 			// chokePoint.getCenterY() / 32), false);
+
+			Region ourRegion = xvr.getBwapi().getMap().getRegion(xvr.getFirstBase());
+//			xvr.getBwapi().getMap().
+			
+			boolean onlyOurRegion = false;
+			if (choke.getSecondRegion().getConnectedRegions().size() == 1) {
+				Region region = (Region) RUtilities.getSetElement(choke
+						.getSecondRegion().getConnectedRegions(), 0);
+				if (region.equals(ourRegion)) {
+					onlyOurRegion = true;
+				}
+			}
+			if (choke.getFirstRegion().getConnectedRegions().size() == 1) {
+				Region region = (Region) RUtilities.getSetElement(choke
+						.getFirstRegion().getConnectedRegions(), 0);
+				if (region.equals(ourRegion)) {
+					onlyOurRegion = true;
+				}
+			}
+			
+			String string = choke.getFirstRegionID() + " ("
+					+ choke.getFirstRegion().getConnectedRegions().size()
+					+ "), " + choke.getSecondRegionID() + "("
+					+ choke.getSecondRegion().getConnectedRegions().size()
+					+ "), " + (onlyOurRegion ? "YESSSSS" : "no");
+
+			xvr.getBwapi().drawText(choke.getCenterX() - 40, choke.getCenterY(),
+					string, false);
 		}
 
 	}
 
-	private static void paintWorkers(XVR xvr) {
+	private static void paintUnitsDetails(XVR xvr) {
 		// Draw circles over workers (blue if they're gathering minerals, green
 		// if gas, yellow if they're constructing).
 		JNIBWAPI bwapi = xvr.getBwapi();
 		for (Unit u : bwapi.getMyUnits()) {
 			if (FULL_DEBUG) {
-//				if (u.isMoving()) {
-//					continue;
-//				}
+				// if (u.isMoving()) {
+				// continue;
+				// }
 
 				if (u.isGatheringMinerals()) {
 					bwapi.drawCircle(u.getX(), u.getY(), 12, BWColor.BLUE,
@@ -189,9 +240,9 @@ public class Debug {
 
 			// Paint Observers
 			if (u.getTypeID() == UnitTypes.Protoss_Observer.ordinal()) {
-				bwapi.drawCircle(u.getX(), u.getX(), 13, BWColor.BLUE, false,
+				bwapi.drawCircle(u.getX(), u.getY(), 13, BWColor.BLUE, false,
 						false);
-				bwapi.drawCircle(u.getX(), u.getX(), 12, BWColor.BLUE, false,
+				bwapi.drawCircle(u.getX(), u.getY(), 12, BWColor.BLUE, false,
 						false);
 			}
 		}
@@ -202,18 +253,6 @@ public class Debug {
 		// String.format("->[%d,%d]",u.getTargetX() / 32, u.getTargetY() /
 		// 32), false);
 		// }
-
-		if (NukeHandling.nuclearDetectionPoint != null) {
-			Point nuclearPoint = NukeHandling.nuclearDetectionPoint;
-			bwapi.drawCircle(nuclearPoint.x, nuclearPoint.y, 20, BWColor.RED,
-					false, false);
-			bwapi.drawCircle(nuclearPoint.x, nuclearPoint.y, 18, BWColor.RED,
-					false, false);
-			bwapi.drawCircle(nuclearPoint.x, nuclearPoint.y, 16, BWColor.RED,
-					false, false);
-			bwapi.drawCircle(nuclearPoint.x, nuclearPoint.y, 14, BWColor.RED,
-					false, false);
-		}
 	}
 
 	@SuppressWarnings("static-access")
@@ -329,20 +368,35 @@ public class Debug {
 
 		}
 
-		if (ProtossPylon.shouldBuild())
-			paintMainMessage(xvr, "Build PYLON: true");
-		if (ProtossPhotonCannon.shouldBuild())
-			paintMainMessage(xvr, "Build CANNON: true");
-		if (ProtossGateway.shouldBuild())
-			paintMainMessage(xvr, "Build GATEWAY: true");
-		if (ProtossNexus.shouldBuild())
-			paintMainMessage(xvr, "Build NEXUS: true");
-		if (ProtossAssimilator.shouldBuild())
-			paintMainMessage(xvr, "Build ASSIMILATOR: true");
-		if (ProtossObservatory.shouldBuild())
-			paintMainMessage(xvr, "Build OBSERVATORY: true");
-		if (ProtossCybernetics.shouldBuild())
-			paintMainMessage(xvr, "Build CYBERNETICS: true");
+		if (xvr.getTime() % 10 == 0) {
+
+		}
+
+		// if (ProtossPylon.shouldBuild())
+		// paintMainMessage(xvr, "Build PYLON: true");
+		// if (ProtossPhotonCannon.shouldBuild())
+		// paintMainMessage(xvr, "Build CANNON: true");
+		// if (ProtossGateway.shouldBuild())
+		// paintMainMessage(xvr, "Build GATEWAY: true");
+		// if (ProtossNexus.shouldBuild())
+		// paintMainMessage(xvr, "Build NEXUS: true");
+		// if (ProtossAssimilator.shouldBuild())
+		// paintMainMessage(xvr, "Build ASSIMILATOR: true");
+		// if (ProtossObservatory.shouldBuild())
+		// paintMainMessage(xvr, "Build OBSERVATORY: true");
+		// if (ProtossCybernetics.shouldBuild())
+		// paintMainMessage(xvr, "Build CYBERNETICS: true");
+
+		for (UnitTypes type : ShouldBuildCache.getBuildingsThatShouldBeBuild()) {
+			paintMainMessage(
+					xvr,
+					"Build "
+							+ type.name()
+									.substring(0,
+											Math.min(15, type.name().length()))
+									.toUpperCase() + ": true");
+		}
+
 		// if (Terran.shouldBuild())
 		// paintMainMessage(xvr, "Build : ");
 		// if (Terran.shouldBuild())
