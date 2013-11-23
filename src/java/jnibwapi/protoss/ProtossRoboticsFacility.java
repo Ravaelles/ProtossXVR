@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
+import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.UnitCounter;
 
 public class ProtossRoboticsFacility {
 
@@ -12,8 +14,8 @@ public class ProtossRoboticsFacility {
 	public static UnitTypes REAVER = UnitTypes.Protoss_Reaver;
 	public static UnitTypes SHUTTLE = UnitTypes.Protoss_Shuttle;
 
-	private static final int MINIMUM_OBSERVERS = 5;
-	private static final double REAVERS_TO_INFANTRY_RATIO = 0.2;
+	private static final int MINIMUM_OBSERVERS = 6;
+	private static final double REAVERS_TO_INFANTRY_RATIO = 0.16;
 	
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Robotics_Facility;
 	private static XVR xvr = XVR.getInstance();
@@ -26,11 +28,10 @@ public class ProtossRoboticsFacility {
 
 	public static boolean shouldBuild() {
 		// UnitCounter.weHaveBuilding(UnitTypes.Protoss_Citadel_of_Adun)
-		if (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Templar_Archives)
-				&& !UnitCounter.weHaveBuilding(buildingType)
-				&& !Constructing.weAreBuilding(buildingType)
-				&& xvr.canAfford(200, 200)) {
-			if (UnitCounter.getNumberOfBattleUnits() >= 15) {
+		if (UnitCounter.getNumberOfUnits(ProtossGateway.getBuildingType()) >= 2
+				&& UnitCounter.getNumberOfUnits(buildingType) <= 1
+				&& !Constructing.weAreBuilding(buildingType)) {
+			if (UnitCounter.getNumberOfBattleUnits() >= 3) {
 				return true;
 			}
 		}
@@ -57,7 +58,7 @@ public class ProtossRoboticsFacility {
 	// ==========================
 	// Unit creating
 
-	protected static void act(Unit facility) {
+	public static void act(Unit facility) {
 		if (facility == null) {
 			return;
 		}

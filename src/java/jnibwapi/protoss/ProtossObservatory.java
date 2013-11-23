@@ -1,7 +1,10 @@
 package jnibwapi.protoss;
 
 import jnibwapi.XVR;
+import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
+import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.UnitCounter;
 
 public class ProtossObservatory {
 
@@ -15,19 +18,26 @@ public class ProtossObservatory {
 	}
 
 	public static boolean shouldBuild() {
-		if (xvr.canAfford(50, 100)
-				&& UnitCounter
-						.weHaveBuilding(UnitTypes.Protoss_Robotics_Facility)) {
-			if (!UnitCounter.weHaveBuilding(buildingType)
-					&& !Constructing.weAreBuilding(buildingType)) {
+		if (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Robotics_Facility)) {
+			if (!UnitCounter.weHaveBuilding(buildingType)) {
+//					&& !Constructing.weAreBuilding(buildingType)) {
 				return true;
 			}
 		}
 		return false;
 	}
 
+	public static Unit getOneNotBusy() {
+		for (Unit unit : xvr.getUnitsOfType(buildingType)) {
+			if (unit.isBuildingNotBusy()) {
+				return unit;
+			}
+		}
+		return null;
+	}
+
 	public static UnitTypes getBuildingtype() {
 		return buildingType;
 	}
-	
+
 }

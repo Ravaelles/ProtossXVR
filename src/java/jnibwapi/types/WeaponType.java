@@ -1,5 +1,7 @@
 package jnibwapi.types;
 
+import java.util.ArrayList;
+
 /**
  * Represents a StarCraft weapon type.
  * 
@@ -8,6 +10,8 @@ package jnibwapi.types;
 public class WeaponType {
 	
 	public static final int numAttributes = 24;
+	
+	private static ArrayList<WeaponType> allObjects = new ArrayList<WeaponType>();
 	
 	private String name;
 	private int ID;
@@ -198,6 +202,8 @@ public class WeaponType {
 		targetsTerrain = data[index++] == 1;
 		targetsOrgOrMech = data[index++] == 1;
 		targetsOwn = data[index++] == 1;
+		
+		allObjects.add(this);
 	}
 	
 	public String getName() {
@@ -303,4 +309,16 @@ public class WeaponType {
 	public boolean isTargetsOwn() {
 		return targetsOwn;
 	}
+
+	// ========================
+	
+	public static WeaponType getWeaponByID(int weaponID) {
+		for (WeaponType weapon : allObjects) {
+			if (weapon.ID == weaponID) {
+				return weapon;
+			}
+		}
+		return null;
+	}
+
 }

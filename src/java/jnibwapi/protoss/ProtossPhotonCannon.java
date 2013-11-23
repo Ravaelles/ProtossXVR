@@ -6,6 +6,11 @@ import jnibwapi.XVR;
 import jnibwapi.model.ChokePoint;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
+import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.MapExploration;
+import jnibwapi.xvr.UnitCounter;
+import jnibwapi.xvr.UnitManager;
+import jnibwapi.xvr.WorkerManager;
 
 public class ProtossPhotonCannon {
 
@@ -19,11 +24,24 @@ public class ProtossPhotonCannon {
 
 	private static ChokePoint _chokePointToReinforce = null;
 
+	// private static boolean _forcedPylonConstruction = false;
+
 	// private static final int MAX_DIST_FROM_BASE = 30;
 
 	public static boolean shouldBuild() {
-		if (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Gateway)
-				&& xvr.canAfford(100)) {
+		if (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Forge)) {
+
+			int cannons = UnitCounter.getNumberOfUnits(buildingType);
+			int bases = UnitCounter.getNumberOfUnits(UnitManager.BASE);
+			int battleUnits = UnitCounter.getNumberOfBattleUnits();
+			
+			if (cannons == 2 && battleUnits <= 6) {
+				return false;
+			}
+			
+			if (cannons >= 4 * bases) {
+				return xvr.canAfford(900) && cannons <= 7 * bases;
+			}
 
 			for (Unit base : ProtossNexus.getBases()) {
 				if (shouldBuildFor(base)) {
@@ -64,11 +82,7 @@ public class ProtossPhotonCannon {
 	}
 
 	private static boolean shouldBuildFor(ChokePoint chokePoint) {
-		int searchInDistance = (int) (1.3 * MAX_DIST_FROM_CHOKE_POINT_MODIFIER
-				* chokePoint.getRadius() / 32);
-		int numberOfCannonsNearby = xvr.getUnitsOfGivenTypeInRadius(
-				buildingType, searchInDistance, chokePoint.getCenterX(),
-				chokePoint.getCenterY(), true).size();
+		int numberOfCannonsNearby = calculateCannonsNearby(chokePoint);
 
 		// If there isn't too many cannons defending this choke point
 		if (numberOfCannonsNearby < MAX_CANNON_STACK) {
@@ -82,6 +96,15 @@ public class ProtossPhotonCannon {
 		}
 	}
 
+	private static int calculateCannonsNearby(ChokePoint chokePoint) {
+		int searchInDistance = (int) (1.7 * MAX_DIST_FROM_CHOKE_POINT_MODIFIER
+				* chokePoint.getRadius() / 32);
+		int numberOfCannonsNearby = xvr.getUnitsOfGivenTypeInRadius(
+				buildingType, searchInDistance, chokePoint.getCenterX(),
+				chokePoint.getCenterY(), true).size();
+		return numberOfCannonsNearby;
+	}
+
 	private static Point findProperBuildTile(ChokePoint choke,
 			boolean requiresPower) {
 
@@ -92,18 +115,26 @@ public class ProtossPhotonCannon {
 		// Define initial worker
 		Unit workerUnit = WorkerManager.findNearestWorkerTo(initialBuildTile.x,
 				initialBuildTile.y);
-		
+
 		// Define maximum distance from a choke point for a cannon
-		int maxDistanceBasedOnChokePointRadius = (int) (choke.getRadius()
-				* MAX_DIST_FROM_CHOKE_POINT_MODIFIER / 32);
-		int maxDistanceBasedOnDistanceFromChokePoint = 7;
-		int maximumDistance = Math.max(maxDistanceBasedOnChokePointRadius,
-				maxDistanceBasedOnDistanceFromChokePoint);
+		int minimumDistance = 6;
+		int numberOfCannonsNearby = calculateCannonsNearby(choke);
+
+		if (choke.getRadius() / 32 >= 8) {
+			minimumDistance -= 3;
+		}
+		int maximumDistance = minimumDistance
+				+ (12 / (numberOfCannonsNearby + 1));
+		// int maxDistanceBasedOnChokePointRadius = (int) (choke.getRadius()
+		// * MAX_DIST_FROM_CHOKE_POINT_MODIFIER / 32);
+		// int maxDistanceBasedOnDistanceFromChokePoint = 7;
+		// int maximumDistance = Math.max(maxDistanceBasedOnChokePointRadius,
+		// maxDistanceBasedOnDistanceFromChokePoint);
 
 		// Get proper build tile
 		Point properBuildTile = Constructing.getLegitTileToBuildNear(
 				workerUnit, buildingType, initialBuildTile.x,
-				initialBuildTile.y, 1, maximumDistance,
+				initialBuildTile.y, minimumDistance, maximumDistance,
 				requiresPower);
 
 		return properBuildTile;
@@ -118,24 +149,11 @@ public class ProtossPhotonCannon {
 
 		// Try to find normal tile.
 		Point tileForCannon = findProperBuildTile(_chokePointToReinforce, true);
-
-		// There's a pylon which can power this tile for cannon.
 		if (tileForCannon != null) {
 			return tileForCannon;
 		}
 
-		// FIX: Force constructing a pylon nearby first
-		else {
-			if (shouldBuildFor(_chokePointToReinforce)) {
-				Point tileForPylon = findProperBuildTile(
-						_chokePointToReinforce, false);
-				if (tileForPylon != null) {
-					Constructing.forceConstructionAt(
-							ProtossPylon.getBuildingtype(), tileForPylon);
-				}
-			}
-			return null;
-		}
+		return null;
 	}
 
 	public static UnitTypes getBuildingType() {

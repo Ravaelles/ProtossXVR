@@ -3,6 +3,8 @@ package jnibwapi.protoss;
 import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
+import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.UnitCounter;
 
 public class ProtossForge {
 
@@ -17,12 +19,20 @@ public class ProtossForge {
 
 	public static boolean shouldBuild() {
 		if (!UnitCounter.weHaveBuilding(buildingType)
-				&& UnitCounter.weHaveBuilding(ProtossGateway.getBuildingType())
 				&& !Constructing.weAreBuilding(buildingType)) {
 			// if (UnitCounter.getNumberOfBattleUnits() >= 15) {
 			return true;
 			// }
 		}
+
+		if (UnitCounter.getNumberOfUnits(buildingType) == 1
+				&& UnitCounter.getNumberOfUnits(ProtossGateway
+						.getBuildingType()) >= 3
+				&& xvr.canAfford(650)
+				&& !Constructing.weAreBuilding(buildingType)) {
+			return true;
+		}
+
 		return false;
 	}
 

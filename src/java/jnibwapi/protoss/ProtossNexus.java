@@ -7,8 +7,15 @@ import java.util.HashMap;
 import jnibwapi.RUtilities;
 import jnibwapi.XVR;
 import jnibwapi.model.BaseLocation;
+import jnibwapi.model.Map;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
+import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.MapExploration;
+import jnibwapi.xvr.UnitActions;
+import jnibwapi.xvr.UnitCounter;
+import jnibwapi.xvr.UnitManager;
+import jnibwapi.xvr.WorkerManager;
 
 public class ProtossNexus {
 
@@ -16,6 +23,7 @@ public class ProtossNexus {
 
 	private static int MAX_DIST_OF_MINERAL_FROM_BASE = 15;
 	private static final int ARMY_UNITS_PER_NEW_BASE = 10;
+	private static final int MAX_WORKERS = 100;
 
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Nexus;
 
@@ -28,18 +36,30 @@ public class ProtossNexus {
 	public static boolean shouldBuild() {
 		int bases = UnitCounter.getNumberOfUnits(buildingType);
 		int battleUnits = UnitCounter.getNumberOfBattleUnits();
-		
-		// FORCE quick expansion if we're rich 
-		if (xvr.canAfford(580)) {
-			return true;
+
+		// FORCE quick expansion if we're rich
+		if (xvr.canAfford(330)) {
+			if (battleUnits < 9) {
+				return false;
+			}
+			else {
+				return true;
+			}
+		}
+		if (xvr.canAfford(460)) {
+			if (battleUnits < 5) {
+				return false;
+			}
+			else {
+				return true;
+			}
 		}
 
 		// Initially, we must wait to have at least 3 barracks to build first
 		// base.
 		if (bases == 1) {
-			if (battleUnits < 10
-					|| Constructing.weAreBuilding(buildingType)
-					|| UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Gateway) <= 1) {
+			if (UnitCounter
+					.getNumberOfUnitsCompleted(UnitTypes.Protoss_Gateway) <= 1) {
 				return false;
 			}
 		}
@@ -72,6 +92,12 @@ public class ProtossNexus {
 		if (gasGatherersForBase > 4) {
 			int overLimitWorkers = gasGatherersForBase - 4;
 
+			// Check whether the geyser isn't depleted
+			if (xvr.getUnitOfTypeNearestTo(UnitTypes.Protoss_Assimilator, base)
+					.getResources() == 0) {
+				overLimitWorkers = gasGatherersForBase - 1;
+			}
+
 			// We can send workers only if there's another base
 			if (UnitCounter.getNumberOfUnits(buildingType) > 1) {
 				ArrayList<Unit> gatherers = getGasWorkersNearBase(base);
@@ -95,9 +121,11 @@ public class ProtossNexus {
 			// another
 			// base try sending them to the new base
 			int overLimitWorkers = getNumberOfMineralGatherersForBase(base)
-					- getOptimalMineralGatherersAtBase(base) - 1;
+					- getOptimalMineralGatherersAtBase(base) + 2;
 			if (overLimitWorkers > 0
 					&& UnitCounter.getNumberOfUnitsCompleted(buildingType) > 1) {
+				ArrayList<Unit> gatherers = getMineralWorkersNearBase(base);
+				boolean sendSomewhere = false;
 				for (Unit otherBase : xvr.getUnitsOfTypeCompleted(buildingType)) {
 					if (!base.equals(otherBase)) {
 						int overLimitWorkersAtOtherBase = getNumberOfMineralGatherersForBase(otherBase)
@@ -106,39 +134,113 @@ public class ProtossNexus {
 							continue;
 						}
 
-						ArrayList<Unit> gatherers = getMineralWorkersNearBase(base);
 						for (int i = 0; i < overLimitWorkers
 								&& i < gatherers.size(); i++) {
-							UnitActions.moveTo(gatherers.get(i), otherBase);
+							// UnitActions.moveTo(gatherers.get(i), otherBase);
+							WorkerManager.gatherResources(gatherers.get(i),
+									otherBase);
 						}
+						sendSomewhere = true;
 						break;
 					}
+				}
+
+				// If not send anywhere, kill the damned units!!!
+				if (!sendSomewhere) {
+					for (int i = 0; i < overLimitWorkers
+							&& i < gatherers.size(); i++) {
+						UnitActions.attackEnemyUnit(gatherers.get(i),
+								MapExploration.getRandomKnownEnemyBase());
+					}
+				}
+			}
+		}
+
+		// =========================================
+		// ======== SSCAI FIX: Remove 0 minerals ===
+		checkIfRemoveZeroMineralsCrystal(base);
+	}
+
+	private static void checkIfRemoveZeroMineralsCrystal(Unit base) {
+		final int SEARCH_IN_RADIUS = 30;
+		final int ACT_IF_AT_LEAST_N_WORKERS = 10;
+
+		// Create list of mineral gatheres near base. It's essential not to use
+		// defined method, as we need to significantly increase seek range.
+		ArrayList<Unit> workers = xvr.getWorkers();
+		if (workers.size() < ACT_IF_AT_LEAST_N_WORKERS) {
+			return;
+		}
+
+		ArrayList<Unit> mineralWorkersNearBase = new ArrayList<>();
+		for (Unit worker : workers) {
+			if (worker.isGatheringMinerals()
+					&& xvr.getDistanceBetween(base, worker) <= SEARCH_IN_RADIUS) {
+				mineralWorkersNearBase.add(worker);
+			}
+		}
+
+		// If we have at least 8 mineral workers near base, send one of them to
+		// gather this lonely mineral-obstacle
+		if (mineralWorkersNearBase.size() >= ACT_IF_AT_LEAST_N_WORKERS) {
+			ArrayList<Unit> mineralsAroundTheBase = xvr
+					.getUnitsOfGivenTypeInRadius(
+							UnitTypes.Resource_Mineral_Field, SEARCH_IN_RADIUS,
+							base, false);
+
+			for (Unit mineral : mineralsAroundTheBase) {
+				if (mineral.getResources() == 0 && !mineral.isBeingGathered()) {
+					Unit unitToUse = mineralWorkersNearBase.get(0);
+					WorkerManager.forceGatherMinerals(unitToUse, mineral);
 				}
 			}
 		}
 	}
 
+	/** Find building tile for new base. */
 	public static Point findTileForBase() {
+		Map map = xvr.getBwapi().getMap();
+
 		Unit mainBase = xvr.getFirstBase();
+		// Region mainBaseRegion = map.getRegion(mainBase.getTx(),
+		// mainBase.getTy());
 		double nearestDistance = 999999;
 		BaseLocation nearestFreeBaseLocation = null;
 
-		for (BaseLocation baseLocation : xvr.getBwapi().getMap()
-				.getBaseLocations()) {
-			if (existsBaseNear(baseLocation.getX(), baseLocation.getY())) {
+		for (BaseLocation location : xvr.getBwapi().getMap().getBaseLocations()) {
+
+			// If there's already a base there don't build. Check for both our
+			// and enemy bases.
+			if (existsBaseNear(location.getX(), location.getY())) {
 				continue;
 			}
 
-			double distance = xvr.getDistanceBetween(baseLocation.getX(),
-					baseLocation.getY(), mainBase.getX(), mainBase.getY());
+			// Check if the new base is connected to the main base by land.
+			// Region newBaseRegion = xvr.getBwapi().getMap()
+			// .getRegion(location.getX(), location.getY());
+			if (!map.isConnected(location.getTx(), location.getTy(),
+					mainBase.getTx(), mainBase.getTy())) {
+				continue;
+			}
+
+			// Look for for the closest base and remember it.
+			double distance = xvr.getDistanceBetween(location.getX(),
+					location.getY(), mainBase.getX(), mainBase.getY());
 			if (distance < nearestDistance) {
 				nearestDistance = distance;
-				nearestFreeBaseLocation = baseLocation;
+				nearestFreeBaseLocation = location;
 			}
 		}
 
-		return new Point(nearestFreeBaseLocation.getTx(),
-				nearestFreeBaseLocation.getTy());
+		if (nearestFreeBaseLocation != null) {
+			Point point = new Point(nearestFreeBaseLocation.getTx(),
+					nearestFreeBaseLocation.getTy());
+			// Debug.message(xvr, "Tile for new base: " + point.x + "," +
+			// point.y);
+			return point;
+		} else {
+			return null;
+		}
 	}
 
 	private static boolean existsBaseNear(int x, int y) {
@@ -173,6 +275,10 @@ public class ProtossNexus {
 	}
 
 	private static boolean shouldBuildWorkers(Unit base) {
+		if (xvr.countUnitsOfType(UnitManager.WORKER) >= MAX_WORKERS) {
+			return false;
+		}
+
 		int workersNearBase = getNumberOfWorkersNearBase(base);
 		double existingToOptimalRatio = (double) workersNearBase
 				/ getOptimalMineralGatherersAtBase(base);
@@ -346,6 +452,10 @@ public class ProtossNexus {
 		} else {
 			return false;
 		}
+	}
+
+	public static Unit getRandomBase() {
+		return (Unit) RUtilities.randomElement(getBases());
 	}
 
 }

@@ -1,18 +1,19 @@
 package jnibwapi.model;
 
 import jnibwapi.XVR;
-import jnibwapi.protoss.CallForHelp;
-import jnibwapi.protoss.UnitManager;
 import jnibwapi.types.UnitCommandType.UnitCommandTypes;
 import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
+import jnibwapi.types.WeaponType;
+import jnibwapi.xvr.CallForHelp;
+import jnibwapi.xvr.MapPoint;
 
 /**
  * Represents a StarCraft unit.
  * 
  * For a description of fields see: http://code.google.com/p/bwapi/wiki/Unit
  */
-public class Unit implements Comparable<Unit> {
+public class Unit extends MapPoint implements Comparable<Unit> {
 
 	public static final int numAttributes = 118;
 	public static final double TO_DEGREES = 180.0 / Math.PI;
@@ -746,7 +747,9 @@ public class Unit implements Comparable<Unit> {
 	// =================================================
 
 	public boolean isWorker() {
-		return typeID == UnitManager.WORKER.ordinal();
+		return typeID == UnitTypes.Protoss_Probe.ordinal()
+				|| typeID == UnitTypes.Zerg_Drone.ordinal()
+				|| typeID == UnitTypes.Terran_SCV.ordinal();
 	}
 
 	public static Unit getMyUnitByID(int unitID) {
@@ -923,6 +926,40 @@ public class Unit implements Comparable<Unit> {
 
 	public void setCallForHelpMission(CallForHelp call) {
 		this.callForHelpMission = call;
+	}
+
+	public boolean canGroundAttack() {
+		UnitType type = getType();
+		return type.isAttackCapable() && type.getGroundWeaponID() != -1;
+	}
+
+	public int getGroundAttack() {
+		// System.out.println();
+		// System.out.println("## " + getType().getName() + " weapon:");
+		// System.out.println("  damage: " +
+		// WeaponType.getWeaponByID(getType().getGroundWeaponID()).getDamageAmount());
+		// System.out.println("   bonus: " +
+		// WeaponType.getWeaponByID(getType().getGroundWeaponID()).getDamageBonus());
+		// System.out.println("  factor: " +
+		// WeaponType.getWeaponByID(getType().getGroundWeaponID()).getDamageFactor());
+
+		if (!canGroundAttack()) {
+			return 0;
+		}
+		return WeaponType.getWeaponByID(getType().getGroundWeaponID())
+				.getDamageAmount();
+	}
+
+	public boolean isDefensiveBuilding() {
+		// return isPhotonCannon() || isSunkenColony() || isBunker();
+		UnitType type = getType();
+		return type.isBuilding() && type.getGroundWeaponID() != -1
+				&& type.isAttackCapable();
+	}
+
+	
+	public boolean isHidden() {
+		return (isCloaked() || isBurrowed() || !isDetected());
 	}
 
 }

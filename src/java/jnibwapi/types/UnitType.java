@@ -538,11 +538,20 @@ public class UnitType {
 	}
 
 	public boolean isTank() {
-		return getID() == UnitTypes.Terran_Siege_Tank_Tank_Mode.ordinal();
+		return ID == UnitTypes.Terran_Siege_Tank_Tank_Mode.ordinal()
+				|| ID == UnitTypes.Terran_Siege_Tank_Tank_Mode.ordinal();
 	}
 	
 	public boolean isReaver() {
 		return getID() == UnitTypes.Protoss_Reaver.ordinal();
+	}
+	
+	public boolean isHighTemplar() {
+		return getID() == UnitTypes.Protoss_High_Templar.ordinal();
+	}
+	
+	public boolean isMissileTurret() {
+		return getID() == UnitTypes.Terran_Missile_Turret.ordinal();
 	}
 
 }

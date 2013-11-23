@@ -3,6 +3,8 @@ package jnibwapi.protoss;
 import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
+import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.UnitCounter;
 
 public class ProtossCitadelOfAdun {
 
@@ -16,8 +18,11 @@ public class ProtossCitadelOfAdun {
 	}
 
 	public static boolean shouldBuild() {
-		if (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core)
-				&& !UnitCounter.weHaveBuilding(buildingType)
+		if (!UnitCounter.weHaveBuilding(buildingType)
+				&& UnitCounter
+						.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core)
+				&& UnitCounter.getNumberOfUnits(ProtossGateway
+						.getBuildingType()) >= 2
 				&& !Constructing.weAreBuilding(buildingType)
 				&& xvr.canAfford(150, 100)) {
 			if (UnitCounter.getNumberOfBattleUnits() >= 2) {
@@ -39,5 +44,5 @@ public class ProtossCitadelOfAdun {
 	public static UnitTypes getBuildingtype() {
 		return buildingType;
 	}
-	
+
 }

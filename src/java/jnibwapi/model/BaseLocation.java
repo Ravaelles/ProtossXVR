@@ -1,14 +1,17 @@
 package jnibwapi.model;
 
+import jnibwapi.xvr.MapPoint;
+
 /**
  * Represents a StarCraft base location.
  * 
- * For a description of fields see: http://code.google.com/p/bwta/wiki/BaseLocation
+ * For a description of fields see:
+ * http://code.google.com/p/bwta/wiki/BaseLocation
  */
-public class BaseLocation implements Comparable<BaseLocation> {
-	
+public class BaseLocation extends MapPoint implements Comparable<BaseLocation> {
+
 	public static final int numAttributes = 10;
-	
+
 	private int x;
 	private int y;
 	private int tx;
@@ -19,7 +22,7 @@ public class BaseLocation implements Comparable<BaseLocation> {
 	private boolean island;
 	private boolean mineralOnly;
 	private boolean startLocation;
-	
+
 	public BaseLocation(int[] data, int index) {
 		x = data[index++];
 		y = data[index++];
@@ -32,47 +35,47 @@ public class BaseLocation implements Comparable<BaseLocation> {
 		mineralOnly = (data[index++] == 1);
 		startLocation = (data[index++] == 1);
 	}
-	
+
 	public int getX() {
 		return x;
 	}
-	
+
 	public int getY() {
 		return y;
 	}
-	
+
 	public int getTx() {
 		return tx;
 	}
-	
+
 	public int getTy() {
 		return ty;
 	}
-	
+
 	public int getRegionID() {
 		return regionID;
 	}
-	
+
 	public int getMinerals() {
 		return minerals;
 	}
-	
+
 	public int getGas() {
 		return gas;
 	}
-	
+
 	public boolean isIsland() {
 		return island;
 	}
-	
+
 	public boolean isMineralOnly() {
 		return mineralOnly;
 	}
-	
+
 	public boolean isStartLocation() {
 		return startLocation;
 	}
-	
+
 	// ======================
 
 	@Override
@@ -103,7 +106,7 @@ public class BaseLocation implements Comparable<BaseLocation> {
 	@Override
 	public int compareTo(BaseLocation arg0) {
 		BaseLocation otherBase = (BaseLocation) arg0;
-		return (x + ";" + y).compareTo(otherBase.x + ";" + otherBase.y); 
+		return (x + ";" + y).compareTo(otherBase.x + ";" + otherBase.y);
 	}
-	
+
 }

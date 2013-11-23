@@ -3,12 +3,14 @@ package jnibwapi;
 import jnibwapi.model.ChokePoint;
 import jnibwapi.model.Player;
 import jnibwapi.model.Unit;
-import jnibwapi.protoss.MapExploration;
-import jnibwapi.protoss.MassiveAttack;
-import jnibwapi.protoss.NukeHandling;
 import jnibwapi.protoss.ProtossGateway;
 import jnibwapi.protoss.ProtossNexus;
 import jnibwapi.protoss.ProtossObserver;
+import jnibwapi.types.UnitType;
+import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.MapExploration;
+import jnibwapi.xvr.MassiveAttack;
+import jnibwapi.xvr.NukeHandling;
 
 public class XVRClient implements BWAPIEventListener {
 
@@ -114,8 +116,15 @@ public class XVRClient implements BWAPIEventListener {
 
 	public void unitCreate(int unitID) {
 		xvr.unitCreated(unitID);
-		// Unit unit = bwapi.getUnit(unitID);
-		// UnitType unitType = UnitType.getUnitTypeByID(unit.getTypeID());
+		 Unit unit = bwapi.getUnit(unitID);
+		 UnitType unitType = unit.getType();
+		 if (!unit.isEnemy()) {
+			 if (unitType.isBuilding() && unitType.isBase()) {
+				 
+				 // Build pylon nearby
+				 Constructing.forceConstructingPylonNear(unit);
+			 }
+		 }
 		// if (unitType.isBuilding()) {
 		// TerranConstructing.removeIsBeingBuilt(unitType);
 		// }
@@ -123,17 +132,22 @@ public class XVRClient implements BWAPIEventListener {
 
 	public void unitDestroy(int unitID) {
 		// System.out.println("DESTROYED: " + unitID);
-		// Unit unit = bwapi.getUnit(unitID);
-		// UnitType unitType = UnitType.getUnitTypeByID(unit.getTypeID());
+		boolean removedSomething = MapExploration.enemyUnitDestroyed(unitID);
 
 		// Check if massive attack target has just been destroyed; if so,
 		// redefine it.
-		if (MassiveAttack.getTargetUnit() != null
+		if (removedSomething && MassiveAttack.getTargetUnit() != null
 				&& MassiveAttack.getTargetUnit().getID() == unitID) {
 			// System.out.println("REDIFINING... " +
 			// MassiveAttack.getTargetUnit().toStringShort());
 			MassiveAttack.forceRedefinitionOfNextTarget();
 		}
+		// Unit unit = Unit.getByID(unitID);
+		// if (unit == null) {
+		// return;
+		// }
+		// System.out.println("Destroyed unit was " + unit.toStringShort());
+		// UnitType unitType = UnitType.getUnitTypeByID(unit.getTypeID());
 	}
 
 	public void unitDiscover(int unitID) {
@@ -166,7 +180,8 @@ public class XVRClient implements BWAPIEventListener {
 
 		System.out.println("Unit hide: "
 				+ (unit != null ? unit.getName() : "null"));
-		if (unit.isEnemy() && (unit.isCloaked() || unit.isBurrowed())) {
+		if (unit.isEnemy()
+				&& (unit.isCloaked() || unit.isBurrowed() || !unit.isDetected())) {
 			ProtossObserver.hiddenUnitDetected(unit);
 		}
 	}
@@ -180,7 +195,7 @@ public class XVRClient implements BWAPIEventListener {
 			return;
 		}
 
-		if (unit.isEnemy() && (unit.isCloaked() || unit.isBurrowed())) {
+		if (unit.isEnemy() && unit.isHidden()) {
 			Debug.message(xvr, "Hidden unit: " + Unit.getByID(unitID).getName());
 			ProtossObserver.hiddenUnitDetected(unit);
 		}

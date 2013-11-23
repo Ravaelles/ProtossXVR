@@ -2,6 +2,9 @@ package jnibwapi.protoss;
 
 import jnibwapi.XVR;
 import jnibwapi.types.UnitType.UnitTypes;
+import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.UnitCounter;
+import jnibwapi.xvr.UnitManager;
 
 public class ProtossAssimilator {
 
@@ -14,7 +17,7 @@ public class ProtossAssimilator {
 				&& xvr.canAfford(100)
 				&& (UnitCounter
 						.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core) || UnitCounter
-						.getNumberOfUnits(UnitTypes.Protoss_Gateway) >= 2)
+						.getNumberOfUnits(UnitManager.GATEWAY) >= 2)
 				&& UnitCounter.getNumberOfUnits(buildingType) < UnitCounter
 						.getNumberOfUnitsCompleted(UnitManager.BASE)) {
 			if (UnitCounter.getNumberOfInfantryUnits() >= 4) {

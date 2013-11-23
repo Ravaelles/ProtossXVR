@@ -3,6 +3,8 @@ package jnibwapi.protoss;
 import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
+import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.UnitCounter;
 
 public class ProtossRoboticsSupportBay {
 
@@ -36,7 +38,7 @@ public class ProtossRoboticsSupportBay {
 		return null;
 	}
 
-	public static UnitTypes getBuildingtype() {
+	public static UnitTypes getBuildingType() {
 		return buildingType;
 	}
 	

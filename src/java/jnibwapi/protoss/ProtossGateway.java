@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
+import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.UnitCounter;
+import jnibwapi.xvr.UnitManager;
 
 public class ProtossGateway {
 
@@ -13,9 +16,9 @@ public class ProtossGateway {
 	public static UnitTypes DARK_TEMPLAR = UnitTypes.Protoss_Dark_Templar;
 	public static UnitTypes HIGH_TEMPLAR = UnitTypes.Protoss_High_Templar;
 
-	private static int zealotBuildRatio = 60;
-	private static int dragoonBuildRatio = 60;
-	private static int darkTemplarBuildRatio = 100;
+	private static int zealotBuildRatio = 72;
+	private static int dragoonBuildRatio = 18;
+	private static int darkTemplarBuildRatio = 30;
 	// private static int highTemplarBuildRatio = 19;
 
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Gateway;
@@ -26,24 +29,25 @@ public class ProtossGateway {
 			int barracks = UnitCounter.getNumberOfUnits(buildingType);
 
 			// 0 barracks
-			if (barracks == 0) {
+			if (barracks == 0
+					&& (UnitCounter.weHaveBuilding(ProtossForge.getBuildingType())
+					|| xvr.canAfford(150))) {
 				return true;
 			}
 
 			// 1 barracks
 			if (barracks == 1
-					&& UnitCounter
-							.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core)) {
+					&& UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Pylon) >= 2) {
 				return true;
 			}
 
 			// 2 barracks or more
 			if (UnitCounter.getNumberOfUnits(buildingType) >= 2
-					&& UnitCounter.getNumberOfUnits(UnitManager.BASE) >= 2
+					&& UnitCounter.getNumberOfUnitsCompleted(UnitManager.BASE) >= 2
 					&& UnitCounter
 							.weHaveBuilding(UnitTypes.Protoss_Citadel_of_Adun)) {
 				int HQs = UnitCounter.getNumberOfUnits(UnitManager.BASE);
-				if ((double) barracks / HQs < 2.6 || xvr.canAfford(850)) {
+				if ((double) barracks / HQs < 1.73 || xvr.canAfford(850)) {
 					return true;
 				}
 			}
@@ -65,7 +69,7 @@ public class ProtossGateway {
 		}
 	}
 
-	protected static void act(Unit barracks) {
+	public static void act(Unit barracks) {
 		int[] buildingQueueDetails = Constructing.shouldBuildAnyBuilding();
 		int freeMinerals = xvr.getMinerals();
 		int freeGas = xvr.getGas();
@@ -89,37 +93,36 @@ public class ProtossGateway {
 		boolean darkTemplarAllowed = UnitCounter
 				.weHaveBuildingFinished(UnitTypes.Protoss_Templar_Archives)
 				&& (freeMinerals >= 125 && freeGas >= 100);
-		;
 
 		UnitTypes typeToBuild = ZEALOT;
 
 		// Calculate ratio
-		int totalRatio = zealotBuildRatio
+		double totalRatio = zealotBuildRatio
 				+ (dragoonAllowed ? dragoonBuildRatio : 0)
 				+ (darkTemplarAllowed ? darkTemplarBuildRatio : 0);
-		int totalInfantry = UnitCounter.getNumberOfInfantryUnits() + 1;
+		double totalInfantry = UnitCounter.getNumberOfInfantryUnits() + 1;
 
 		// ZEALOT
-		int zealotPercent = UnitCounter.getNumberOfUnits(ZEALOT) * totalRatio
+		double zealotPercent = UnitCounter.getNumberOfUnits(ZEALOT)
 				/ totalInfantry;
-		if (zealotPercent < zealotBuildRatio) {
+		if (zealotPercent < zealotBuildRatio / totalRatio) {
 			return ZEALOT;
 		}
 
 		// DARK TEMPLAR
 		if (darkTemplarAllowed) {
-			int darkTemplarPercent = UnitCounter.getNumberOfUnits(DARK_TEMPLAR)
-					* totalRatio / totalInfantry;
-			if (darkTemplarPercent < darkTemplarBuildRatio) {
+			double darkTemplarPercent = (double) UnitCounter
+					.getNumberOfUnits(DARK_TEMPLAR) / totalInfantry;
+			if (darkTemplarPercent < darkTemplarBuildRatio / totalRatio) {
 				return DARK_TEMPLAR;
 			}
 		}
 
 		// DRAGOON
 		if (dragoonAllowed) {
-			int dragoonPercent = UnitCounter.getNumberOfUnits(DRAGOON)
-					* totalRatio / totalInfantry;
-			if (dragoonPercent < dragoonBuildRatio) {
+			double dragoonPercent = (double) UnitCounter
+					.getNumberOfUnits(DRAGOON) / totalInfantry;
+			if (dragoonPercent < dragoonBuildRatio / totalRatio) {
 				return DRAGOON;
 			}
 		}
@@ -139,6 +142,12 @@ public class ProtossGateway {
 
 	public static UnitTypes getBuildingType() {
 		return buildingType;
+	}
+
+	public static void changePlanToAntiAir() {
+		zealotBuildRatio = 10;
+		dragoonBuildRatio = 70;
+		darkTemplarBuildRatio = 10;
 	}
 
 }

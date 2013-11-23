@@ -3,6 +3,8 @@ package jnibwapi.protoss;
 import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
+import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.UnitCounter;
 
 public class ProtossCybernetics {
 
@@ -17,8 +19,9 @@ public class ProtossCybernetics {
 
 	public static boolean shouldBuild() {
 		if (!Constructing.weAreBuilding(buildingType)
+				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Forge)
 				&& xvr.canAfford(150)) {
-			if ((UnitCounter.getNumberOfUnitsCompleted(UnitTypes.Protoss_Gateway) >= 1
+			if ((UnitCounter.getNumberOfUnitsCompleted(UnitTypes.Protoss_Gateway) >= 2
 					|| UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Gateway) >= 3) 
 					&& !UnitCounter.weHaveBuilding(buildingType)) {
 				return true;

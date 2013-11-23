@@ -1,8 +1,12 @@
 package jnibwapi.protoss;
 
+import java.util.ArrayList;
+
 import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
+import jnibwapi.xvr.Constructing;
+import jnibwapi.xvr.UnitCounter;
 
 public class ProtossArbiterTribunal {
 
@@ -18,11 +22,10 @@ public class ProtossArbiterTribunal {
 	public static boolean shouldBuild() {
 		if (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Templar_Archives)
 				&& !UnitCounter.weHaveBuilding(buildingType)
-				&& xvr.canAfford(200, 150)
 				&& !Constructing.weAreBuilding(buildingType)) {
-//			if (UnitCounter.getNumberOfBattleUnits() >= 15) {
-				return true;
-//			}
+			// if (UnitCounter.getNumberOfBattleUnits() >= 15) {
+			return true;
+			// }
 		}
 		return false;
 	}
@@ -36,8 +39,12 @@ public class ProtossArbiterTribunal {
 		return null;
 	}
 
-	public static UnitTypes getBuildingtype() {
+	public static UnitTypes getBuildingType() {
 		return buildingType;
 	}
-	
+
+	public static ArrayList<Unit> getAllObjects() {
+		return xvr.getUnitsOfTypeCompleted(buildingType);
+	}
+
 }

@@ -1,8 +1,14 @@
 package jnibwapi.protoss;
 
+import java.util.ArrayList;
+
 import jnibwapi.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
+import jnibwapi.xvr.ArmyPlacing;
+import jnibwapi.xvr.UnitActions;
+import jnibwapi.xvr.UnitCounter;
+import jnibwapi.xvr.UnitManager;
 
 public class ProtossObserver {
 
@@ -30,29 +36,28 @@ public class ProtossObserver {
 
 	public static void act(Unit observer) {
 
-		// Act when enemy detector or some AA building is nearby: just run away
-		if (xvr.isEnemyDetectorNear(observer.getX(), observer.getY())
-				|| xvr.isEnemyDefensiveAirBuildingNear(observer.getX(),
-						observer.getY())) {
-			
-			// Try to move away from this enemy detector on N tiles.
-			UnitActions.moveAwayFromUnitIfPossible(observer,
-					xvr.getEnemyDetectorNear(observer.getX(), observer.getY()), 3);
+		// TOP PRIORITY: Act when enemy detector or some AA building is nearby:
+		// just run away
+		if (UnitActions.runFromEnemyDetectorOrDefensiveBuildingIfNecessary(observer, true)) {
 			return;
 		}
 
-		// If there's active attack we absolutely have to help the army.
-		if (MassiveAttack.isAttackPending()) {
-			actionWhenMassiveAttack(observer);
-		}
-
-		// There's no massive attack right now, do usual stuff.
-		else {
-			actionWhenNoMassiveAttack(observer);
+		if (isIndividualTaskAssigned(observer)) {
+			actIndividual(observer);
+		} else {
+			actNormally(observer);
 		}
 	}
 
-	private static void actionWhenNoMassiveAttack(Unit observer) {
+	private static boolean isIndividualTaskAssigned(Unit observer) {
+		return getIndexOfObserver(observer) <= 2;
+	}
+
+	private static int getIndexOfObserver(Unit observer) {
+		return xvr.getUnitsOfType(OBSERVER).indexOf(observer);
+	}
+
+	private static void actNormally(Unit observer) {
 
 		// If observer is already moving, don't interrupt
 		if (observer.isMoving()) {
@@ -63,13 +68,78 @@ public class ProtossObserver {
 		tryProtectingNewestBaseIfMakesSense(observer);
 	}
 
-	private static void actionWhenMassiveAttack(Unit observer) {
-		if (MassiveAttack.getTargetUnit() != null) {
-			UnitActions.moveTo(observer, MassiveAttack.getTargetUnit());
-		} else {
-			actStandard(observer);
+	private static void actIndividual(Unit observer) {
+		int observerIndex = getIndexOfObserver(observer);
+
+		// Get the units to assign observers to.
+		Unit unit1 = null;
+		Unit unit2 = null;
+		Unit unit3 = null;
+
+		ArrayList<Unit> zealots = xvr.getUnitsOfType(UnitTypes.Protoss_Zealot);
+
+		// Two observers should follow the main army
+		if (observerIndex == 0) {
+			if (!zealots.isEmpty()) {
+				unit1 = zealots.get(0);
+				UnitActions.moveTo(observer, unit1);
+				return;
+			}
+		} else if (observerIndex == 1) {
+			ArrayList<Unit> dragoons = xvr
+					.getUnitsOfType(UnitTypes.Protoss_Dragoon);
+			if (!dragoons.isEmpty()) {
+				unit2 = dragoons.get(0);
+				UnitActions.moveTo(observer, unit2);
+				return;
+			} else if (!zealots.isEmpty()) {
+				unit2 = zealots.get(zealots.size() - 1);
+				UnitActions.moveTo(observer, unit2);
+				return;
+			}
+		} else if (observerIndex == 2) {
+			ArrayList<Unit> arbiters = xvr
+					.getUnitsOfType(UnitTypes.Protoss_Arbiter);
+			if (!arbiters.isEmpty()) {
+				unit3 = arbiters.get(0);
+				UnitActions.moveTo(observer, unit3);
+				return;
+			} else {
+				if (!zealots.isEmpty()) {
+					unit3 = zealots.get(zealots.size() / 2);
+					UnitActions.moveTo(observer, unit3);
+					return;
+				}
+			}
+		} else if (observerIndex == 3) {
+			UnitActions.moveTo(observer, ArmyPlacing.getArmyCenterPoint());
 		}
+
+		// If no previous action was successful, just act normally.
+		actNormally(observer);
 	}
+
+	// private static void actionWhenNoMassiveAttack(Unit observer) {
+	//
+	// }
+	//
+	// private static void actionWhenMassiveAttack(Unit observer) {
+	// boolean shouldFollowArmy = xvr.getUnitsOfType(OBSERVER).indexOf(
+	// observer) <= 1;
+	// if (MassiveAttack.getTargetUnit() != null && shouldFollowArmy) {
+	//
+	// int observersNearby = -1
+	// + xvr.getUnitsOfGivenTypeInRadius(OBSERVER, 10, observer,
+	// true).size();
+	// if (observersNearby == 0) {
+	// UnitActions.moveTo(observer, MassiveAttack.getTargetUnit());
+	// } else {
+	// UnitActions.spreadOutRandomly(observer);
+	// }
+	// } else {
+	// goToRandomChokePoint(observer);
+	// }
+	// }
 
 	private static void tryProtectingNewestBaseIfMakesSense(Unit observer) {
 
@@ -97,23 +167,23 @@ public class ProtossObserver {
 				if (observer.equals(observerNearBase)) {
 
 				} else {
-					actStandard(observer);
+					goToRandomChokePoint(observer);
 				}
 			}
 
 			// There's enough observers at base, do something else.
 			else {
-				actStandard(observer);
+				goToRandomChokePoint(observer);
 			}
 		}
 
 		// No new base, just go to random choke point.
 		else {
-			actStandard(observer);
+			goToRandomChokePoint(observer);
 		}
 	}
 
-	private static void actStandard(Unit observer) {
+	private static void goToRandomChokePoint(Unit observer) {
 		UnitActions.goToRandomChokePoint(observer);
 	}
 
