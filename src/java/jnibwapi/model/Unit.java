@@ -1,12 +1,12 @@
 package jnibwapi.model;
 
-import jnibwapi.XVR;
+import ai.core.XVR;
+import ai.handling.map.MapPoint;
+import ai.handling.units.CallForHelp;
 import jnibwapi.types.UnitCommandType.UnitCommandTypes;
 import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.types.WeaponType;
-import jnibwapi.xvr.CallForHelp;
-import jnibwapi.xvr.MapPoint;
 
 /**
  * Represents a StarCraft unit.

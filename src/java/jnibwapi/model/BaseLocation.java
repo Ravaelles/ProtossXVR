@@ -1,6 +1,6 @@
 package jnibwapi.model;
 
-import jnibwapi.xvr.MapPoint;
+import ai.handling.map.MapPoint;
 
 /**
  * Represents a StarCraft base location.

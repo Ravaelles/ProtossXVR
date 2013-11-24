@@ -2,7 +2,7 @@ package jnibwapi.model;
 
 import java.awt.Point;
 
-import jnibwapi.XVR;
+import ai.core.XVR;
 
 /**
  * Represents a StarCraft player.

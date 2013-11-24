@@ -558,4 +558,9 @@ public class UnitType {
 		return getID() == UnitTypes.Terran_Missile_Turret.ordinal();
 	}
 
+	
+	public boolean isObserver() {
+		return getID() == UnitTypes.Protoss_Observer.ordinal();
+	}
+
 }
