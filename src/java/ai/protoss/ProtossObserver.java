@@ -5,7 +5,6 @@ import java.util.HashMap;
 
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
-import ai.core.Debug;
 import ai.core.XVR;
 import ai.handling.army.ArmyPlacing;
 import ai.handling.map.MapPoint;
@@ -35,10 +34,13 @@ public class ProtossObserver {
 	}
 
 	public static void tryToScanUnit(Unit enemy) {
+		if (enemy == null || enemy.getType().isTerranMine()
+				|| enemy.getType().isObserver()) {
+			return;
+		}
+
 		Unit observer = getNearestFreeObserverTo(enemy);
 		if (observer != null) {
-			Debug.message(xvr, "Trying to scan: " + enemy.getName() + ", with: "
-					+ observer.getName());
 
 			// Check whether this unit isn't already being scanned by some
 			// observer
@@ -50,7 +52,6 @@ public class ProtossObserver {
 	}
 
 	private static void markEnemyUnitAsNoLongerScanned(Unit enemy) {
-		Debug.message(xvr, "No longer scanning: " + enemy.getName());
 
 		// Find the key (observer) that was scanning this enemy
 		Unit observerKey = null;
@@ -116,19 +117,16 @@ public class ProtossObserver {
 		// TOP PRIORITY: Act when enemy detector or some AA building is nearby:
 		// just run away, no matter what.
 		if (UnitActions.runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
-				observer, true)) {
+				observer, false, true)) {
 			return;
 		}
 
 		// Choose behavior according to current mission for of this observer
 		if (isObserverSupposedToScanSomePoint(observer)) {
-//			System.out.println("OBS: 1");
 			actWhenScanningSomePoint(observer);
 		} else if (isIndividualTaskAssigned(observer)) {
-//			System.out.println("OBS: 2");
 			actIndividual(observer);
 		} else {
-//			System.out.println("OBS: 3");
 			actNormally(observer);
 		}
 
@@ -142,7 +140,8 @@ public class ProtossObserver {
 		// and/or should we stop scanning this location.
 		if (mapPointToScan instanceof Unit) {
 			Unit enemyToScan = (Unit) mapPointToScan;
-			if (!enemyToScan.isHidden()) {
+			if (!enemyToScan.isHidden()
+					|| xvr.getDistanceSimple(observer, enemyToScan) <= 3) {
 				markEnemyUnitAsNoLongerScanned(enemyToScan);
 				return;
 			}
@@ -199,30 +198,24 @@ public class ProtossObserver {
 
 		// Two observers should follow the main army
 		if (observerIndex == 0) {
-			System.out.println("   OBS, case 0");
 			if (!zealots.isEmpty()) {
 				unit1 = zealots.get(0);
 				UnitActions.moveTo(observer, unit1);
-				System.out.println("   OBS, case 0, zealot");
 				return;
 			}
 		} else if (observerIndex == 1) {
-			System.out.println("   OBS, case 1");
 			ArrayList<Unit> dragoons = xvr
 					.getUnitsOfType(UnitTypes.Protoss_Dragoon);
 			if (!dragoons.isEmpty()) {
 				unit2 = dragoons.get(0);
 				UnitActions.moveTo(observer, unit2);
-				System.out.println("   OBS, case 1, dragoon");
 				return;
 			} else if (!zealots.isEmpty()) {
 				unit2 = zealots.get(zealots.size() - 1);
 				UnitActions.moveTo(observer, unit2);
-				System.out.println("   OBS, case 1, zealot");
 				return;
 			}
 		} else if (observerIndex == 2) {
-			System.out.println("   OBS, case 2");
 			ArrayList<Unit> arbiters = xvr
 					.getUnitsOfType(UnitTypes.Protoss_Arbiter);
 			if (!arbiters.isEmpty()) {
@@ -237,7 +230,6 @@ public class ProtossObserver {
 				}
 			}
 		} else {
-			System.out.println("   OBS, case 3");
 			UnitActions.moveTo(observer, ArmyPlacing.getArmyCenterPoint());
 		}
 

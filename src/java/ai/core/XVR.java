@@ -14,6 +14,7 @@ import jnibwapi.types.UnitType.UnitTypes;
 import ai.handling.map.MapExploration;
 import ai.handling.map.MapPoint;
 import ai.handling.units.UnitCounter;
+import ai.managers.ArmyCreationManager;
 import ai.managers.ConstructingManager;
 import ai.managers.StrategyManager;
 import ai.managers.TechnologyManager;
@@ -37,7 +38,7 @@ public class XVR {
 	 */
 	private static final int WHAT_IS_NEAR_DISTANCE = 12;
 
-	public static Player ENEMY;
+	private static Player ENEMY;
 	public static int ENEMY_ID;
 	private static String ENEMY_RACE = "Undefined";
 	public static Player SELF;
@@ -95,16 +96,26 @@ public class XVR {
 			// Handle behavior of units and buildings.
 			// Handle units in neighborhood of army units.
 			if (getTime() % 30 == 0) {
-//				System.out.println();
-//				for (Unit unit : MapExploration.getEnemyUnitsDiscovered()) {
-//					System.out.println(unit.getName() + " ## visible:"
-//							+ unit.isVisible() + ", exists:" + unit.isExists()
-//							+ ", HP:" + unit.getHitPoints());
-//				}
+				// System.out.println();
+				// for (Unit unit : MapExploration.getEnemyUnitsDiscovered()) {
+				// System.out.println(unit.getName() + " ## visible:"
+				// + unit.isVisible() + ", exists:" + unit.isExists()
+				// + ", HP:" + unit.getHitPoints());
+				// }
 
 				// These two MUST BE TOGETHER.
 				UnitManager.act();
 				UnitManager.actWithArmyUnitsWhenEnemyNearby();
+			}
+
+			// Handle Nexus behavior differently, more often.
+			if (getTime() % 10 == 0) {
+				ProtossNexus.act();
+			}
+
+			// Handle army building.
+			if (getTime() % 23 == 0) {
+				ArmyCreationManager.act();
 			}
 
 			// Handle constructing new buildings
@@ -417,6 +428,11 @@ public class XVR {
 		return resultList;
 	}
 
+	public int countUnitsInRadius(Unit unit, int tileRadius, boolean onlyMyUnits) {
+		return countUnitsInRadius(unit.getX(), unit.getY(), tileRadius,
+				onlyMyUnits);
+	}
+
 	public int countUnitsInRadius(int x, int y, int tileRadius,
 			boolean onlyMyUnits) {
 		int result = 0;
@@ -501,14 +517,24 @@ public class XVR {
 		return nearestUnit;
 	}
 
-	public ArrayList<Unit> getEnemyUnitsVisible() {
+	public ArrayList<Unit> getEnemyUnitsVisible(boolean includeGroundUnits,
+			boolean includeAirUnits) {
 		ArrayList<Unit> units = new ArrayList<Unit>();
 		for (Unit unit : bwapi.getEnemyUnits()) {
-			if (!unit.getType().isBuilding()) {
-				units.add(unit);
+			UnitType type = unit.getType();
+			if (!type.isBuilding()) {
+				if (!type.isFlyer() && includeGroundUnits) {
+					units.add(unit);
+				} else if (type.isFlyer() && includeAirUnits) {
+					units.add(unit);
+				}
 			}
 		}
 		return units;
+	}
+
+	public ArrayList<Unit> getEnemyUnitsVisible() {
+		return getEnemyUnitsVisible(true, true);
 	}
 
 	public Collection<Unit> getEnemyArmyUnits() {
@@ -607,19 +633,23 @@ public class XVR {
 		ArrayList<Unit> enemiesNearby = getUnitsInRadius(x, y,
 				WHAT_IS_NEAR_DISTANCE, getEnemyUnitsVisible());
 		for (Unit enemy : enemiesNearby) {
-			if (enemy.getType().isDetector()) {
+			if (enemy.isCompleted() && enemy.getType().isDetector()) {
 				return enemy;
 			}
 		}
 		return null;
 	}
 
+	public boolean isEnemyDefensiveGroundBuildingNear(MapPoint point) {
+		return isEnemyDefensiveAirBuildingNear(point.getX(), point.getY());
+	}
+
 	public boolean isEnemyDefensiveGroundBuildingNear(int x, int y) {
 		ArrayList<Unit> enemiesNearby = getUnitsInRadius(x, y, 11,
 				getEnemyBuildings());
 		for (Unit enemy : enemiesNearby) {
-			if (enemy.getType().isAttackCapable()
-					&& enemy.getType().getGroundWeaponID() != -1) {
+			if (enemy.isCompleted() && enemy.getType().isAttackCapable()
+					&& enemy.canAttackGroundUnits()) {
 				return true;
 			}
 		}
@@ -630,8 +660,8 @@ public class XVR {
 		ArrayList<Unit> enemiesNearby = getUnitsInRadius(x, y,
 				WHAT_IS_NEAR_DISTANCE, getEnemyBuildings());
 		for (Unit enemy : enemiesNearby) {
-			if (enemy.getType().isAttackCapable()
-					&& enemy.getType().getAirWeaponID() != -1) {
+			if (enemy.isCompleted() && enemy.getType().isAttackCapable()
+					&& enemy.canAttackAirUnits()) {
 				return true;
 			}
 		}
@@ -642,8 +672,8 @@ public class XVR {
 		ArrayList<Unit> enemiesNearby = getUnitsInRadius(x, y,
 				WHAT_IS_NEAR_DISTANCE, getEnemyBuildings());
 		for (Unit enemy : enemiesNearby) {
-			if (enemy.getType().isAttackCapable()
-					&& enemy.getType().getGroundWeaponID() != -1) {
+			if (enemy.isCompleted() && enemy.getType().isAttackCapable()
+					&& enemy.canAttackGroundUnits()) {
 				return enemy;
 			}
 		}
@@ -654,8 +684,8 @@ public class XVR {
 		ArrayList<Unit> enemiesNearby = getUnitsInRadius(x, y,
 				WHAT_IS_NEAR_DISTANCE, getEnemyBuildings());
 		for (Unit enemy : enemiesNearby) {
-			if (enemy.getType().isAttackCapable()
-					&& enemy.getType().getAirWeaponID() != -1) {
+			if (enemy.isCompleted() && enemy.getType().isAttackCapable()
+					&& enemy.canAttackAirUnits()) {
 				return enemy;
 			}
 		}
@@ -685,9 +715,9 @@ public class XVR {
 	}
 
 	/** Returns Manhattan distance between two locations, expressed in tiles. */
-	public int getDistanceSimple(Unit unit, MapPoint safePlace) {
-		return Math.abs(unit.getX() - safePlace.getX())
-				+ Math.abs(unit.getY() - safePlace.getY()) / 32;
+	public int getDistanceSimple(MapPoint point1, MapPoint point2) {
+		return (Math.abs(point1.getX() - point2.getX()) + Math.abs(point1
+				.getY() - point2.getY())) / 32;
 	}
 
 	public Unit getBaseNearestToEnemy() {
@@ -712,6 +742,19 @@ public class XVR {
 			}
 			return base;
 		}
+	}
+
+	public boolean isEnemyInRadius(MapPoint point, int tileRadius) {
+		return getNumberOfUnitsInRadius(point.getX(), point.getY(), tileRadius,
+				getEnemyUnitsVisible()) > 0;
+	}
+
+	public Player getENEMY() {
+		return ENEMY;
+	}
+
+	public static void setENEMY(Player eNEMY) {
+		ENEMY = eNEMY;
 	}
 
 }

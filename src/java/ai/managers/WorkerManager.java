@@ -3,6 +3,8 @@ package ai.managers;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import jnibwapi.model.Unit;
+import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
 import ai.handling.constructing.Constructing;
 import ai.handling.map.MapExploration;
@@ -10,8 +12,6 @@ import ai.handling.map.MapPoint;
 import ai.handling.units.UnitActions;
 import ai.protoss.ProtossNexus;
 import ai.utils.RUtilities;
-import jnibwapi.model.Unit;
-import jnibwapi.types.UnitType.UnitTypes;
 
 public class WorkerManager {
 
@@ -31,6 +31,12 @@ public class WorkerManager {
 	}
 
 	public static void act(Unit unit) {
+		
+		// If we should destroy this unit
+		if (unit.isShouldScrapUnit()) {
+			UnitActions.attackTo(unit, MapExploration.getNearestEnemyBuilding());
+			return;
+		}
 
 		// Act with worker that is under attack
 		if (unit.isUnderAttack()) {

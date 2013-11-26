@@ -2,20 +2,22 @@ package ai.protoss;
 
 import java.util.ArrayList;
 
+import jnibwapi.model.Unit;
+import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
 import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.units.UnitCounter;
-import jnibwapi.model.Unit;
-import jnibwapi.types.UnitType.UnitTypes;
 
 public class ProtossStargate {
 
 	public static UnitTypes ARBITER = UnitTypes.Protoss_Arbiter;
 	public static UnitTypes CORSAIR = UnitTypes.Protoss_Corsair;
+	public static UnitTypes SCOUT = UnitTypes.Protoss_Scout;
 
 	private static final int MINIMUM_ARBITERS = 2;
 	private static final int MINIMUM_CORSAIRS = 3;
+	private static final int MINIMUM_SCOUTS = 2;
 	private static final int CORSAIRS_PER_OTHER_AIR_UNIT = 2;
 
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Stargate;
@@ -34,11 +36,16 @@ public class ProtossStargate {
 				&& !UnitCounter.weHaveBuilding(buildingType)
 				&& xvr.canAfford(150, 150)
 				&& !Constructing.weAreBuilding(buildingType)) {
-			// if (UnitCounter.getNumberOfBattleUnits() >= 15) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
-			// }
 		}
+		
+		if (UnitCounter.getNumberOfUnits(buildingType) == 1 
+				&& xvr.canAfford(800, 300)) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			return true;
+		}
+		
 		ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 		return false;
 	}
@@ -92,6 +99,11 @@ public class ProtossStargate {
 		// ARBITER
 		if (arbiterAllowed && xvr.countUnitsOfType(ARBITER) < MINIMUM_ARBITERS) {
 			return ARBITER;
+		}
+		
+		// SCOUT
+		if (UnitCounter.getNumberOfUnits(SCOUT) < MINIMUM_SCOUTS) {
+			return SCOUT;
 		}
 
 		// CORSAIR

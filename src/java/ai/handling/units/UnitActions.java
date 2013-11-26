@@ -9,6 +9,7 @@ import ai.handling.army.TargetHandling;
 import ai.handling.map.MapExploration;
 import ai.handling.map.MapPoint;
 import ai.managers.StrategyManager;
+import ai.protoss.ProtossShieldBattery;
 import ai.utils.RUtilities;
 
 public class UnitActions {
@@ -39,6 +40,9 @@ public class UnitActions {
 	}
 
 	public static void attackTo(Unit ourUnit, Unit enemyUnit) {
+		if (ourUnit == null || enemyUnit == null) {
+			return;
+		}
 		attackTo(ourUnit, enemyUnit.getX(), enemyUnit.getY());
 	}
 
@@ -130,8 +134,11 @@ public class UnitActions {
 		}
 
 		// Look if there's really important unit nearby
+		boolean groundAttackCapable = unit.canAttackGroundUnits();
+		boolean airAttackCapable = unit.canAttackAirUnits();
 		Unit importantEnemyUnit = TargetHandling
-				.getImportantEnemyUnitTargetIfPossibleFor(unit);
+				.getImportantEnemyUnitTargetIfPossibleFor(unit,
+						groundAttackCapable, airAttackCapable);
 		if (importantEnemyUnit != null && importantEnemyUnit.isDetected()) {
 			Unit goTo = importantEnemyUnit;
 			UnitActions.attackTo(unit, goTo.getX(), goTo.getY());
@@ -165,18 +172,20 @@ public class UnitActions {
 	}
 
 	public static boolean runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
-			Unit unit, boolean isAirUnit) {
+			Unit unit, boolean runFromDetectors, boolean isAirUnit) {
 		final int RUN_DISTANCE = 6;
 
-		boolean isEnemyDetectorNear = xvr.isEnemyDetectorNear(unit.getX(),
-				unit.getY());
-		if (isEnemyDetectorNear) {
+		if (runFromDetectors) {
+			boolean isEnemyDetectorNear = xvr.isEnemyDetectorNear(unit.getX(),
+					unit.getY());
+			if (isEnemyDetectorNear) {
 
-			// Try to move away from this enemy detector on N tiles.
-			UnitActions.moveAwayFromUnitIfPossible(unit,
-					xvr.getEnemyDetectorNear(unit.getX(), unit.getY()),
-					RUN_DISTANCE);
-			return true;
+				// Try to move away from this enemy detector on N tiles.
+				UnitActions.moveAwayFromUnitIfPossible(unit,
+						xvr.getEnemyDetectorNear(unit.getX(), unit.getY()),
+						RUN_DISTANCE);
+				return true;
+			}
 		}
 
 		boolean isEnemyBuildingNear = isAirUnit ? xvr
@@ -200,20 +209,27 @@ public class UnitActions {
 			boolean isImportantUnit) {
 		Unit goTo = null;
 
+		int currShields = unit.getShields();
+		int maxShields = unit.getType().getMaxShields();
+
 		// If there's massive attack and unit has more than 60% of initial
 		// shields, we treat it as healthy, as there's nothing to do about it.
 		if (StrategyManager.isAttackPending()
-				&& unit.getShields() >= 0.6 * unit.getType().getMaxShields()) {
+				&& currShields >= 0.1 * maxShields) {
 			if (!isImportantUnit) {
 				return;
 			}
+		}
+		
+		// Unit has almost all shields
+		if (currShields >= maxShields / 2) {
+			return;
 		}
 
 		// =====================================================================
 
 		// First try to go to the nearest shield battery, if exists.
-		goTo = xvr.getUnitOfTypeNearestTo(UnitTypes.Protoss_Shield_Battery,
-				xvr.getLastBase());
+		goTo = ProtossShieldBattery.getOneWithEnergy();
 		if (goTo != null && goTo.isUnpowered()) {
 			goTo = null;
 		}
@@ -221,9 +237,7 @@ public class UnitActions {
 		if (goTo != null) {
 
 			// We can heal at this point! Right click *should* do it.
-			if (goTo.getEnergy() >= 13
-					&& unit.getShields() <= 0.8 * unit.getType()
-							.getMaxShields()) {
+			if (goTo.getEnergy() >= 13) {
 				UnitActions.rightClick(unit, goTo);
 				return;
 			}

@@ -2,13 +2,13 @@ package ai.protoss;
 
 import java.util.ArrayList;
 
+import jnibwapi.model.Unit;
 import ai.core.XVR;
 import ai.handling.map.MapExploration;
 import ai.handling.map.MapPoint;
 import ai.handling.units.UnitActions;
 import ai.managers.StrategyManager;
 import ai.utils.RUtilities;
-import jnibwapi.model.Unit;
 
 public class ProtossDarkTemplar {
 
@@ -28,21 +28,21 @@ public class ProtossDarkTemplar {
 		if (shouldConsiderRunningAway
 				&& UnitActions
 						.runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
-								unit, true) || unit.getHitPoints() < 50) {
+								unit, true, true) || unit.getHitPoints() < 50) {
 			return;
 		}
 
-//		// TOP PRIORITY: Act when enemy detector is nearby, just run away to
-//		// base.
-//		if (!MassiveAttack.isAttackPending()
-//				&& (xvr.isEnemyDetectorNear(unit.getX(), unit.getY()) || (unit
-//						.isDetected() && xvr
-//						.isEnemyDefensiveGroundBuildingNear(unit.getX(),
-//								unit.getY())))) {
-//			Unit goTo = xvr.getLastBase();
-//			UnitActions.attackTo(unit, goTo.getX(), goTo.getY());
-//			return;
-//		}
+		// // TOP PRIORITY: Act when enemy detector is nearby, just run away to
+		// // base.
+		// if (!MassiveAttack.isAttackPending()
+		// && (xvr.isEnemyDetectorNear(unit.getX(), unit.getY()) || (unit
+		// .isDetected() && xvr
+		// .isEnemyDefensiveGroundBuildingNear(unit.getX(),
+		// unit.getY())))) {
+		// Unit goTo = xvr.getLastBase();
+		// UnitActions.attackTo(unit, goTo.getX(), goTo.getY());
+		// return;
+		// }
 
 		// Don't interrupt unit on march
 		if ((unit.isAttacking() || unit.isMoving()) && !unit.isUnderAttack()) {
@@ -51,10 +51,15 @@ public class ProtossDarkTemplar {
 
 		// ======== DEFINE NEXT MOVE =============================
 
-		// Get 3 base locations near enemy
-		ArrayList<? extends MapPoint> pointForHarassmentNearEnemy = MapExploration
-				.getBaseLocationsNear(MapExploration.getRandomKnownEnemyBase(),
-						3);
+		// Get 3 base locations near enemy, or buildings and try to go there.
+		MapPoint pointToHarass = defineNeighborhoodToHarass(unit);
+
+		ArrayList<MapPoint> pointForHarassmentNearEnemy = new ArrayList<>();
+		pointForHarassmentNearEnemy.addAll(MapExploration.getBaseLocationsNear(
+				pointToHarass, 30));
+		pointForHarassmentNearEnemy.addAll(MapExploration.getChokePointsNear(
+				pointToHarass, 30));
+
 		MapPoint goTo = null;
 		if (!pointForHarassmentNearEnemy.isEmpty()) {
 
@@ -78,4 +83,21 @@ public class ProtossDarkTemplar {
 		UnitActions.attackTo(unit, goTo.getX(), goTo.getY());
 	}
 
+	private static MapPoint defineNeighborhoodToHarass(Unit unit) {
+
+		// Try to get random base
+		MapPoint pointToHarass = MapExploration.getRandomKnownEnemyBase();
+
+		// If we don't know any base, get random building
+		if (pointToHarass == null) {
+			pointToHarass = MapExploration.getNearestEnemyBuilding();
+		}
+
+		// If still nothing...
+		if (pointToHarass == null) {
+			pointToHarass = MapExploration.getRandomChokePoint();
+		}
+
+		return pointToHarass;
+	}
 }

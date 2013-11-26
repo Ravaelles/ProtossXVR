@@ -1,7 +1,7 @@
 package ai.protoss;
 
-import ai.handling.units.UnitActions;
 import jnibwapi.model.Unit;
+import ai.handling.units.UnitActions;
 
 public class ProtossArbiter {
 
@@ -20,7 +20,7 @@ public class ProtossArbiter {
 
 		// TOP PRIORITY: Arbiter under attack must go back to base.
 		if (UnitActions.runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
-				unit, true) || unit.isUnderAttack()) {
+				unit, false, true) || unit.isUnderAttack()) {
 			return;
 		}
 

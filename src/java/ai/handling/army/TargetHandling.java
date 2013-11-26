@@ -11,7 +11,8 @@ public class TargetHandling {
 
 	private static XVR xvr = XVR.getInstance();
 
-	public static Unit getImportantEnemyUnitTargetIfPossibleFor(MapPoint point) {
+	public static Unit getImportantEnemyUnitTargetIfPossibleFor(MapPoint point,
+			boolean includeGroundUnits, boolean includeAirUnits) {
 		Collection<Unit> enemyUnits = xvr.getEnemyBuildings();
 		// ArrayList<Unit> enemyUnits = xvr.getUnitsInRadius(point.x, point.y,
 		// 25,
@@ -20,6 +21,14 @@ public class TargetHandling {
 		// Look for crucial units first
 		for (Unit unit : enemyUnits) {
 			UnitType type = unit.getType();
+			
+			if (type.isFlyer() && !includeAirUnits) {
+				continue;
+			}
+			if (!type.isFlyer() && !includeGroundUnits) {
+				continue;
+			}
+			
 			if (unit.isExists()
 					&& unit.getHitPoints() > 0
 					&& (type.isLurker() || type.isTank() || type.isReaver()
@@ -68,7 +77,7 @@ public class TargetHandling {
 
 		boolean isProper;
 		UnitType type = target.getType();
-		
+
 		if (type.isOnGeyser()) {
 			return false;
 		}

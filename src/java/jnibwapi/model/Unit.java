@@ -1,12 +1,13 @@
 package jnibwapi.model;
 
-import ai.core.XVR;
-import ai.handling.map.MapPoint;
-import ai.handling.units.CallForHelp;
 import jnibwapi.types.UnitCommandType.UnitCommandTypes;
 import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.types.WeaponType;
+import jnibwapi.types.WeaponType.WeaponTypes;
+import ai.core.XVR;
+import ai.handling.map.MapPoint;
+import ai.handling.units.CallForHelp;
 
 /**
  * Represents a StarCraft unit.
@@ -21,6 +22,7 @@ public class Unit extends MapPoint implements Comparable<Unit> {
 
 	// ========
 	private Unit mineralGathered = null;
+	private boolean shouldScrapUnit = false;
 	private CallForHelp callForHelpMission = null;
 	// ========
 
@@ -957,9 +959,24 @@ public class Unit extends MapPoint implements Comparable<Unit> {
 				&& type.isAttackCapable();
 	}
 
-	
 	public boolean isHidden() {
 		return (isCloaked() || isBurrowed() || !isDetected());
+	}
+
+	public void markUnitToScrap() {
+		shouldScrapUnit = true;
+	}
+
+	public boolean isShouldScrapUnit() {
+		return shouldScrapUnit;
+	}
+
+	public boolean canAttackGroundUnits() {
+		return getType().getGroundWeaponID() != WeaponTypes.None.ordinal();
+	}
+	
+	public boolean canAttackAirUnits() {
+		return getType().getAirWeaponID() != WeaponTypes.None.ordinal();
 	}
 
 }

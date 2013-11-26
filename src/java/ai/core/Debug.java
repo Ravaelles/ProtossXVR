@@ -24,6 +24,9 @@ public class Debug {
 
 	private static int messageCounter = 1;
 	private static int mainMessageRowCounter = 0;
+	
+	public static int ourDeaths = 0;
+	public static int enemyDeaths = 0;
 
 	public static void drawDebug(XVR xvr) {
 		int oldMainMessageRowCounter = mainMessageRowCounter;
@@ -225,18 +228,16 @@ public class Debug {
 					bwapi.drawCircle(u.getX(), u.getY(), 9, BWColor.TEAL,
 							false, false);
 				}
+			}
 
-				if (u.isConstructing()) {
-					String name = (UnitType
-							.getUnitTypesByID(u.getBuildTypeID()) + "")
-							.replace("Protoss_", "");
-					bwapi.drawText(u.getX() - 30, u.getY(), "-> " + name, false);
-				} else if (u.isTraining()) {
-					String name = (bwapi.getUnitCommandType(
-							u.getLastCommandID()).getName() + "").replace(
-							"Protoss_", "");
-					bwapi.drawText(u.getX() - 30, u.getY(), "-> " + name, false);
-				}
+			if (u.isConstructing()) {
+				String name = (UnitType.getUnitTypesByID(u.getBuildTypeID()) + "")
+						.replace("Protoss_", "");
+				bwapi.drawText(u.getX() - 30, u.getY(), "-> " + name, false);
+			} else if (u.isTraining()) {
+				String name = (bwapi.getUnitCommandType(u.getLastCommandID())
+						.getName() + "").replace("Protoss_", "");
+				bwapi.drawText(u.getX() - 30, u.getY(), "-> " + name, false);
 			}
 
 			// Paint Observers
@@ -262,6 +263,8 @@ public class Debug {
 			return;
 		}
 
+		paintMainMessage(xvr, "Killed: " + enemyDeaths);
+		paintMainMessage(xvr, "Lost: " + ourDeaths);
 		if (StrategyManager.getTargetUnit() != null) {
 			Unit attack = StrategyManager.getTargetUnit();
 			paintMainMessage(xvr, "Attack target: " + attack.getName()
@@ -270,6 +273,7 @@ public class Debug {
 		}
 
 		if (FULL_DEBUG) {
+			paintMainMessage(xvr, "--------------------");
 			paintMainMessage(xvr, "Enemy: " + xvr.getENEMY_RACE());
 			paintMainMessage(
 					xvr,

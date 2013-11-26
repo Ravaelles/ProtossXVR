@@ -43,13 +43,18 @@ public class ProtossPylon {
 		int free = xvr.getSuppliesFree();
 		int total = xvr.getSuppliesTotal();
 
+		if (total == 200) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
+			return false;
+		}
+
 		// !Constructing.weAreBuilding(buildingType)
 		// &&
 		boolean shouldBuild = ((total <= 10 && free <= 2)
 				|| (total > 10 && total <= 18 && free <= 4)
 				|| (total > 18 && total <= 45 && free <= 7)
 				|| (total > 45 && free <= 10) || (total > 90 && total < 200 && free <= 20));
-		
+
 		ShouldBuildCache.cacheShouldBuildInfo(buildingType, shouldBuild);
 		return shouldBuild;
 	}
@@ -64,6 +69,10 @@ public class ProtossPylon {
 
 		// Unit base = ProtossNexus.getRandomBase();
 		Unit base = xvr.getFirstBase();
+		if (base == null) {
+			return null;
+		}
+
 		if (RUtilities.rand(0, 4) == 0) {
 			base = ProtossNexus.getRandomBase();
 		}
@@ -107,33 +116,47 @@ public class ProtossPylon {
 			return findTileForFirstPylon(builder, xvr.getFirstBase());
 		}
 	}
-
+	
 	private static Point findTileForNextPylon(Unit builder) {
+
+		// If we have more than one base make sure that every base has at
+		// least one pylon nearby
+		for (Unit base : xvr.getUnitsOfType(UnitManager.BASE)) {
+			int nearbyPylons = xvr.countUnitsOfGivenTypeInRadius(buildingType,
+					9, base.getX(), base.getY(), true);
+
+			// If this base has no pylons nearby, build one.
+			// if (nearbyPylons == 0) {
+			// return findTileForFirstPylon(builder, base);
+			// } else {
+			// Point buildTile = findTileForPylonNearby(base,
+			// INITIAL_PYLON_MIN_DIST_FROM_BASE,
+			// INITIAL_PYLON_MAX_DIST_FROM_BASE);
+			// if (buildTile != null) {
+			// return buildTile;
+			// }
+			// }
+
+			if (nearbyPylons == 0) {
+				Point buildTile = findTileForPylonNearby(base,
+						INITIAL_PYLON_MIN_DIST_FROM_BASE,
+						INITIAL_PYLON_MAX_DIST_FROM_BASE);
+				if (buildTile != null) {
+					return buildTile;
+				}
+			}
+		}
 
 		// If we already have N pylons, with some luck try building it as normal
 		// building.
 		if ((UnitCounter.getNumberOfUnits(buildingType) >= 5 && RUtilities
-				.rand(0, 3) == 0)
+				.rand(0, 5) == 0)
 				|| (xvr.getSuppliesTotal() > 55 && xvr.getSuppliesFree() <= 5)) {
 			return findTileNearPylonForNewBuilding();
 		}
 
 		// Either build randomly near base
 		if (RUtilities.rand(0, 1) == 0) {
-
-			// If we have more than one base make sure that every base has at
-			// least
-			// one pylon nearby
-			if (UnitCounter.getNumberOfUnits(UnitManager.BASE) > 1) {
-				for (Unit base : xvr.getUnitsOfType(UnitManager.BASE)) {
-
-					// If this base has no pylons nearby, build one.
-					if (xvr.countUnitsOfGivenTypeInRadius(buildingType,
-							base.getX(), base.getY(), 10, true) < 1) {
-						return findTileForFirstPylon(builder, base);
-					}
-				}
-			}
 
 			// Build normally, at random base.
 			Point buildTile = findTileForPylonNearby(
@@ -221,18 +244,17 @@ public class ProtossPylon {
 		// if (existsPylonNearby) {
 		// return null;
 		// } else {
-		return findTileForNextPylonIfPossible(point,
-				Constructing.getRandomWorker());
+		return findLegitTileForPylon(point, Constructing.getRandomWorker());
 		// return Constructing.getLegitTileToBuildNear(xvr.getRandomWorker(),
 		// buildingType, unit, INITIAL_PYLON_MIN_DIST_FROM_BASE,
 		// INITIAL_PYLON_MAX_DIST_FROM_BASE, false);
 		// }
 	}
 
-	private static Point findTileForNextPylonIfPossible(
-			MapPoint nearToThisUnit, Unit builder) {
-		int tileX = nearToThisUnit.getTx();
-		int tileY = nearToThisUnit.getTy();
+	private static Point findLegitTileForPylon(MapPoint buildNearToHere,
+			Unit builder) {
+		int tileX = buildNearToHere.getTx();
+		int tileY = buildNearToHere.getTy();
 
 		int currentDist = PYLON_FROM_PYLON_MIN_DISTANCE;
 		while (currentDist <= PYLON_FROM_PYLON_MAX_DISTANCE) {

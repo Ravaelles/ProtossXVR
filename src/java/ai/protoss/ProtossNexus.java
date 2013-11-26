@@ -4,19 +4,21 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import jnibwapi.model.BaseLocation;
+import jnibwapi.model.Map;
+import jnibwapi.model.Unit;
+import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
 import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.map.MapExploration;
+import ai.handling.map.MapPoint;
+import ai.handling.map.MapPointInstance;
 import ai.handling.units.UnitActions;
 import ai.handling.units.UnitCounter;
 import ai.managers.UnitManager;
 import ai.managers.WorkerManager;
 import ai.utils.RUtilities;
-import jnibwapi.model.BaseLocation;
-import jnibwapi.model.Map;
-import jnibwapi.model.Unit;
-import jnibwapi.types.UnitType.UnitTypes;
 
 public class ProtossNexus {
 
@@ -25,6 +27,7 @@ public class ProtossNexus {
 	private static int MAX_DIST_OF_MINERAL_FROM_BASE = 15;
 	private static final int ARMY_UNITS_PER_NEW_BASE = 10;
 	private static final int MAX_WORKERS = 100;
+	private static final int MIN_WORKERS = 20;
 
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Nexus;
 
@@ -42,18 +45,17 @@ public class ProtossNexus {
 
 		// FORCE quick expansion if we're rich
 		if (xvr.canAfford(330)) {
-			if (battleUnits < 9) {
+			int thresholdBattleUnits = xvr.getENEMY().isProtoss() ? 9 : 5;
+			if (battleUnits < thresholdBattleUnits) {
 				return false;
-			}
-			else {
+			} else {
 				return true;
 			}
 		}
-		if (xvr.canAfford(460)) {
-			if (battleUnits < 5) {
+		if (xvr.canAfford(430)) {
+			if (battleUnits < 3) {
 				return false;
-			}
-			else {
+			} else {
 				return true;
 			}
 		}
@@ -152,8 +154,9 @@ public class ProtossNexus {
 				if (!sendSomewhere) {
 					for (int i = 0; i < overLimitWorkers
 							&& i < gatherers.size(); i++) {
+						// gatherers.get(i).markUnitToScrap();
 						UnitActions.attackEnemyUnit(gatherers.get(i),
-								MapExploration.getRandomKnownEnemyBase());
+								MapExploration.getRandomEnemyBuilding());
 					}
 				}
 			}
@@ -177,7 +180,7 @@ public class ProtossNexus {
 
 		ArrayList<Unit> mineralWorkersNearBase = new ArrayList<>();
 		for (Unit worker : workers) {
-			if (worker.isGatheringMinerals()
+			if (worker.isGatheringMinerals() && !worker.isConstructing()
 					&& xvr.getDistanceBetween(base, worker) <= SEARCH_IN_RADIUS) {
 				mineralWorkersNearBase.add(worker);
 			}
@@ -236,11 +239,13 @@ public class ProtossNexus {
 		}
 
 		if (nearestFreeBaseLocation != null) {
-			Point point = new Point(nearestFreeBaseLocation.getTx(),
+			MapPoint point = new MapPointInstance(
+					nearestFreeBaseLocation.getTx(),
 					nearestFreeBaseLocation.getTy());
 			// Debug.message(xvr, "Tile for new base: " + point.x + "," +
 			// point.y);
-			return point;
+			return Constructing.getLegitTileToBuildNear(xvr.getRandomWorker(),
+					buildingType, point.getX(), point.getY(), 0, 30, false);
 		} else {
 			return null;
 		}
@@ -268,7 +273,7 @@ public class ProtossNexus {
 		// return false;
 		// }
 
-		for (Unit unit : xvr.getUnitsInRadius(x, y, 10)) {
+		for (Unit unit : xvr.getUnitsInRadius(x, y, 14)) {
 			if (unit.getType().isBase()) {
 				return true;
 			}
@@ -278,8 +283,11 @@ public class ProtossNexus {
 	}
 
 	private static boolean shouldBuildWorkers(Unit base) {
-		if (xvr.countUnitsOfType(UnitManager.WORKER) >= MAX_WORKERS) {
+		if (UnitCounter.getNumberOfUnits(UnitManager.WORKER) >= MAX_WORKERS) {
 			return false;
+		}
+		if (UnitCounter.getNumberOfUnits(UnitManager.WORKER) < MIN_WORKERS) {
+			return true;
 		}
 
 		int workersNearBase = getNumberOfWorkersNearBase(base);

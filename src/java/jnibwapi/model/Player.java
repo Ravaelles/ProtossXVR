@@ -2,6 +2,7 @@ package jnibwapi.model;
 
 import java.awt.Point;
 
+import jnibwapi.types.RaceType.RaceTypes;
 import ai.core.XVR;
 
 /**
@@ -205,6 +206,19 @@ public class Player {
 
 	public static boolean isEnemy(int playerID) {
 		return playerID == XVR.ENEMY_ID;
+	}
+
+	
+	public boolean isProtoss() {
+		return getRaceID() == RaceTypes.Protoss.ordinal();
+	}
+	
+	public boolean isZerg() {
+		return getRaceID() == RaceTypes.Zerg.ordinal();
+	}
+	
+	public boolean isTerran() {
+		return getRaceID() == RaceTypes.Terran.ordinal();
 	}
 
 }

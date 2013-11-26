@@ -14,7 +14,7 @@ import ai.handling.units.CallForHelp;
 import ai.handling.units.UnitActions;
 import ai.protoss.ProtossArbiter;
 import ai.protoss.ProtossDarkTemplar;
-import ai.protoss.ProtossNexus;
+import ai.protoss.ProtossHighTemplar;
 import ai.protoss.ProtossObserver;
 import ai.protoss.ProtossReaver;
 import ai.utils.RUtilities;
@@ -39,11 +39,6 @@ public class UnitManager {
 		}
 
 		// ===============================
-		// Act with buildings, globally.
-		ProtossNexus.act();
-		ArmyCreationManager.act();
-
-		// ===============================
 		// Act with live units
 		// ChokePoint beHere = TerranMapExploration.getNearestChokePointFor(xvr,
 		// base);
@@ -63,6 +58,18 @@ public class UnitManager {
 		UnitType unitType = UnitType.getUnitTypeByID(unit.getTypeID());
 		if (unitType == null) {
 			return;
+		}
+
+		// Flying unit
+		if (unitType.isFlyer()) {
+
+			// TOP PRIORITY: Act when enemy detector or some AA building is
+			// nearby:
+			// just run away, no matter what.
+			if (UnitActions.runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
+					unit, false, true)) {
+				return;
+			}
 		}
 
 		// Wounded units should avoid being killed if possible
@@ -132,6 +139,12 @@ public class UnitManager {
 			return;
 		}
 
+		// High Templar
+		else if (unit.getTypeID() == UnitTypes.Protoss_High_Templar.ordinal()) {
+			ProtossHighTemplar.act(unit);
+			return;
+		}
+
 		// Arbiter
 		else if (unit.getTypeID() == UnitTypes.Protoss_Arbiter.ordinal()) {
 			ProtossArbiter.act(unit);
@@ -158,9 +171,37 @@ public class UnitManager {
 
 	private static void handleWoundedUnitBehaviourIfNecessary(Unit unit) {
 		if (unit.getHitPoints() <= 30
-				|| unit.getShields() <= unit.getType().getMaxShields()) {
+				|| unit.getShields() <= unit.getType().getMaxShields() / 2) {
+
+			// Now, it doesn't make sense to run away if we're close to some
+			// bunker or cannon and we're lonely. In this case it's better to
+			// attack, rather than retreat without causing any damage.
+			if (isInSuicideShouldFightPosition(unit)) {
+				return;
+			}
+
+			// If there are tanks nearby, DON'T RUN. Rather die first!
+			if (xvr.countUnitsOfGivenTypeInRadius(
+					UnitTypes.Terran_Siege_Tank_Siege_Mode, 15, unit.getX(),
+					unit.getY(), false) > 0) {
+				return;
+			}
+
 			UnitActions.actWhenLowHitPointsOrShields(unit, false);
 		}
+	}
+
+	private static boolean isInSuicideShouldFightPosition(Unit unit) {
+
+		// Only if we're only unit in this region it makes sense to die.
+		int alliesNearby = -1 + xvr.countUnitsInRadius(unit, 4, true);
+		if (alliesNearby <= 0) {
+			if (xvr.isEnemyDefensiveGroundBuildingNear(unit)) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private static void avoidHiddenUnitsIfNecessary(Unit unit) {
@@ -193,9 +234,13 @@ public class UnitManager {
 			}
 		}
 
+		if (xvr.countUnitsInRadius(unit, 7, true) >= 2) {
+			return;
+		}
+
 		double ourStrengthRatio = StrengthEvaluator
 				.calculateOurStrengthRatio(unit);
-		if (ourStrengthRatio < 0.9) {
+		if (ourStrengthRatio < 0.6) {
 			// System.out.println("RUN! " + unit.getName());
 			UnitActions.moveTo(unit, xvr.getFirstBase().getX(), xvr
 					.getFirstBase().getY());
@@ -221,6 +266,8 @@ public class UnitManager {
 		// || !unit.isMoving()) {
 		// return;
 		// }
+		boolean groundAttackCapable = unit.canAttackGroundUnits();
+		boolean airAttackCapable = unit.canAttackAirUnits();
 
 		// Disallow wounded units to attack distant targets.
 		if (unit.getShields() < 15
@@ -232,7 +279,8 @@ public class UnitManager {
 
 		// Try selecting top priority units like lurkers, siege tanks.
 		Unit importantEnemyUnitNearby = TargetHandling
-				.getImportantEnemyUnitTargetIfPossibleFor(unit);
+				.getImportantEnemyUnitTargetIfPossibleFor(unit,
+						groundAttackCapable, airAttackCapable);
 		if (importantEnemyUnitNearby != null) {
 			enemyToAttack = importantEnemyUnitNearby;
 		}
@@ -240,7 +288,8 @@ public class UnitManager {
 		// If no such unit is nearby then attack the closest one.
 		else {
 			enemyToAttack = xvr.getUnitNearestFromList(unit.getX(),
-					unit.getY(), xvr.getEnemyUnitsVisible());
+					unit.getY(), xvr.getEnemyUnitsVisible(groundAttackCapable,
+							airAttackCapable));
 		}
 
 		// Attack selected target if it's not too far away.

@@ -1,11 +1,11 @@
 package ai.protoss;
 
+import jnibwapi.model.Unit;
+import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
 import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.units.UnitCounter;
-import jnibwapi.model.Unit;
-import jnibwapi.types.UnitType.UnitTypes;
 
 public class ProtossForge {
 
@@ -22,6 +22,8 @@ public class ProtossForge {
 
 	public static boolean shouldBuild() {
 		if (!UnitCounter.weHaveBuilding(buildingType)
+				&& UnitCounter.getNumberOfUnits(ProtossGateway
+						.getBuildingType()) >= 2
 				&& !Constructing.weAreBuilding(buildingType)) {
 			// if (UnitCounter.getNumberOfBattleUnits() >= 15) {
 			return true;
@@ -30,8 +32,7 @@ public class ProtossForge {
 
 		if (UnitCounter.getNumberOfUnits(buildingType) == 1
 				&& UnitCounter.getNumberOfUnits(ProtossGateway
-						.getBuildingType()) >= 3
-				&& xvr.canAfford(650)
+						.getBuildingType()) >= 3 && xvr.canAfford(650)
 				&& !Constructing.weAreBuilding(buildingType)) {
 			return true;
 		}

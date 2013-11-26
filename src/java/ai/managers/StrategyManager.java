@@ -2,14 +2,15 @@ package ai.managers;
 
 import java.awt.Point;
 import java.util.Collection;
+import java.util.Iterator;
 
+import jnibwapi.model.Unit;
 import ai.core.Debug;
 import ai.core.XVR;
 import ai.handling.army.ArmyPlacing;
 import ai.handling.army.TargetHandling;
 import ai.handling.map.MapExploration;
 import ai.handling.units.UnitCounter;
-import jnibwapi.model.Unit;
 
 public class StrategyManager {
 
@@ -64,18 +65,17 @@ public class StrategyManager {
 
 	private static boolean decideIfWeAreReadyToAttack(boolean forceMinimum) {
 		int battleUnits = UnitCounter.getNumberOfBattleUnits();
-		
+
 		if (battleUnits >= MINIMUM_ARMY_ABSOLUTE_THRESHOLD) {
 			return true;
 		}
-		
+
 		int minimumArmyToPush = MINIMUM_ARMY_TO_PUSH + 6 * retreatsCounter;
 		boolean weAreReadyToAttack = (battleUnits >= (forceMinimum ? minimumArmyToPush
 				: (int) (MINIMUM_ARMY_TO_PUSH * 1)));
-		
-		if ((MapExploration.getNumberOfKnownEnemyBases() > 0 
-				&& (battleUnits >= (1.5 * MINIMUM_ARMY_TO_PUSH)
-						* MapExploration.getNumberOfKnownEnemyBases()))) {
+
+		if ((MapExploration.getNumberOfKnownEnemyBases() > 0 && (battleUnits >= (1.5 * MINIMUM_ARMY_TO_PUSH)
+				* MapExploration.getNumberOfKnownEnemyBases()))) {
 			weAreReadyToAttack = true;
 		}
 
@@ -182,19 +182,18 @@ public class StrategyManager {
 	}
 
 	private static void defineNextTarget() {
-		Unit target = TargetHandling
-				.getImportantEnemyUnitTargetIfPossibleFor(ArmyPlacing
-						.getArmyCenterPoint());
+		Unit target = TargetHandling.getImportantEnemyUnitTargetIfPossibleFor(
+				ArmyPlacing.getArmyCenterPoint(), true, true);
 		Collection<Unit> enemyBuildings = xvr.getEnemyBuildings();
 
-		// // Remove refineries
-		// for (Iterator<Unit> iterator = enemyBuildings.iterator(); iterator
-		// .hasNext();) {
-		// Unit unit = (Unit) iterator.next();
-		// if (unit.getType().isOnGeyser()) {
-		// iterator.remove();
-		// }
-		// }
+		// Remove refineries, geysers etc
+		for (Iterator<Unit> iterator = enemyBuildings.iterator(); iterator
+				.hasNext();) {
+			Unit unit = (Unit) iterator.next();
+			if (unit.getType().isOnGeyser()) {
+				iterator.remove();
+			}
+		}
 
 		// Try to target some crucial building
 		if (!TargetHandling.isProperTarget(target)) {
@@ -275,7 +274,8 @@ public class StrategyManager {
 	public static boolean isSomethingToAttackDefined() {
 		// return _attackUnitNeighbourhood != null
 		// && _attackUnitNeighbourhood.isExists();
-		return _attackTargetUnit != null && !_attackTargetUnit.getType().isOnGeyser();
+		return _attackTargetUnit != null
+				&& !_attackTargetUnit.getType().isOnGeyser();
 	}
 
 	private static void armyIsNotReadyToAttack() {

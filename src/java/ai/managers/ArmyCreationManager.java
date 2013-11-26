@@ -2,14 +2,14 @@ package ai.managers;
 
 import java.util.ArrayList;
 
+import jnibwapi.model.Unit;
+import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
 import ai.handling.units.UnitCounter;
 import ai.protoss.ProtossGateway;
 import ai.protoss.ProtossNexus;
 import ai.protoss.ProtossRoboticsFacility;
 import ai.protoss.ProtossStargate;
-import jnibwapi.model.Unit;
-import jnibwapi.types.UnitType.UnitTypes;
 
 public class ArmyCreationManager {
 
@@ -67,10 +67,18 @@ public class ArmyCreationManager {
 		// // }
 
 		int battleUnits = UnitCounter.getNumberOfBattleUnits();
+		
+		// If enemy is Protoss, force more units
+		if (xvr.getENEMY().isProtoss()) {
+			if (battleUnits <= 9) {
+				return true;
+			}
+		}
+		
 		return xvr.canAfford(700)
 				|| (!ProtossNexus.shouldBuild() || xvr.canAfford(525) || battleUnits < 10)
 				&& (UnitCounter
-						.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core) || battleUnits < 3);
+						.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core) || battleUnits < 5);
 	}
 
 }

@@ -557,10 +557,17 @@ public class UnitType {
 	public boolean isMissileTurret() {
 		return getID() == UnitTypes.Terran_Missile_Turret.ordinal();
 	}
-
 	
 	public boolean isObserver() {
 		return getID() == UnitTypes.Protoss_Observer.ordinal();
+	}
+
+	public boolean isCarrier() {
+		return getID() == UnitTypes.Protoss_Carrier.ordinal();
+	}
+
+	public boolean isTerranMine() {
+		return getID() == UnitTypes.Terran_Vulture_Spider_Mine.ordinal();
 	}
 
 }

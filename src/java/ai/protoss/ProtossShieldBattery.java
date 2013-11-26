@@ -2,12 +2,13 @@ package ai.protoss;
 
 import java.util.ArrayList;
 
+import jnibwapi.model.Unit;
+import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
 import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.units.UnitCounter;
-import jnibwapi.model.Unit;
-import jnibwapi.types.UnitType.UnitTypes;
+import ai.managers.UnitManager;
 
 public class ProtossShieldBattery {
 
@@ -26,9 +27,21 @@ public class ProtossShieldBattery {
 	}
 
 	public static boolean shouldBuild() {
+		
+		// First battery
 		if (!UnitCounter.weHaveBuilding(buildingType)
 				&& !Constructing.weAreBuilding(buildingType)) {
-			if (UnitCounter.getNumberOfBattleUnits() >= 3) {
+			if (UnitCounter.getNumberOfBattleUnits() >= 5) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+				return true;
+			}
+		}
+		
+		// Second
+		else if (UnitCounter.getNumberOfUnits(UnitManager.BASE) == 2
+				&& UnitCounter.getNumberOfUnits(buildingType) == 1
+				&& !Constructing.weAreBuilding(buildingType)) {
+			if (xvr.canAfford(200)) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
@@ -39,7 +52,7 @@ public class ProtossShieldBattery {
 
 	public static Unit getOneWithEnergy() {
 		for (Unit unit : xvr.getUnitsOfType(buildingType)) {
-			if (unit.getEnergy() >= 13) {
+			if (unit.getEnergy() >= 20 && !unit.isUnpowered()) {
 				return unit;
 			}
 		}

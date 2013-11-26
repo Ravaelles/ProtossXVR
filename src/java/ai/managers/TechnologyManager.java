@@ -1,5 +1,9 @@
 package ai.managers;
 
+import jnibwapi.model.Unit;
+import jnibwapi.types.TechType.TechTypes;
+import jnibwapi.types.UnitType.UnitTypes;
+import jnibwapi.types.UpgradeType.UpgradeTypes;
 import ai.core.XVR;
 import ai.handling.units.UnitCounter;
 import ai.protoss.ProtossCitadelOfAdun;
@@ -7,11 +11,11 @@ import ai.protoss.ProtossCybernetics;
 import ai.protoss.ProtossForge;
 import ai.protoss.ProtossObservatory;
 import ai.protoss.ProtossRoboticsSupportBay;
-import jnibwapi.model.Unit;
-import jnibwapi.types.UnitType.UnitTypes;
-import jnibwapi.types.UpgradeType.UpgradeTypes;
+import ai.protoss.ProtossTemplarArchives;
 
 public class TechnologyManager {
+
+	public static final TechTypes HALLUCINATION = TechTypes.Hallucination;
 
 	private static XVR xvr = XVR.getInstance();
 
@@ -19,7 +23,8 @@ public class TechnologyManager {
 	// HashMap<UpgradeTypes, Boolean>();
 
 	public static void act() {
-		UpgradeTypes technology;
+		UpgradeTypes upgrade;
+		TechTypes technology;
 
 		// ======================================================
 		// TOP PRIORITY
@@ -27,16 +32,36 @@ public class TechnologyManager {
 		// in order to upgrade them
 
 		// Leg enhancement
-		technology = UpgradeTypes.Leg_Enhancements;
-		if (isUpgradePossible(technology)) {
-			tryToUpgrade(ProtossCitadelOfAdun.getOneNotBusy(), technology);
+		upgrade = UpgradeTypes.Leg_Enhancements;
+		if (isUpgradePossible(upgrade)) {
+			tryToUpgrade(ProtossCitadelOfAdun.getOneNotBusy(), upgrade);
 		}
 
 		// Leg enhancement
-		technology = UpgradeTypes.Singularity_Charge;
-		if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dragoon) >= 4 
-				&& xvr.canAfford(250) && isUpgradePossible(technology)) {
-			tryToUpgrade(ProtossCybernetics.getOneNotBusy(), technology);
+		upgrade = UpgradeTypes.Singularity_Charge;
+		if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dragoon) >= 4
+				&& xvr.canAfford(250) && isUpgradePossible(upgrade)) {
+			tryToUpgrade(ProtossCybernetics.getOneNotBusy(), upgrade);
+		}
+
+		// Observer speed
+		upgrade = UpgradeTypes.Gravitic_Boosters;
+		if (xvr.canAfford(400)
+				&& isUpgradePossible(upgrade)
+				&& UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Observer) >= 2) {
+			tryToUpgrade(ProtossObservatory.getOneNotBusy(), upgrade);
+		}
+
+		// Hallucination
+		technology = HALLUCINATION;
+		if (UnitCounter
+				.weHaveBuildingFinished(UnitTypes.Protoss_Templar_Archives)
+				&& xvr.canAfford(200) && isResearchPossible(technology)) {
+			// if (xvr.canAfford(200)
+			// && isTechPossible(technology)
+			// && UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Observer) >= 2)
+			// {
+			tryToResearch(ProtossTemplarArchives.getOneNotBusy(), technology);
 		}
 
 		// ======================================================
@@ -46,43 +71,37 @@ public class TechnologyManager {
 			return;
 		}
 
-		// Observer speed
-		technology = UpgradeTypes.Gravitic_Boosters;
-		if (xvr.canAfford(500) && isUpgradePossible(technology)) {
-			tryToUpgrade(ProtossObservatory.getOneNotBusy(), technology);
-		}
-
 		// Observer range
-		technology = UpgradeTypes.Sensor_Array;
-		if (xvr.canAfford(500) && isUpgradePossible(technology)) {
-			tryToUpgrade(ProtossObservatory.getOneNotBusy(), technology);
+		upgrade = UpgradeTypes.Sensor_Array;
+		if (xvr.canAfford(500) && isUpgradePossible(upgrade)) {
+			tryToUpgrade(ProtossObservatory.getOneNotBusy(), upgrade);
 		}
 
 		// Protoss shield
-		technology = UpgradeTypes.Protoss_Plasma_Shields;
-		if (isUpgradePossible(technology)) {
-			tryToUpgrade(ProtossForge.getOneNotBusy(), technology);
+		upgrade = UpgradeTypes.Protoss_Plasma_Shields;
+		if (isUpgradePossible(upgrade)) {
+			tryToUpgrade(ProtossForge.getOneNotBusy(), upgrade);
 		}
 
 		// Protoss ground weapon
-		technology = UpgradeTypes.Protoss_Ground_Weapons;
-		if (xvr.canAfford(600 * getTechLevelOf(technology), 300)
-				&& isUpgradePossible(technology)) {
-			tryToUpgrade(ProtossForge.getOneNotBusy(), technology);
+		upgrade = UpgradeTypes.Protoss_Ground_Weapons;
+		if (xvr.canAfford(600 * getTechLevelOf(upgrade), 300)
+				&& isUpgradePossible(upgrade)) {
+			tryToUpgrade(ProtossForge.getOneNotBusy(), upgrade);
 		}
 
 		// Protoss ground armor
-		technology = UpgradeTypes.Protoss_Ground_Armor;
-		if (xvr.canAfford(600 * getTechLevelOf(technology), 300)
-				&& isUpgradePossible(technology)) {
-			tryToUpgrade(ProtossForge.getOneNotBusy(), technology);
+		upgrade = UpgradeTypes.Protoss_Ground_Armor;
+		if (xvr.canAfford(600 * getTechLevelOf(upgrade), 300)
+				&& isUpgradePossible(upgrade)) {
+			tryToUpgrade(ProtossForge.getOneNotBusy(), upgrade);
 		}
 
 		// Scarab damage
-		technology = UpgradeTypes.Scarab_Damage;
+		upgrade = UpgradeTypes.Scarab_Damage;
 		if (UnitCounter.weHaveBuilding(ProtossRoboticsSupportBay
-				.getBuildingType()) && isUpgradePossible(technology)) {
-			tryToUpgrade(ProtossRoboticsSupportBay.getOneNotBusy(), technology);
+				.getBuildingType()) && isUpgradePossible(upgrade)) {
+			tryToUpgrade(ProtossRoboticsSupportBay.getOneNotBusy(), upgrade);
 		}
 	}
 
@@ -102,6 +121,18 @@ public class TechnologyManager {
 		return xvr.getBwapi().canUpgrade(tech.ordinal());
 	}
 
+	private static boolean isResearchPossible(TechTypes technology) {
+		return isNotResearched(technology) && canResearch(technology);
+	}
+
+	private static boolean isNotResearched(TechTypes tech) {
+		return !XVR.SELF.hasResearched(tech.ordinal());
+	}
+
+	private static boolean canResearch(TechTypes tech) {
+		return xvr.getBwapi().canResearch(tech.ordinal());
+	}
+
 	private static void tryToUpgrade(Unit building, UpgradeTypes upgrade) {
 		if (building != null) {
 			// Debug.message(xvr, "Researching " + upgrade.toString());
@@ -110,6 +141,20 @@ public class TechnologyManager {
 			// knownTechs.put(upgrade, true);
 			// }
 		}
+	}
+
+	private static void tryToResearch(Unit building, TechTypes technology) {
+		if (building != null) {
+//			Debug.message(xvr, "Researching " + technology.toString());
+			xvr.getBwapi().research(building.getID(), technology.ordinal());
+			// if (!building.isBuildingNotBusy()) {
+			// knownTechs.put(upgrade, true);
+			// }
+		}
+	}
+
+	public static boolean isResearched(TechTypes tech) {
+		return !isNotResearched(tech);
 	}
 
 }

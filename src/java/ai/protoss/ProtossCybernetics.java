@@ -1,11 +1,11 @@
 package ai.protoss;
 
+import jnibwapi.model.Unit;
+import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
 import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.units.UnitCounter;
-import jnibwapi.model.Unit;
-import jnibwapi.types.UnitType.UnitTypes;
 
 public class ProtossCybernetics {
 
@@ -24,8 +24,8 @@ public class ProtossCybernetics {
 		if (!Constructing.weAreBuilding(buildingType)
 				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Forge)
 				&& xvr.canAfford(150)) {
-			if ((UnitCounter.getNumberOfUnitsCompleted(UnitTypes.Protoss_Gateway) >= 2
-					|| UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Gateway) >= 3) 
+			if (UnitCounter
+					.getNumberOfUnitsCompleted(UnitTypes.Protoss_Gateway) >= 2
 					&& !UnitCounter.weHaveBuilding(buildingType)) {
 				return true;
 			}
@@ -45,5 +45,5 @@ public class ProtossCybernetics {
 	public static UnitTypes getBuildingtype() {
 		return buildingType;
 	}
-	
+
 }

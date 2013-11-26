@@ -17,10 +17,14 @@ public class ProtossGateway {
 	public static UnitTypes DARK_TEMPLAR = UnitTypes.Protoss_Dark_Templar;
 	public static UnitTypes HIGH_TEMPLAR = UnitTypes.Protoss_High_Templar;
 
+	private static boolean isPlanAntiAirActive = false;
+
 	private static int zealotBuildRatio = 72;
 	private static int dragoonBuildRatio = 18;
-	private static int darkTemplarBuildRatio = 30;
+	private static int darkTemplarBuildRatio = 60;
 	// private static int highTemplarBuildRatio = 19;
+
+	private static final int MINIMAL_HIGH_TEMPLARS = 4;
 
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Gateway;
 	private static XVR xvr = XVR.getInstance();
@@ -31,26 +35,30 @@ public class ProtossGateway {
 
 			// 0 barracks
 			if (barracks == 0
-					&& (UnitCounter.weHaveBuilding(ProtossForge.getBuildingType())
-					|| xvr.canAfford(150))) {
+					&& (UnitCounter.weHaveBuilding(ProtossForge
+							.getBuildingType()) || xvr.canAfford(150))) {
 				return true;
 			}
 
 			// 1 barracks
-			if (barracks == 1
-					&& UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Pylon) >= 2) {
+			if (barracks == 1) {
 				return true;
 			}
 
 			// 2 barracks or more
-			if (UnitCounter.getNumberOfUnits(buildingType) >= 2
+			if (barracks >= 2
+					&& UnitCounter.getNumberOfUnits(buildingType) <= 4
+					&& xvr.canAfford(700)) {
+				return true;
+			}
+			if (barracks >= 2
 					&& UnitCounter.getNumberOfUnitsCompleted(UnitManager.BASE) >= 2
 					&& UnitCounter
-							.weHaveBuilding(UnitTypes.Protoss_Robotics_Facility)
+							.weHaveBuilding(UnitTypes.Protoss_Observatory)
 					&& UnitCounter
 							.weHaveBuilding(UnitTypes.Protoss_Citadel_of_Adun)) {
 				int HQs = UnitCounter.getNumberOfUnits(UnitManager.BASE);
-				if ((double) barracks / HQs < 1.73 || xvr.canAfford(850)) {
+				if ((double) barracks / HQs < 2 && xvr.canAfford(560)) {
 					return true;
 				}
 			}
@@ -98,6 +106,8 @@ public class ProtossGateway {
 		boolean darkTemplarAllowed = UnitCounter
 				.weHaveBuildingFinished(UnitTypes.Protoss_Templar_Archives)
 				&& (freeMinerals >= 125 && freeGas >= 100);
+		boolean highTemplarAllowed = darkTemplarAllowed
+				&& (freeMinerals >= 50 && freeGas >= 100);
 
 		UnitTypes typeToBuild = ZEALOT;
 
@@ -107,12 +117,7 @@ public class ProtossGateway {
 				+ (darkTemplarAllowed ? darkTemplarBuildRatio : 0);
 		double totalInfantry = UnitCounter.getNumberOfInfantryUnits() + 1;
 
-		// ZEALOT
-		double zealotPercent = UnitCounter.getNumberOfUnits(ZEALOT)
-				/ totalInfantry;
-		if (zealotPercent < zealotBuildRatio / totalRatio) {
-			return ZEALOT;
-		}
+		// ===========================================================
 
 		// DARK TEMPLAR
 		if (darkTemplarAllowed) {
@@ -130,6 +135,19 @@ public class ProtossGateway {
 			if (dragoonPercent < dragoonBuildRatio / totalRatio) {
 				return DRAGOON;
 			}
+		}
+
+		// HIGH TEMPLAR
+		if (highTemplarAllowed
+				&& UnitCounter.getNumberOfUnits(HIGH_TEMPLAR) < MINIMAL_HIGH_TEMPLARS) {
+			return HIGH_TEMPLAR;
+		}
+
+		// ZEALOT
+		double zealotPercent = UnitCounter.getNumberOfUnits(ZEALOT)
+				/ totalInfantry;
+		if (zealotPercent < zealotBuildRatio / totalRatio) {
+			return ZEALOT;
 		}
 
 		// int medicPercent = UnitCounter
@@ -150,9 +168,18 @@ public class ProtossGateway {
 	}
 
 	public static void changePlanToAntiAir() {
+		if (isPlanAntiAirActive) {
+			return;
+		}
+
+		isPlanAntiAirActive = true;
 		zealotBuildRatio = 10;
 		dragoonBuildRatio = 70;
 		darkTemplarBuildRatio = 10;
+	}
+
+	public static boolean isPlanAntiAirActive() {
+		return isPlanAntiAirActive;
 	}
 
 }

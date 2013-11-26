@@ -282,6 +282,15 @@ public class MapExploration {
 		}
 	}
 
+	public static Unit getRandomEnemyBuilding() {
+		if (enemyBuildingsDiscovered.isEmpty()) {
+			return null;
+		} else {
+			return (Unit) RUtilities.getRandomElement(enemyBuildingsDiscovered
+					.values());
+		}		
+	}
+	
 	public static Unit getNearestEnemyBuilding() {
 		if (enemyBuildingsDiscovered.isEmpty()) {
 			return null;
@@ -431,10 +440,10 @@ public class MapExploration {
 		return result;
 	}
 
-	public static ArrayList<? extends MapPoint> getBaseLocationsNear(Unit base,
+	public static ArrayList<? extends MapPoint> getBaseLocationsNear(MapPoint point,
 			int tileRadius) {
 		ArrayList<BaseLocation> bases = new ArrayList<BaseLocation>();
-		if (base == null) {
+		if (point == null) {
 			return bases;
 		}
 
@@ -442,7 +451,7 @@ public class MapExploration {
 			if (object == null) {
 				continue;
 			}
-			double distance = xvr.getDistanceBetween(base, object.getX(),
+			double distance = xvr.getDistanceBetween(point, object.getX(),
 					object.getY());
 			if (distance <= tileRadius) {
 				bases.add(object);
@@ -522,7 +531,12 @@ public class MapExploration {
 		ArrayList<ChokePoint> nearestChokePoints = getChokePointsForRegion(xvr
 				.getBwapi().getMap().getRegion(base));
 
-		return nearestChokePoints.get(0);
+		if (!nearestChokePoints.isEmpty()) {
+			return nearestChokePoints.get(0);
+		}
+		else {
+			return getNearestChokePointFor(base);
+		}
 
 		// int mapWidth = xvr.getBwapi().getMap().getWidth();
 		// int mapHeight = xvr.getBwapi().getMap().getHeight();
@@ -589,5 +603,26 @@ public class MapExploration {
 
 	public static ArrayList<ChokePoint> getChokePoints() {
 		return chokePointsProcessed;
+	}
+
+	
+	public static Collection<ChokePoint> getChokePointsNear(MapPoint near,
+			int tileRadius) {
+		ArrayList<ChokePoint> chokes = new ArrayList<>();
+		if (near == null) {
+			return chokes;
+		}
+
+		for (ChokePoint object : chokePointsProcessed) {
+			if (object == null) {
+				continue;
+			}
+			double distance = xvr.getDistanceSimple(near, object);
+			if (distance <= tileRadius) {
+				chokes.add(object);
+			}
+		}
+
+		return chokes;
 	}
 }
