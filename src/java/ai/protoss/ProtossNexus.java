@@ -1,6 +1,5 @@
 package ai.protoss;
 
-import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -24,9 +23,10 @@ public class ProtossNexus {
 
 	private static XVR xvr = XVR.getInstance();
 
+	public static final int MAX_WORKERS = 85;
+
 	private static int MAX_DIST_OF_MINERAL_FROM_BASE = 15;
 	private static final int ARMY_UNITS_PER_NEW_BASE = 10;
-	private static final int MAX_WORKERS = 100;
 	private static final int MIN_WORKERS = 20;
 
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Nexus;
@@ -169,7 +169,7 @@ public class ProtossNexus {
 
 	private static void checkIfRemoveZeroMineralsCrystal(Unit base) {
 		final int SEARCH_IN_RADIUS = 30;
-		final int ACT_IF_AT_LEAST_N_WORKERS = 10;
+		final int ACT_IF_AT_LEAST_N_WORKERS = 11;
 
 		// Create list of mineral gatheres near base. It's essential not to use
 		// defined method, as we need to significantly increase seek range.
@@ -196,7 +196,15 @@ public class ProtossNexus {
 
 			for (Unit mineral : mineralsAroundTheBase) {
 				if (mineral.getResources() == 0 && !mineral.isBeingGathered()) {
-					Unit unitToUse = mineralWorkersNearBase.get(0);
+					int max = (3 + UnitCounter
+							.getNumberOfUnits(UnitTypes.Protoss_Pylon)) / 3;
+					if (max >= mineralWorkersNearBase.size()) {
+						max = mineralWorkersNearBase.size() - 1;
+					}
+					Unit unitToUse = mineralWorkersNearBase.get(RUtilities
+							.rand(0, max));
+					// Unit unitToUse = mineralWorkersNearBase.get(RUtilities
+					// .rand(0, mineralWorkersNearBase.size() - 1));
 					WorkerManager.forceGatherMinerals(unitToUse, mineral);
 				}
 			}
@@ -204,7 +212,7 @@ public class ProtossNexus {
 	}
 
 	/** Find building tile for new base. */
-	public static Point findTileForBase() {
+	public static MapPoint findTileForBase() {
 		Map map = xvr.getBwapi().getMap();
 
 		Unit mainBase = xvr.getFirstBase();
@@ -319,7 +327,7 @@ public class ProtossNexus {
 	public static int getOptimalMineralGatherersAtBase(Unit base) {
 		int numberOfMineralsNearbyBase = xvr.countMineralsInRadiusOf(12,
 				base.getX(), base.getY());
-		return (int) (2.65 * numberOfMineralsNearbyBase);
+		return (int) (2.59 * numberOfMineralsNearbyBase);
 	}
 
 	public static Unit getNearestBaseForUnit(Unit unit) {
@@ -391,7 +399,8 @@ public class ProtossNexus {
 
 		for (Unit mineral : xvr.getMineralsUnits()) {
 			double distance = xvr.getDistanceBetween(mineral, base);
-			if (distance <= MAX_DIST_OF_MINERAL_FROM_BASE) {
+			if (distance <= MAX_DIST_OF_MINERAL_FROM_BASE
+					&& mineral.getResources() > 100) {
 				minerals.put(mineral, distance);
 			}
 		}

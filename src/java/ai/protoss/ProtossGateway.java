@@ -24,7 +24,7 @@ public class ProtossGateway {
 	private static int darkTemplarBuildRatio = 60;
 	// private static int highTemplarBuildRatio = 19;
 
-	private static final int MINIMAL_HIGH_TEMPLARS = 4;
+	private static final int MINIMAL_HIGH_TEMPLARS = 5;
 
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Gateway;
 	private static XVR xvr = XVR.getInstance();
@@ -46,10 +46,10 @@ public class ProtossGateway {
 			}
 
 			// 2 barracks or more
-			if (barracks >= 2
-					&& UnitCounter.getNumberOfUnits(buildingType) <= 4
-					&& xvr.canAfford(700)) {
-				return true;
+			if (barracks >= 2 && (barracks <= 5 || xvr.canAfford(520))) {
+				if (isMajorityOfGatewaysTrainingUnits()) {
+					return true;
+				}
 			}
 			if (barracks >= 2
 					&& UnitCounter.getNumberOfUnitsCompleted(UnitManager.BASE) >= 2
@@ -58,12 +58,34 @@ public class ProtossGateway {
 					&& UnitCounter
 							.weHaveBuilding(UnitTypes.Protoss_Citadel_of_Adun)) {
 				int HQs = UnitCounter.getNumberOfUnits(UnitManager.BASE);
-				if ((double) barracks / HQs < 2 && xvr.canAfford(560)) {
-					return true;
+				if ((double) barracks / HQs <= 2 && xvr.canAfford(560)) {
+					if (isMajorityOfGatewaysTrainingUnits()) {
+						return true;
+					}
 				}
 			}
 		}
+
+		if (xvr.canAfford(1500)) {
+			if (isMajorityOfGatewaysTrainingUnits()) {
+				return true;
+			}
+		}
+
 		return false;
+	}
+
+	private static boolean isMajorityOfGatewaysTrainingUnits() {
+		ArrayList<Unit> allObjects = getAllObjects();
+		int all = allObjects.size();
+		int busy = 0;
+		for (Unit gateway : allObjects) {
+			if (gateway.isTraining()) {
+				busy++;
+			}
+		}
+
+		return ((double) busy / all) >= 0.7;
 	}
 
 	public static ArrayList<Unit> getAllObjects() {
@@ -71,7 +93,7 @@ public class ProtossGateway {
 	}
 
 	public static void enemyIsProtoss() {
-		dragoonBuildRatio *= 2.5;
+		// dragoonBuildRatio *= 2.5;
 	}
 
 	public static void buildIfNecessary() {
@@ -91,7 +113,10 @@ public class ProtossGateway {
 			freeGas -= buildingQueueDetails[1];
 		}
 
-		if (buildingQueueDetails == null || freeMinerals >= 100) {
+		boolean shouldAlwaysBuild = xvr.canAfford(100)
+				&& UnitCounter.getNumberOfBattleUnits() <= 6;
+		if (shouldAlwaysBuild || buildingQueueDetails == null
+				|| freeMinerals >= 100) {
 			if (barracks.getTrainingQueueSize() == 0) {
 				xvr.buildUnit(barracks,
 						defineUnitToBuild(freeMinerals, freeGas));
@@ -100,14 +125,30 @@ public class ProtossGateway {
 	}
 
 	private static UnitTypes defineUnitToBuild(int freeMinerals, int freeGas) {
+
+		// If we don't have Observatory build than disallow production of units
+		// which cost lot of gas.
+		int forceFreeGas = 0;
+		int darkTemplarGasBonus = 0;
+		if (!UnitCounter.weHaveBuilding(ProtossObservatory.getBuildingtype())) {
+			forceFreeGas = 100 + (UnitCounter.getNumberOfUnits(DARK_TEMPLAR) + UnitCounter
+					.getNumberOfUnits(DRAGOON)) * 5;
+
+			// If there's less than 2 Dark Templars, create them. Only then
+			// start conserving gas for buildings like Observatory.
+			if (UnitCounter.getNumberOfUnits(DARK_TEMPLAR) < 2) {
+				darkTemplarGasBonus = forceFreeGas;
+			}
+		}
+
 		boolean dragoonAllowed = UnitCounter
 				.weHaveBuildingFinished(UnitTypes.Protoss_Cybernetics_Core)
-				&& (freeMinerals >= 125 && freeGas >= 50);
+				&& (freeMinerals >= 125 && (freeGas - forceFreeGas) >= 50);
 		boolean darkTemplarAllowed = UnitCounter
 				.weHaveBuildingFinished(UnitTypes.Protoss_Templar_Archives)
-				&& (freeMinerals >= 125 && freeGas >= 100);
+				&& (freeMinerals >= 125 && (freeGas - forceFreeGas + darkTemplarGasBonus) >= 100);
 		boolean highTemplarAllowed = darkTemplarAllowed
-				&& (freeMinerals >= 50 && freeGas >= 100);
+				&& (freeMinerals >= 50 && (freeGas - forceFreeGas) >= 100);
 
 		UnitTypes typeToBuild = ZEALOT;
 
@@ -121,8 +162,15 @@ public class ProtossGateway {
 
 		// DARK TEMPLAR
 		if (darkTemplarAllowed) {
-			double darkTemplarPercent = (double) UnitCounter
-					.getNumberOfUnits(DARK_TEMPLAR) / totalInfantry;
+			int darkTemplars = UnitCounter.getNumberOfUnits(DARK_TEMPLAR);
+			int highTemplars = UnitCounter.getNumberOfUnits(HIGH_TEMPLAR);
+
+			// Build some HIGH Templars if there'are none.
+			if (highTemplarAllowed && darkTemplars >= 2 && highTemplars < 2) {
+				return HIGH_TEMPLAR;
+			}
+
+			double darkTemplarPercent = (double) darkTemplars / totalInfantry;
 			if (darkTemplarPercent < darkTemplarBuildRatio / totalRatio) {
 				return DARK_TEMPLAR;
 			}

@@ -979,4 +979,14 @@ public class Unit extends MapPoint implements Comparable<Unit> {
 		return getType().getAirWeaponID() != WeaponTypes.None.ordinal();
 	}
 
+	
+	public boolean canAttack(Unit enemy) {
+		if (!enemy.getType().isFlyer()) {
+			return canAttackGroundUnits();
+		}
+		else {
+			return canAttackAirUnits();
+		}
+	}
+
 }

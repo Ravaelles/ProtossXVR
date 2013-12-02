@@ -117,7 +117,7 @@ public class ProtossObserver {
 		// TOP PRIORITY: Act when enemy detector or some AA building is nearby:
 		// just run away, no matter what.
 		if (UnitActions.runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
-				observer, false, true)) {
+				observer, false, false, true)) {
 			return;
 		}
 

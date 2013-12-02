@@ -53,8 +53,9 @@ public class MapExploration {
 			// If we're worker and found hidden unit like dark templar, get the
 			// hell out of there.
 			if (explorer.isWorker()) {
-				UnitActions.moveAwayFromUnitIfPossible(explorer, nearestEnemy,
-						8);
+//				UnitActions.moveAwayFromUnitIfPossible(explorer, nearestEnemy,
+//						12);
+				UnitActions.moveTo(explorer, xvr.getFirstBase());
 				return;
 			}
 
@@ -306,7 +307,7 @@ public class MapExploration {
 				}
 
 				double distance = xvr.getDistanceBetween(building, ourBase);
-				if (closestDistance > distance) {
+				if (closestDistance > distance && closestDistance != 0) {
 					closestBuilding = building;
 					closestDistance = distance;
 				}

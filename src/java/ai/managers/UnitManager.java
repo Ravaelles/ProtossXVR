@@ -13,6 +13,7 @@ import ai.handling.map.MapExploration;
 import ai.handling.units.CallForHelp;
 import ai.handling.units.UnitActions;
 import ai.protoss.ProtossArbiter;
+import ai.protoss.ProtossArchon;
 import ai.protoss.ProtossDarkTemplar;
 import ai.protoss.ProtossHighTemplar;
 import ai.protoss.ProtossObserver;
@@ -67,7 +68,7 @@ public class UnitManager {
 			// nearby:
 			// just run away, no matter what.
 			if (UnitActions.runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
-					unit, false, true)) {
+					unit, false, true, true)) {
 				return;
 			}
 		}
@@ -160,18 +161,29 @@ public class UnitManager {
 		ArrayList<Unit> enemiesNearby = xvr.getUnitsInRadius(unit.getX(),
 				unit.getY(), 25, xvr.getEnemyUnitsVisible());
 		if (!enemiesNearby.isEmpty()) {
-			Unit enemy = enemiesNearby.get(0);
+			for (Unit enemy : enemiesNearby) {
+				if (unit.canAttack(enemy)) {
 
-			// If you have less than X to the enemy, attack him
-			if (xvr.getDistanceBetween(unit, enemy) <= 20) {
-				UnitActions.attackTo(unit, enemy);
+					// If you have less than X to the enemy, attack him
+					if (xvr.getDistanceBetween(unit, enemy) <= 20) {
+						UnitActions.attackTo(unit, enemy);
+						break;
+					}
+				}
 			}
 		}
 	}
 
 	private static void handleWoundedUnitBehaviourIfNecessary(Unit unit) {
-		if (unit.getHitPoints() <= 30
-				|| unit.getShields() <= unit.getType().getMaxShields() / 2) {
+		UnitType type = unit.getType();
+
+		boolean extraCondition = false;
+		if (type.getID() == UnitTypes.Protoss_Archon.ordinal()) {
+			extraCondition = ProtossArchon.isSeriouslyWounded(unit);
+		}
+
+		if (extraCondition || unit.getHitPoints() <= 30
+				|| unit.getShields() <= type.getMaxShields() / 2) {
 
 			// Now, it doesn't make sense to run away if we're close to some
 			// bunker or cannon and we're lonely. In this case it's better to
@@ -182,8 +194,7 @@ public class UnitManager {
 
 			// If there are tanks nearby, DON'T RUN. Rather die first!
 			if (xvr.countUnitsOfGivenTypeInRadius(
-					UnitTypes.Terran_Siege_Tank_Siege_Mode, 15, unit.getX(),
-					unit.getY(), false) > 0) {
+					UnitTypes.Terran_Siege_Tank_Siege_Mode, 15, unit, false) > 0) {
 				return;
 			}
 
@@ -196,7 +207,9 @@ public class UnitManager {
 		// Only if we're only unit in this region it makes sense to die.
 		int alliesNearby = -1 + xvr.countUnitsInRadius(unit, 4, true);
 		if (alliesNearby <= 0) {
-			if (xvr.isEnemyDefensiveGroundBuildingNear(unit)) {
+			Unit enemy = xvr.getEnemyDefensiveGroundBuildingNear(unit.getX(),
+					unit.getY());
+			if (xvr.getDistanceBetween(enemy, unit) <= 3) {
 				return true;
 			}
 		}
@@ -234,7 +247,7 @@ public class UnitManager {
 			}
 		}
 
-		if (xvr.countUnitsInRadius(unit, 7, true) >= 2) {
+		if (xvr.countUnitsInRadius(unit, 8, true) >= 2) {
 			return;
 		}
 
@@ -287,8 +300,8 @@ public class UnitManager {
 
 		// If no such unit is nearby then attack the closest one.
 		else {
-			enemyToAttack = xvr.getUnitNearestFromList(unit.getX(),
-					unit.getY(), xvr.getEnemyUnitsVisible(groundAttackCapable,
+			enemyToAttack = xvr.getUnitNearestFromList(unit,
+					xvr.getEnemyUnitsVisible(groundAttackCapable,
 							airAttackCapable));
 		}
 

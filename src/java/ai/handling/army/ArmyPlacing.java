@@ -1,7 +1,6 @@
 package ai.handling.army;
 
-import java.util.ArrayList;
-
+import jnibwapi.model.Unit;
 import ai.core.XVR;
 import ai.handling.map.MapPoint;
 import ai.handling.map.MapPointInstance;
@@ -9,8 +8,6 @@ import ai.handling.units.UnitActions;
 import ai.handling.units.UnitCounter;
 import ai.managers.UnitManager;
 import ai.protoss.ProtossGateway;
-import jnibwapi.model.Unit;
-import jnibwapi.types.UnitType.UnitTypes;
 
 public class ArmyPlacing {
 
@@ -22,14 +19,20 @@ public class ArmyPlacing {
 		Unit runTo = null;
 
 		// If only one base, then go to nearest cannon
-		if (UnitCounter.getNumberOfUnits(UnitManager.BASE) == 1
-				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Photon_Cannon)) {
+		if (UnitCounter.getNumberOfUnits(UnitManager.BASE) == 1) {
 			Unit base = xvr.getFirstBase();
-			ArrayList<Unit> allCannons = xvr.getUnitsOfGivenTypeInRadius(
-					UnitTypes.Protoss_Photon_Cannon, 300, base.getX(),
-					base.getY(), true);
-			runTo = allCannons.get(allCannons.size() - 1);
+			runTo = base;
 		}
+		
+//		// If only one base, then go to nearest cannon
+//		if (UnitCounter.getNumberOfUnits(UnitManager.BASE) == 1
+//				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Photon_Cannon)) {
+//			Unit base = xvr.getFirstBase();
+//			ArrayList<Unit> allCannons = xvr.getUnitsOfGivenTypeInRadius(
+//					UnitTypes.Protoss_Photon_Cannon, 300, base.getX(),
+//					base.getY(), true);
+//			runTo = allCannons.get(allCannons.size() - 1);
+//		}
 
 		// Try to go to the base nearest to enemy
 		else if (UnitCounter.weHaveBuilding(UnitManager.BASE)) {
@@ -50,9 +53,6 @@ public class ArmyPlacing {
 	}
 
 	public static void goToSafePlaceIfNotAlreadyThere(Unit unit) {
-		// if (unit.isMoving()) {
-		// return;
-		// }
 
 		// First, just escape.
 		MapPoint safePlace = getArmyGatheringPointFor(unit);

@@ -21,22 +21,33 @@ public class ProtossForge {
 	}
 
 	public static boolean shouldBuild() {
+		int forges = UnitCounter.getNumberOfUnits(buildingType);
+
 		if (!UnitCounter.weHaveBuilding(buildingType)
 				&& UnitCounter.getNumberOfUnits(ProtossGateway
 						.getBuildingType()) >= 2
 				&& !Constructing.weAreBuilding(buildingType)) {
 			// if (UnitCounter.getNumberOfBattleUnits() >= 15) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
 			// }
 		}
 
-		if (UnitCounter.getNumberOfUnits(buildingType) == 1
+		if (forges == 1
 				&& UnitCounter.getNumberOfUnits(ProtossGateway
 						.getBuildingType()) >= 3 && xvr.canAfford(650)
 				&& !Constructing.weAreBuilding(buildingType)) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
 		}
 
+		if (forges == 2 && xvr.canAfford(1300)
+				&& !Constructing.weAreBuilding(buildingType)) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			return true;
+		}
+
+		ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 		return false;
 	}
 

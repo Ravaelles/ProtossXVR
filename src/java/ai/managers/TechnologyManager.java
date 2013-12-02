@@ -6,8 +6,9 @@ import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.types.UpgradeType.UpgradeTypes;
 import ai.core.XVR;
 import ai.handling.units.UnitCounter;
+import ai.protoss.ProtossArbiterTribunal;
 import ai.protoss.ProtossCitadelOfAdun;
-import ai.protoss.ProtossCybernetics;
+import ai.protoss.ProtossCyberneticsCore;
 import ai.protoss.ProtossForge;
 import ai.protoss.ProtossObservatory;
 import ai.protoss.ProtossRoboticsSupportBay;
@@ -16,6 +17,8 @@ import ai.protoss.ProtossTemplarArchives;
 public class TechnologyManager {
 
 	public static final TechTypes HALLUCINATION = TechTypes.Hallucination;
+	public static final TechTypes PSIONIC_STORM = TechTypes.Psionic_Storm;
+	public static final TechTypes STASIS_FIELD = TechTypes.Stasis_Field;
 
 	private static XVR xvr = XVR.getInstance();
 
@@ -41,7 +44,7 @@ public class TechnologyManager {
 		upgrade = UpgradeTypes.Singularity_Charge;
 		if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dragoon) >= 4
 				&& xvr.canAfford(250) && isUpgradePossible(upgrade)) {
-			tryToUpgrade(ProtossCybernetics.getOneNotBusy(), upgrade);
+			tryToUpgrade(ProtossCyberneticsCore.getOneNotBusy(), upgrade);
 		}
 
 		// Observer speed
@@ -52,8 +55,8 @@ public class TechnologyManager {
 			tryToUpgrade(ProtossObservatory.getOneNotBusy(), upgrade);
 		}
 
-		// Hallucination
-		technology = HALLUCINATION;
+		// Psionic Storm
+		technology = PSIONIC_STORM;
 		if (UnitCounter
 				.weHaveBuildingFinished(UnitTypes.Protoss_Templar_Archives)
 				&& xvr.canAfford(200) && isResearchPossible(technology)) {
@@ -63,6 +66,18 @@ public class TechnologyManager {
 			// {
 			tryToResearch(ProtossTemplarArchives.getOneNotBusy(), technology);
 		}
+		
+//		// Hallucination
+//		technology = HALLUCINATION;
+//		if (UnitCounter
+//				.weHaveBuildingFinished(UnitTypes.Protoss_Templar_Archives)
+//				&& xvr.canAfford(200) && isResearchPossible(technology)) {
+//			// if (xvr.canAfford(200)
+//			// && isTechPossible(technology)
+//			// && UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Observer) >= 2)
+//			// {
+//			tryToResearch(ProtossTemplarArchives.getOneNotBusy(), technology);
+//		}
 
 		// ======================================================
 		// LOWER PRIORITY
@@ -82,6 +97,13 @@ public class TechnologyManager {
 		if (isUpgradePossible(upgrade)) {
 			tryToUpgrade(ProtossForge.getOneNotBusy(), upgrade);
 		}
+		
+		// Scarab damage
+		upgrade = UpgradeTypes.Scarab_Damage;
+		if (UnitCounter.weHaveBuilding(ProtossRoboticsSupportBay
+				.getBuildingType()) && isUpgradePossible(upgrade)) {
+			tryToUpgrade(ProtossRoboticsSupportBay.getOneNotBusy(), upgrade);
+		}
 
 		// Protoss ground weapon
 		upgrade = UpgradeTypes.Protoss_Ground_Weapons;
@@ -96,12 +118,13 @@ public class TechnologyManager {
 				&& isUpgradePossible(upgrade)) {
 			tryToUpgrade(ProtossForge.getOneNotBusy(), upgrade);
 		}
-
-		// Scarab damage
-		upgrade = UpgradeTypes.Scarab_Damage;
-		if (UnitCounter.weHaveBuilding(ProtossRoboticsSupportBay
-				.getBuildingType()) && isUpgradePossible(upgrade)) {
-			tryToUpgrade(ProtossRoboticsSupportBay.getOneNotBusy(), upgrade);
+		
+		// Protoss stasis field
+		technology = STASIS_FIELD;
+		if (UnitCounter
+				.weHaveBuildingFinished(UnitTypes.Protoss_Arbiter_Tribunal)
+				&& xvr.canAfford(200) && isResearchPossible(technology)) {
+			tryToResearch(ProtossArbiterTribunal.getOneNotBusy(), technology);
 		}
 	}
 

@@ -33,22 +33,58 @@ public class ProtossHighTemplar {
 			return;
 		}
 
-		if (xvr.isEnemyInRadius(highTemplar, 20)) {
-			tryUsingHallucination(highTemplar);
+		if (highTemplar.getEnergy() >= 75) {
+			// tryUsingHallucination(highTemplar);
+			tryUsingPsionicStorm(highTemplar);
+		}
+
+		if (highTemplar.isUnderAttack()) {
+			UnitActions.moveTo(highTemplar, xvr.getLastBase());
 		}
 	}
 
-	private static void tryUsingHallucination(Unit highTemplar) {
-		if (highTemplar.getEnergy() >= 100) {
-			ArrayList<Unit> ourUnits = xvr
-					.getUnitsOfType(UnitTypes.Protoss_Zealot);
-			Unit sheepDolly = xvr.getUnitNearestFromList(highTemplar, ourUnits);
-			xvr.getBwapi()
-					.useTech(highTemplar.getID(),
-							TechnologyManager.HALLUCINATION.getID(),
-							sheepDolly.getID());
+	private static void tryUsingPsionicStorm(Unit highTemplar) {
+		if (highTemplar.getEnergy() >= 75) {
+			Unit unitToStrike = null;
+
+			// Try to find top priority target.
+			ArrayList<Unit> topPriorityTargets = xvr.getUnitsInRadius(
+					highTemplar, 20, xvr.getEnemyUnitsOfType(
+							UnitTypes.Protoss_Carrier,
+							UnitTypes.Terran_Siege_Tank_Siege_Mode,
+							UnitTypes.Terran_Siege_Tank_Tank_Mode,
+							UnitTypes.Zerg_Guardian, UnitTypes.Zerg_Lurker));
+			if (!topPriorityTargets.isEmpty()) {
+				unitToStrike = topPriorityTargets.get(0);
+			}
+
+			if (unitToStrike == null) {
+
+				// Find any target
+				ArrayList<Unit> enemies = xvr.getUnitsInRadius(highTemplar, 15,
+						xvr.getEnemyArmyUnits());
+				if (!enemies.isEmpty()) {
+					unitToStrike = enemies.get(0);
+				}
+			}
+
+			// If there's some target, use psionic storm
+			if (unitToStrike != null) {
+				UnitActions.useTech(highTemplar,
+						TechnologyManager.PSIONIC_STORM, unitToStrike);
+			}
 		}
 	}
+
+//	private static void tryUsingHallucination(Unit highTemplar) {
+//		if (highTemplar.getEnergy() >= 100) {
+//			ArrayList<Unit> ourUnits = xvr
+//					.getUnitsOfType(UnitTypes.Protoss_Zealot);
+//			Unit sheepDolly = xvr.getUnitNearestFromList(highTemplar, ourUnits);
+//			UnitActions.useTech(highTemplar, TechnologyManager.HALLUCINATION,
+//					sheepDolly);
+//		}
+//	}
 
 	private static boolean tryWarpingArchon(Unit highTemplar) {
 		if (UnitCounter.getNumberOfUnits(HIGH_TEMPLAR) >= 2) {

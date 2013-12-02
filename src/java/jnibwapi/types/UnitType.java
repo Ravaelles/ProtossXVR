@@ -538,7 +538,7 @@ public class UnitType {
 	}
 
 	public boolean isTank() {
-		return ID == UnitTypes.Terran_Siege_Tank_Tank_Mode.ordinal()
+		return ID == UnitTypes.Terran_Siege_Tank_Siege_Mode.ordinal()
 				|| ID == UnitTypes.Terran_Siege_Tank_Tank_Mode.ordinal();
 	}
 	

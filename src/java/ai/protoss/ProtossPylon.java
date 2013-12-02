@@ -1,6 +1,5 @@
 package ai.protoss;
 
-import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -59,7 +58,7 @@ public class ProtossPylon {
 		return shouldBuild;
 	}
 
-	public static Point findTileNearPylonForNewBuilding() {
+	public static MapPoint findTileNearPylonForNewBuilding() {
 		if (!UnitCounter.weHavePylonFinished()) {
 			return null;
 		}
@@ -77,10 +76,9 @@ public class ProtossPylon {
 			base = ProtossNexus.getRandomBase();
 		}
 
-		for (Unit pylon : xvr.getUnitsOfGivenTypeInRadius(buildingType, 60,
-				base.getX(), base.getY(), true)) {
+		for (Unit pylon : xvr.getUnitsInRadius(base, 100,
+				xvr.getUnitsOfType(buildingType))) {
 			if (pylon != null) {
-
 				// return Constructing.getLegitTileToBuildNear(
 				// xvr.getRandomWorker(), buildingType, pylon.getTileX(),
 				// pylon.getTileY(), 0, PYLON_FROM_PYLON_MAX_DISTANCE);
@@ -92,9 +90,9 @@ public class ProtossPylon {
 				// - RUtilities.rand(0,
 				// 2 * PYLON_FROM_PYLON_MIN_DISTANCE_RAND);
 
-				Point tile = Constructing.getLegitTileToBuildNear(
-						xvr.getRandomWorker(), buildingType, pylon.getTileX(),
-						pylon.getTileY(), 0, 11, true);
+				MapPoint tile = Constructing
+						.getLegitTileToBuildNear(xvr.getRandomWorker(),
+								buildingType, pylon, 0, 15, true);
 				if (tile != null) {
 					return tile;
 				}
@@ -103,7 +101,7 @@ public class ProtossPylon {
 		return null;
 	}
 
-	public static Point findTileForPylon() {
+	public static MapPoint findTileForPylon() {
 		Unit builder = Constructing.getRandomWorker();
 
 		// It's not the first pylon
@@ -116,8 +114,8 @@ public class ProtossPylon {
 			return findTileForFirstPylon(builder, xvr.getFirstBase());
 		}
 	}
-	
-	private static Point findTileForNextPylon(Unit builder) {
+
+	private static MapPoint findTileForNextPylon(Unit builder) {
 
 		// If we have more than one base make sure that every base has at
 		// least one pylon nearby
@@ -138,7 +136,7 @@ public class ProtossPylon {
 			// }
 
 			if (nearbyPylons == 0) {
-				Point buildTile = findTileForPylonNearby(base,
+				MapPoint buildTile = findTileForPylonNearby(base,
 						INITIAL_PYLON_MIN_DIST_FROM_BASE,
 						INITIAL_PYLON_MAX_DIST_FROM_BASE);
 				if (buildTile != null) {
@@ -159,7 +157,7 @@ public class ProtossPylon {
 		if (RUtilities.rand(0, 1) == 0) {
 
 			// Build normally, at random base.
-			Point buildTile = findTileForPylonNearby(
+			MapPoint buildTile = findTileForPylonNearby(
 					ProtossNexus.getRandomBase(),
 					INITIAL_PYLON_MIN_DIST_FROM_BASE,
 					INITIAL_PYLON_MAX_DIST_FROM_BASE);
@@ -226,7 +224,7 @@ public class ProtossPylon {
 		return (Unit) RUtilities.getRandomListElement(pylons);
 	}
 
-	private static Point findTileForPylonNearby(MapPoint point, int minDist,
+	private static MapPoint findTileForPylonNearby(MapPoint point, int minDist,
 			int maxDist) {
 		// boolean existsPylonNearby = !xvr.getUnitsOfGivenTypeInRadius(
 		// buildingType, 8, base.getX(), base.getY(), true).isEmpty();
@@ -251,7 +249,7 @@ public class ProtossPylon {
 		// }
 	}
 
-	private static Point findLegitTileForPylon(MapPoint buildNearToHere,
+	private static MapPoint findLegitTileForPylon(MapPoint buildNearToHere,
 			Unit builder) {
 		int tileX = buildNearToHere.getTx();
 		int tileY = buildNearToHere.getTy();
@@ -260,19 +258,21 @@ public class ProtossPylon {
 		while (currentDist <= PYLON_FROM_PYLON_MAX_DISTANCE) {
 			for (int i = tileX - currentDist; i <= tileX + currentDist; i++) {
 				for (int j = tileY - currentDist; j <= tileY + currentDist; j++) {
+					int x = i * 32;
+					int y = j * 32;
 					if (Constructing.canBuildHere(builder, buildingType, i, j)
 							&& xvr.getUnitsOfGivenTypeInRadius(buildingType,
-									PYLON_FROM_PYLON_MIN_DISTANCE - 1, i * 32,
-									j * 32, true).isEmpty()) {
+									PYLON_FROM_PYLON_MIN_DISTANCE - 1, x, y,
+									true).isEmpty()) {
 						ChokePoint choke = MapExploration
-								.getNearestChokePointFor(i * 32, j * 32);
+								.getNearestChokePointFor(x, y);
 
 						// Damn, try NOT to build in the middle of narrow choke
 						// point.
 						if (choke.getRadius() < 6 * 32
-								&& xvr.getDistanceBetween(i * 32, j * 32,
+								&& xvr.getDistanceBetween(x, y,
 										choke.getCenterX(), choke.getCenterY()) > 5) {
-							return new Point(i, j);
+							return new MapPointInstance(x, y);
 						}
 					}
 				}
@@ -301,7 +301,7 @@ public class ProtossPylon {
 		return pylons;
 	}
 
-	private static Point findTileForFirstPylon(Unit builder, Unit base) {
+	private static MapPoint findTileForFirstPylon(Unit builder, Unit base) {
 		if (base == null) {
 			return null;
 		}

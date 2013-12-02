@@ -11,13 +11,15 @@ import ai.handling.army.ArmyPlacing;
 import ai.handling.army.TargetHandling;
 import ai.handling.map.MapExploration;
 import ai.handling.units.UnitCounter;
+import ai.protoss.ProtossNexus;
 
 public class StrategyManager {
 
 	private static XVR xvr = XVR.getInstance();
 
-	private static final int MINIMUM_ARMY_TO_PUSH = 25;
-	private static final int MINIMUM_ARMY_ABSOLUTE_THRESHOLD = 48;
+	private static final int MINIMUM_INITIAL_ARMY_TO_PUSH = 25;
+	private static final int MINIMUM_THRESHOLD_ARMY_TO_PUSH = 41;
+	private static final int MINIMUM_ARMY_PSI_USED_THRESHOLD = 75;
 
 	/**
 	 * It means we are NOT ready to attack the enemy, because we suck pretty
@@ -66,15 +68,22 @@ public class StrategyManager {
 	private static boolean decideIfWeAreReadyToAttack(boolean forceMinimum) {
 		int battleUnits = UnitCounter.getNumberOfBattleUnits();
 
-		if (battleUnits >= MINIMUM_ARMY_ABSOLUTE_THRESHOLD) {
+		// If there's more than threshold of psi used, attack. Always. 
+		if (xvr.getSuppliesUsed() >= 
+				(ProtossNexus.MAX_WORKERS + MINIMUM_ARMY_PSI_USED_THRESHOLD)) {
+			return true;
+		}
+		
+		// If there's more than threshold value of battle units
+		if (battleUnits > MINIMUM_THRESHOLD_ARMY_TO_PUSH) {
 			return true;
 		}
 
-		int minimumArmyToPush = MINIMUM_ARMY_TO_PUSH + 6 * retreatsCounter;
+		int minimumArmyToPush = MINIMUM_INITIAL_ARMY_TO_PUSH + 5 * retreatsCounter;
 		boolean weAreReadyToAttack = (battleUnits >= (forceMinimum ? minimumArmyToPush
-				: (int) (MINIMUM_ARMY_TO_PUSH * 1)));
+				: MINIMUM_INITIAL_ARMY_TO_PUSH));
 
-		if ((MapExploration.getNumberOfKnownEnemyBases() > 0 && (battleUnits >= (1.5 * MINIMUM_ARMY_TO_PUSH)
+		if ((MapExploration.getNumberOfKnownEnemyBases() > 0 && (battleUnits >= (1.5 * MINIMUM_INITIAL_ARMY_TO_PUSH)
 				* MapExploration.getNumberOfKnownEnemyBases()))) {
 			weAreReadyToAttack = true;
 		}

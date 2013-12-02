@@ -74,6 +74,9 @@ public class ArmyCreationManager {
 				return true;
 			}
 		}
+		if (battleUnits <= 4) {
+			return true;
+		}
 		
 		return xvr.canAfford(700)
 				|| (!ProtossNexus.shouldBuild() || xvr.canAfford(525) || battleUnits < 10)

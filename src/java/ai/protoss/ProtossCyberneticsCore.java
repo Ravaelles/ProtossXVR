@@ -7,7 +7,7 @@ import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.units.UnitCounter;
 
-public class ProtossCybernetics {
+public class ProtossCyberneticsCore {
 
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Cybernetics_Core;
 	private static XVR xvr = XVR.getInstance();
@@ -22,10 +22,13 @@ public class ProtossCybernetics {
 
 	public static boolean shouldBuild() {
 		if (!Constructing.weAreBuilding(buildingType)
-				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Forge)
+//				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Forge)
+				&& (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Photon_Cannon)
+						|| xvr.canAfford(300))
 				&& xvr.canAfford(150)) {
 			if (UnitCounter
 					.getNumberOfUnitsCompleted(UnitTypes.Protoss_Gateway) >= 2
+					&& UnitCounter.getNumberOfBattleUnits() >= 7
 					&& !UnitCounter.weHaveBuilding(buildingType)) {
 				return true;
 			}

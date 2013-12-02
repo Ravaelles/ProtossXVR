@@ -1,11 +1,11 @@
 package ai.protoss;
 
+import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
 import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.units.UnitCounter;
 import ai.managers.UnitManager;
-import jnibwapi.types.UnitType.UnitTypes;
 
 public class ProtossAssimilator {
 
@@ -21,7 +21,7 @@ public class ProtossAssimilator {
 						.getNumberOfUnits(UnitManager.GATEWAY) >= 2)
 				&& UnitCounter.getNumberOfUnits(buildingType) < UnitCounter
 						.getNumberOfUnitsCompleted(UnitManager.BASE)) {
-			if (UnitCounter.getNumberOfInfantryUnits() >= 4) {
+			if (UnitCounter.getNumberOfBattleUnits() >= 6) {
 				return true;
 			}
 		}

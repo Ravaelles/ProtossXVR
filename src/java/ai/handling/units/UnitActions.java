@@ -1,7 +1,10 @@
 package ai.handling.units;
 
+import java.util.ArrayList;
+
 import jnibwapi.model.ChokePoint;
 import jnibwapi.model.Unit;
+import jnibwapi.types.TechType.TechTypes;
 import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
@@ -9,6 +12,7 @@ import ai.handling.army.TargetHandling;
 import ai.handling.map.MapExploration;
 import ai.handling.map.MapPoint;
 import ai.managers.StrategyManager;
+import ai.managers.UnitManager;
 import ai.protoss.ProtossShieldBattery;
 import ai.utils.RUtilities;
 
@@ -172,19 +176,54 @@ public class UnitActions {
 	}
 
 	public static boolean runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
-			Unit unit, boolean runFromDetectors, boolean isAirUnit) {
+			Unit unit, boolean tryAvoidingDetectors,
+			boolean allowAttackingDetectorsIfSafe, boolean isAirUnit) {
 		final int RUN_DISTANCE = 6;
 
-		if (runFromDetectors) {
-			boolean isEnemyDetectorNear = xvr.isEnemyDetectorNear(unit.getX(),
-					unit.getY());
-			if (isEnemyDetectorNear) {
+		// If we should avoid detectors, look for one nearby.
+		if (tryAvoidingDetectors) {
+			boolean isEnemyDetectorNear = xvr.isEnemyDetectorNear(unit);
 
-				// Try to move away from this enemy detector on N tiles.
-				UnitActions.moveAwayFromUnitIfPossible(unit,
-						xvr.getEnemyDetectorNear(unit.getX(), unit.getY()),
-						RUN_DISTANCE);
-				return true;
+			// Okay, we know there's detector near.
+			if (isEnemyDetectorNear) {
+				boolean canDetectorShootAtThisUnit = false;
+				boolean isAttackingDetectorSafe = false;
+
+				// If unit can possibly attack detector safely, even if it's
+				// supposed
+				// to avoid them, define if this detector can shoot at our unit.
+				if (allowAttackingDetectorsIfSafe) {
+					Unit enemyDetector = xvr.getEnemyDetectorNear(unit);
+					if (isAirUnit) {
+						canDetectorShootAtThisUnit = enemyDetector
+								.canAttackAirUnits();
+					} else {
+						canDetectorShootAtThisUnit = enemyDetector
+								.canAttackGroundUnits();
+					}
+
+					// If detector cannot shoot at this unit, but is surrounded
+					// by some enemies then do not attack
+					if (!canDetectorShootAtThisUnit) {
+						ArrayList<Unit> enemyUnitsNearDetector = xvr
+								.getUnitsInRadius(enemyDetector, 9,
+										xvr.getEnemyArmyUnits());
+						if (enemyUnitsNearDetector.size() <= 1) {
+							isAttackingDetectorSafe = true;
+						}
+					}
+				}
+
+				// If unit isn't allowed to attack detectors OR if the detector
+				// cannot be attack safely, then run away from it.
+				if (!allowAttackingDetectorsIfSafe || !isAttackingDetectorSafe) {
+
+					// Try to move away from this enemy detector on N tiles.
+					UnitActions.moveAwayFromUnitIfPossible(unit,
+							xvr.getEnemyDetectorNear(unit.getX(), unit.getY()),
+							RUN_DISTANCE);
+					return true;
+				}
 			}
 		}
 
@@ -207,23 +246,34 @@ public class UnitActions {
 
 	public static void actWhenLowHitPointsOrShields(Unit unit,
 			boolean isImportantUnit) {
+		UnitType type = unit.getType();
 		Unit goTo = null;
 
 		int currShields = unit.getShields();
-		int maxShields = unit.getType().getMaxShields();
+		int maxShields = type.getMaxShields();
+		int currHP = unit.getHitPoints();
+		int maxHP = type.getMaxHitPoints();
 
 		// If there's massive attack and unit has more than 60% of initial
 		// shields, we treat it as healthy, as there's nothing to do about it.
 		if (StrategyManager.isAttackPending()
-				&& currShields >= 0.1 * maxShields) {
-			if (!isImportantUnit) {
+				&& currShields >= 0.13 * maxShields) {
+			if (!isImportantUnit && currHP >= 0.6 * maxHP) {
 				return;
 			}
 		}
-		
+
 		// Unit has almost all shields
 		if (currShields >= maxShields / 2) {
 			return;
+		}
+
+		// =====================================================================
+		// If unit is close to base then run away only if critically wounded.
+		if (xvr.countUnitsOfGivenTypeInRadius(UnitManager.BASE, 20, unit, true) >= 1) {
+			if (unit.getHitPoints() > (type.getMaxHitPoints() / 3 + 3)) {
+				return;
+			}
 		}
 
 		// =====================================================================
@@ -258,7 +308,8 @@ public class UnitActions {
 		}
 
 		if (goTo != null) {
-			UnitActions.moveTo(unit, goTo);
+//			UnitActions.moveTo(unit, goTo);
+			UnitActions.attackTo(unit, goTo);
 		}
 	}
 
@@ -269,6 +320,10 @@ public class UnitActions {
 			return;
 		}
 		xvr.getBwapi().rightClick(unit.getID(), clickTo.getID());
+	}
+
+	public static void useTech(Unit wizard, TechTypes tech, Unit useOn) {
+		xvr.getBwapi().useTech(wizard.getID(), tech.getID(), useOn.getID());
 	}
 
 }

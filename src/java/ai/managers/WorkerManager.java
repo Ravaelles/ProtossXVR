@@ -31,10 +31,11 @@ public class WorkerManager {
 	}
 
 	public static void act(Unit unit) {
-		
+
 		// If we should destroy this unit
 		if (unit.isShouldScrapUnit()) {
-			UnitActions.attackTo(unit, MapExploration.getNearestEnemyBuilding());
+			UnitActions
+					.attackTo(unit, MapExploration.getNearestEnemyBuilding());
 			return;
 		}
 
@@ -118,6 +119,14 @@ public class WorkerManager {
 	}
 
 	public static void forceGatherMinerals(Unit gathererToAssign, Unit mineral) {
+		if (gathererToAssign.isCarryingMinerals()) {
+			Unit nearestBase = ProtossNexus
+					.getNearestBaseForUnit(gathererToAssign);
+			xvr.getBwapi().rightClick(gathererToAssign.getID(),
+					nearestBase.getID());
+			return;
+		}
+		
 		if (mineral != null) {
 			xvr.getBwapi()
 					.rightClick(gathererToAssign.getID(), mineral.getID());

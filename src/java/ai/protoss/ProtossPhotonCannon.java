@@ -47,9 +47,10 @@ public class ProtossPhotonCannon {
 			}
 
 			for (Unit base : ProtossNexus.getBases()) {
-				
+
 				// Dont check always, it consumes lot of calculations
-				if (RUtilities.rand(0, 1) == 0) {
+				if (RUtilities.rand(0, 1) == 0
+						|| UnitCounter.getNumberOfUnits(UnitManager.BASE) == 1) {
 					if (shouldBuildFor(base)) {
 						return true;
 					}
@@ -126,13 +127,16 @@ public class ProtossPhotonCannon {
 		}
 
 		int searchInDistance = (int) (1.7 * MAX_DIST_FROM_CHOKE_POINT_MODIFIER * radius);
+		if (searchInDistance < 9) {
+			searchInDistance = 9;
+		}
+		
 		int numberOfCannonsNearby = xvr.getUnitsOfGivenTypeInRadius(
-				buildingType, searchInDistance, mapPoint.getX(),
-				mapPoint.getY(), true).size();
+				buildingType, searchInDistance, mapPoint, true).size();
 		return numberOfCannonsNearby;
 	}
 
-	private static Point findProperBuildTile(MapPoint mapPoint,
+	private static MapPoint findProperBuildTile(MapPoint mapPoint,
 			boolean requiresPower) {
 
 		// Define approximate bunker tile
@@ -150,7 +154,7 @@ public class ProtossPhotonCannon {
 		if (mapPoint instanceof ChokePoint) {
 			ChokePoint choke = (ChokePoint) mapPoint;
 			if (choke.getRadius() / 32 >= 8) {
-				minimumDistance -= 3;
+				minimumDistance -= 5;
 			}
 		}
 		int maximumDistance = minimumDistance
@@ -162,7 +166,7 @@ public class ProtossPhotonCannon {
 		// maxDistanceBasedOnDistanceFromChokePoint);
 
 		// Get proper build tile
-		Point properBuildTile = Constructing.getLegitTileToBuildNear(
+		MapPoint properBuildTile = Constructing.getLegitTileToBuildNear(
 				workerUnit, buildingType, initialBuildTile.x,
 				initialBuildTile.y, minimumDistance, maximumDistance,
 				requiresPower);
@@ -170,7 +174,7 @@ public class ProtossPhotonCannon {
 		return properBuildTile;
 	}
 
-	public static Point findTileForCannon() {
+	public static MapPoint findTileForCannon() {
 		// return findProperBuildTile(_chokePointToReinforce, true);
 		if (_placeToReinforceWithCannon == null) {
 			_placeToReinforceWithCannon = MapExploration
@@ -178,7 +182,7 @@ public class ProtossPhotonCannon {
 		}
 
 		// Try to find normal tile.
-		Point tileForCannon = findProperBuildTile(_placeToReinforceWithCannon,
+		MapPoint tileForCannon = findProperBuildTile(_placeToReinforceWithCannon,
 				true);
 		if (tileForCannon != null) {
 			return tileForCannon;

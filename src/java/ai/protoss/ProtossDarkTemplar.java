@@ -15,20 +15,33 @@ public class ProtossDarkTemplar {
 	private static XVR xvr = XVR.getInstance();
 
 	public static void act(Unit unit) {
+		int alliedUnitsNearby = xvr.countUnitsInRadius(unit, 10, true);
 
 		// TOP PRIORITY: Templar under attack must go back to base.
 		// But if there's a massive attack and you have other units nearby DON'T
 		// retreat
 		boolean shouldConsiderRunningAway = true;
+		
+		// Attack is pending
 		if (StrategyManager.isAttackPending()) {
-			if (xvr.countUnitsInRadius(unit.getX(), unit.getY(), 10, true) >= 4) {
+			if (alliedUnitsNearby >= 4) {
 				shouldConsiderRunningAway = false;
 			}
 		}
+		
+//		// No attack is pending
+//		else {
+//			if (unit.isDetected()) {
+//				
+//			}
+//		}
+		
+		// =========================
+		
 		if (shouldConsiderRunningAway
 				&& UnitActions
 						.runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
-								unit, true, true) || unit.getHitPoints() < 50) {
+								unit, true, true, false)) {
 			return;
 		}
 
@@ -100,4 +113,5 @@ public class ProtossDarkTemplar {
 
 		return pointToHarass;
 	}
+
 }

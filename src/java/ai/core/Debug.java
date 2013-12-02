@@ -20,17 +20,23 @@ import ai.protoss.ProtossNexus;
 
 public class Debug {
 
-	public static final boolean FULL_DEBUG = false;
+	public static final boolean FULL_DEBUG = true;
 
 	private static int messageCounter = 1;
 	private static int mainMessageRowCounter = 0;
-	
+
 	public static int ourDeaths = 0;
 	public static int enemyDeaths = 0;
 
 	public static void drawDebug(XVR xvr) {
 		int oldMainMessageRowCounter = mainMessageRowCounter;
 		mainMessageRowCounter = 0;
+
+//		MapPoint assimilator = Constructing.findTileForAssimilator();
+//		if (assimilator != null) {
+//			xvr.getBwapi().drawBox(assimilator.getX(), assimilator.getY(),
+//					3 * 32, 2 * 32, BWColor.TEAL, false, false);
+//		}
 
 		if (FULL_DEBUG) {
 			paintNextBuildingsPosition(xvr);
@@ -123,17 +129,6 @@ public class Debug {
 		// "Building", false);
 		// }
 	}
-
-	// private static void paintStatistics(XVR xvr) {
-	// if (xvr.getFirstBase() == null) {
-	// return;
-	// }
-	//
-	// // for (Integer typeId : UnitCounter.getExistingUnitTypes()) {
-	// // UnitTypes type = UnitType.getUnitTypesByID(typeId);
-	// //
-	// // }
-	// }
 
 	private static void paintChokePoints(XVR xvr) {
 		for (ChokePoint choke : MapExploration.getChokePoints()) {
@@ -348,6 +343,12 @@ public class Debug {
 						"D. Templars: "
 								+ UnitCounter
 										.getNumberOfUnits(UnitTypes.Protoss_Dark_Templar));
+			if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_High_Templar) > 0)
+				paintMainMessage(
+						xvr,
+						"H. Templars: "
+								+ UnitCounter
+										.getNumberOfUnits(UnitTypes.Protoss_High_Templar));
 			if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Observer) > 0)
 				paintMainMessage(
 						xvr,
@@ -380,21 +381,6 @@ public class Debug {
 
 		}
 
-		// if (ProtossPylon.shouldBuild())
-		// paintMainMessage(xvr, "Build PYLON: true");
-		// if (ProtossPhotonCannon.shouldBuild())
-		// paintMainMessage(xvr, "Build CANNON: true");
-		// if (ProtossGateway.shouldBuild())
-		// paintMainMessage(xvr, "Build GATEWAY: true");
-		// if (ProtossNexus.shouldBuild())
-		// paintMainMessage(xvr, "Build NEXUS: true");
-		// if (ProtossAssimilator.shouldBuild())
-		// paintMainMessage(xvr, "Build ASSIMILATOR: true");
-		// if (ProtossObservatory.shouldBuild())
-		// paintMainMessage(xvr, "Build OBSERVATORY: true");
-		// if (ProtossCybernetics.shouldBuild())
-		// paintMainMessage(xvr, "Build CYBERNETICS: true");
-
 		for (UnitTypes type : ShouldBuildCache.getBuildingsThatShouldBeBuild()) {
 			paintMainMessage(
 					xvr,
@@ -404,18 +390,6 @@ public class Debug {
 											Math.min(15, type.name().length()))
 									.toUpperCase() + ": true");
 		}
-
-		// if (Terran.shouldBuild())
-		// paintMainMessage(xvr, "Build : ");
-		// if (Terran.shouldBuild())
-		// paintMainMessage(xvr, "Build : ");
-
-		// paintMainMessage(xvr, ": " +
-		// UnitCounter.getNumberOfUnits(UnitTypes.Protoss_));
-		// paintMainMessage(xvr, ": " +
-		// UnitCounter.getNumberOfUnits(UnitTypes.Protoss_));
-		// paintMainMessage(xvr, ": " +
-		// UnitCounter.getNumberOfUnits(UnitTypes.Protoss_));
 	}
 
 	private static void paintMainMessage(XVR xvr, String string) {

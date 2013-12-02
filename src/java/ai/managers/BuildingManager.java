@@ -12,7 +12,7 @@ public class BuildingManager {
 
 	public static void act(Unit building) {
 		UnitType buildingType = UnitType.getUnitTypeByID(building.getTypeID());
-		if (buildingType == null || !buildingType.isBuilding()) {
+		if (buildingType == null) { //  || !buildingType.isBuilding()
 			return;
 		}
 
@@ -49,7 +49,8 @@ public class BuildingManager {
 
 	private static void checkIfShouldCancelConstruction(Unit building,
 			UnitType buildingType) {
-		if (building.isUnderAttack() && building.isBeingConstructed()) {
+		if (building.isUnderAttack() && (building.isConstructing()
+				|| building.isBeingConstructed())) {
 			boolean shouldCancelConstruction = false;
 
 			// If this is normal building and it's severely damaged.

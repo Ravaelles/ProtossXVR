@@ -4,7 +4,6 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 
 import jnibwapi.JNIBWAPI;
 import jnibwapi.model.Player;
@@ -36,7 +35,7 @@ public class XVR {
 	 * There are several methods of type like "getUnitsNear". This value is this
 	 * "near" distance, expressed in game tiles (32 pixels).
 	 */
-	private static final int WHAT_IS_NEAR_DISTANCE = 12;
+	private static final int WHAT_IS_NEAR_DISTANCE = 13;
 
 	private static Player ENEMY;
 	public static int ENEMY_ID;
@@ -119,7 +118,7 @@ public class XVR {
 			}
 
 			// Handle constructing new buildings
-			if (getTime() % 40 == 0) {
+			if (getTime() % 15 == 0) {
 				ConstructingManager.act();
 			}
 
@@ -149,7 +148,7 @@ public class XVR {
 		// }
 	}
 
-	// =========================================================
+	// ==================================================g=======
 	// Getters
 
 	public static XVR getInstance() {
@@ -289,6 +288,10 @@ public class XVR {
 		return (bwapi.getSelf().getSupplyTotal()) / 2;
 	}
 
+	public int getSuppliesUsed() {
+		return getSuppliesTotal() - getSuppliesFree();
+	}
+
 	public double getDistanceBetween(Unit u1, Point point) {
 		return getDistanceBetween(u1, point.x, point.y);
 	}
@@ -390,10 +393,16 @@ public class XVR {
 	}
 
 	public int countUnitsOfGivenTypeInRadius(UnitTypes type, int tileRadius,
+			Unit unit, boolean onlyMyUnits) {
+		return countUnitsOfGivenTypeInRadius(type, tileRadius, unit.getX(),
+				unit.getY(), onlyMyUnits);
+	}
+
+	public int countUnitsOfGivenTypeInRadius(UnitTypes type, int tileRadius,
 			int x, int y, boolean onlyMyUnits) {
 		int result = 0;
-		List<Unit> unitsList = onlyMyUnits ? bwapi.getMyUnits() : bwapi
-				.getNeutralUnits();
+		Collection<Unit> unitsList = onlyMyUnits ? bwapi.getMyUnits() : bwapi
+				.getAllUnits();
 		for (Unit unit : unitsList) {
 			if (type.ordinal() == unit.getTypeID()
 					&& getDistanceBetween(unit, x, y) <= tileRadius) {
@@ -404,9 +413,9 @@ public class XVR {
 	}
 
 	public ArrayList<Unit> getUnitsOfGivenTypeInRadius(UnitTypes type,
-			int tileRadius, Unit unit, boolean onlyMyUnits) {
-		return getUnitsOfGivenTypeInRadius(type, tileRadius, unit.getX(),
-				unit.getY(), onlyMyUnits);
+			int tileRadius, MapPoint point, boolean onlyMyUnits) {
+		return getUnitsOfGivenTypeInRadius(type, tileRadius, point.getX(),
+				point.getY(), onlyMyUnits);
 	}
 
 	public ArrayList<Unit> getUnitsOfGivenTypeInRadius(UnitTypes type,
@@ -538,7 +547,31 @@ public class XVR {
 	}
 
 	public Collection<Unit> getEnemyArmyUnits() {
-		return MapExploration.getEnemyUnitsDiscovered();
+		ArrayList<Unit> armyUnits = new ArrayList<Unit>();
+		for (Unit enemy : MapExploration.getEnemyUnitsDiscovered()) {
+			if (!enemy.isWorker() && !enemy.getType().isBuilding()) {
+				armyUnits.add(enemy);
+			}
+		}
+		return armyUnits;
+	}
+	
+	public Collection<Unit> getEnemyUnitsOfType(UnitTypes... types) {
+		
+		// Create set object containing all allowed types of units to return
+		ArrayList<UnitTypes> typesList = new ArrayList<UnitTypes>();
+		for (UnitTypes unitTypes : types) {
+			typesList.add(unitTypes);
+		}
+		
+		// Iterate through enemy units and check if they're types match
+		ArrayList<Unit> armyUnits = new ArrayList<Unit>();
+		for (Unit enemy : MapExploration.getEnemyUnitsDiscovered()) {
+			if (typesList.contains(enemy.getType())) {
+				armyUnits.add(enemy);
+			}
+		}
+		return armyUnits;
 	}
 
 	public Collection<Unit> getEnemyBuildings() {
@@ -572,6 +605,13 @@ public class XVR {
 		ArrayList<Unit> allUnits = new ArrayList<Unit>();
 		allUnits.addAll(bwapi.getAllUnits());
 		return allUnits;
+	}
+
+	/** @return List of units from unitsList sorted ascending by distance. */
+	public ArrayList<Unit> getUnitsInRadius(MapPoint point, int tileRadius,
+			Collection<Unit> unitsList) {
+		return getUnitsInRadius(point.getX(), point.getY(), tileRadius,
+				unitsList);
 	}
 
 	/** @return List of units from unitsList sorted ascending by distance. */
@@ -621,17 +661,25 @@ public class XVR {
 		}
 
 		// Return the closest builder to the tile
-		return getUnitNearestFromList((int) buildTile.getX() * 32,
-				(int) buildTile.getY() * 32, freeWorkers);
+		return getUnitNearestFromList(buildTile.getX(), buildTile.getY(),
+				freeWorkers);
 	}
 
 	public boolean isEnemyDetectorNear(int x, int y) {
 		return getEnemyDetectorNear(x, y) != null;
 	}
 
+	public boolean isEnemyDetectorNear(MapPoint point) {
+		return isEnemyDetectorNear(point.getX(), point.getY());
+	}
+
+	public Unit getEnemyDetectorNear(MapPoint point) {
+		return getEnemyDetectorNear(point.getX(), point.getY());
+	}
+
 	public Unit getEnemyDetectorNear(int x, int y) {
 		ArrayList<Unit> enemiesNearby = getUnitsInRadius(x, y,
-				WHAT_IS_NEAR_DISTANCE, getEnemyUnitsVisible());
+				WHAT_IS_NEAR_DISTANCE, bwapi.getEnemyUnits());
 		for (Unit enemy : enemiesNearby) {
 			if (enemy.isCompleted() && enemy.getType().isDetector()) {
 				return enemy;

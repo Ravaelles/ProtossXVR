@@ -14,7 +14,7 @@ import ai.managers.UnitManager;
 import ai.protoss.ProtossArbiterTribunal;
 import ai.protoss.ProtossAssimilator;
 import ai.protoss.ProtossCitadelOfAdun;
-import ai.protoss.ProtossCybernetics;
+import ai.protoss.ProtossCyberneticsCore;
 import ai.protoss.ProtossFleetBeacon;
 import ai.protoss.ProtossForge;
 import ai.protoss.ProtossGateway;
@@ -30,19 +30,24 @@ import ai.protoss.ProtossTemplarArchives;
 import ai.utils.RUtilities;
 
 public class Constructing {
-	
+
 	private static final int MIN_DIST_FROM_CHOKE_POINT = 5;
 
 	private static XVR xvr = XVR.getInstance();
 
 	private static HashMap<UnitTypes, Unit> _recentConstructionsInfo = new HashMap<>();
 	private static int _recentConstructionsCounter = 0;
+	private static int _actCounter = 0;
 
 	// private static final int minDist = 7;
 
 	// private static final int maxDist = 70;
 
 	public static void act() {
+		_actCounter++;
+		if (_actCounter >= 3) {
+			_actCounter = 0;
+		}
 
 		// Store info about constructing given building for 3 seconds, then
 		// remove all data
@@ -50,33 +55,29 @@ public class Constructing {
 			resetInfoAboutConstructions();
 		}
 
-		// Check all the time
-		
-		
-
-//		// Check only every N seconds
-//		if (RUtilities.rand(0, 1) == 0) {
-			ProtossObservatory.buildIfNecessary();
-			ProtossGateway.buildIfNecessary();
+		// Check only every N seconds
+		if (_actCounter == 0) {
 			ProtossNexus.buildIfNecessary();
-			ProtossCybernetics.buildIfNecessary();
-			ProtossCitadelOfAdun.buildIfNecessary();
-			ProtossAssimilator.buildIfNecessary();
-			ProtossPhotonCannon.buildIfNecessary();
+			ProtossRoboticsFacility.buildIfNecessary();
+			ProtossCyberneticsCore.buildIfNecessary();
+			ProtossRoboticsSupportBay.buildIfNecessary();
 			ProtossArbiterTribunal.buildIfNecessary();
-//		} else {
-			ProtossPylon.buildIfNecessary();
+		} else if (_actCounter == 1) {
 			ProtossTemplarArchives.buildIfNecessary();
+			ProtossGateway.buildIfNecessary();
+			ProtossObservatory.buildIfNecessary();
+			ProtossAssimilator.buildIfNecessary();
+			ProtossCitadelOfAdun.buildIfNecessary();
+			ProtossPhotonCannon.buildIfNecessary();
+		} else {
+			ProtossPylon.buildIfNecessary();
 			ProtossStargate.buildIfNecessary();
 			ProtossForge.buildIfNecessary();
-			ProtossCitadelOfAdun.buildIfNecessary();
-			ProtossRoboticsFacility.buildIfNecessary();
-			ProtossRoboticsSupportBay.buildIfNecessary();
 			ProtossShieldBattery.buildIfNecessary();
-//		}
+		}
 	}
 
-	private static Point getTileAccordingToBuildingType(UnitTypes building) {
+	private static MapPoint getTileAccordingToBuildingType(UnitTypes building) {
 
 		// Pylon
 		if (UnitTypes.Protoss_Pylon.ordinal() == building.ordinal()) {
@@ -91,7 +92,7 @@ public class Constructing {
 
 		// Assimilator
 		else if (UnitTypes.Protoss_Assimilator.ordinal() == building.ordinal()) {
-			return findTileForRefinery();
+			return findTileForAssimilator();
 		}
 
 		// Base
@@ -187,7 +188,7 @@ public class Constructing {
 			return new int[] { mineralsRequired + 8, gasRequired,
 					buildingsToBuildTypesNumber };
 		}
-		if (ProtossCybernetics.shouldBuild()) {
+		if (ProtossCyberneticsCore.shouldBuild()) {
 			mineralsRequired += 150;
 			buildingsToBuildTypesNumber++;
 			return new int[] { mineralsRequired + 8, gasRequired,
@@ -247,18 +248,18 @@ public class Constructing {
 		_recentConstructionsInfo.put(building, builder);
 	}
 
-	public static Point findBuildTile(XVR xvr, int builderID, UnitTypes type,
-			MapPoint place) {
+	public static MapPoint findBuildTile(XVR xvr, int builderID,
+			UnitTypes type, MapPoint place) {
 		return findBuildTile(xvr, builderID, type.ordinal(), place.getX(),
 				place.getY());
 	}
 
-	public static Point findBuildTile(XVR xvr, int builderID,
+	public static MapPoint findBuildTile(XVR xvr, int builderID,
 			int buildingTypeID, int x, int y) {
 
 		// Point pointToBuild = getLegitTileToBuildNear(builderID,
 		// buildingTypeID, tileX, tileY, minDist, maxDist);
-		Point tileToBuild = ProtossPylon.findTileNearPylonForNewBuilding();
+		MapPoint tileToBuild = ProtossPylon.findTileNearPylonForNewBuilding();
 
 		if (tileToBuild == null) {
 			JNIBWAPI bwapi = xvr.getBwapi();
@@ -268,28 +269,27 @@ public class Constructing {
 		return tileToBuild;
 	}
 
-	private static Point findTileForRefinery() {
-		// for (Unit n : xvr.getBwapi().getNeutralUnits()) {
-		// if ((n.getTypeID() == UnitTypes.Resource_Vespene_Geyser.ordinal())
-		// && (Math.abs(n.getTileX() - tileX) < maxDist)
-		// && (Math.abs(n.getTileY() - tileY) < maxDist)) {
-		// return new Point(n.getTileX(), n.getTileY());
-		// }
-		// }
-		Unit nearestGeyser = xvr.getUnitNearestFromList(xvr.getFirstBase()
-				.getX(), xvr.getFirstBase().getY(), xvr.getGeysersUnits());
+	public static MapPoint findTileForAssimilator() {
+		Unit nearestGeyser = xvr.getUnitNearestFromList(xvr.getFirstBase(),
+				xvr.getGeysersUnits());
 		if (nearestGeyser != null
 				&& xvr.getUnitsOfGivenTypeInRadius(UnitManager.BASE, 15,
-						nearestGeyser.getX(), nearestGeyser.getY(), true)
-						.isEmpty()) {
+						nearestGeyser, true).isEmpty()) {
 			return null;
 		}
 
-		return (nearestGeyser != null ? (new Point(nearestGeyser.getTileX(),
-				nearestGeyser.getTileY())) : null);
+		// return new MapPointInstance(nearestGeyser.getX(),
+		// nearestGeyser.getY());
+		if (nearestGeyser != null) {
+			return new MapPointInstance(nearestGeyser.getX() - 64,
+					nearestGeyser.getY() - 32);
+		}
+		else {
+			return null;
+		}
 	}
 
-	public static Point getLegitTileToBuildNear(Unit worker, UnitTypes type,
+	public static MapPoint getLegitTileToBuildNear(Unit worker, UnitTypes type,
 			MapPoint nearTo, int minimumDist, int maximumDist,
 			boolean requiresPower) {
 		if (worker == null || type == null) {
@@ -300,7 +300,7 @@ public class Constructing {
 				requiresPower);
 	}
 
-	public static Point getLegitTileToBuildNear(Unit worker, UnitTypes type,
+	public static MapPoint getLegitTileToBuildNear(Unit worker, UnitTypes type,
 			int tileX, int tileY, int minimumDist, int maximumDist,
 			boolean requiresPower) {
 		if (worker == null || type == null) {
@@ -310,7 +310,7 @@ public class Constructing {
 				tileY, minimumDist, maximumDist, requiresPower);
 	}
 
-	public static Point getLegitTileToBuildNear(int builderID,
+	public static MapPoint getLegitTileToBuildNear(int builderID,
 			int buildingTypeID, int tileX, int tileY, int minimumDist,
 			int maximumDist, boolean requiresPower) {
 		JNIBWAPI bwapi = XVR.getInstance().getBwapi();
@@ -346,13 +346,15 @@ public class Constructing {
 					if ((!requiresPower || bwapi.hasPower(i, j))
 							&& bwapi.canBuildHere(builderID, i, j,
 									buildingTypeID, false)) {
-						if (isBuildTileFreeFromUnits(builderID, i, j)) {
-							if (xvr.getDistanceBetween(MapExploration
-									.getNearestChokePointFor(i * 32, j * 32),
-									i * 32, j * 32) >= MIN_DIST_FROM_CHOKE_POINT) {
-								return new Point(i, j);
-							}
+						// if (isBuildTileFreeFromUnits(builderID, i, j)) {
+						int x = i * 32;
+						int y = j * 32;
+						if (xvr.getDistanceBetween(
+								MapExploration.getNearestChokePointFor(x, y),
+								x, y) >= MIN_DIST_FROM_CHOKE_POINT) {
+							return new MapPointInstance(x, y);
 						}
+						// }
 					}
 				}
 			}
@@ -411,8 +413,7 @@ public class Constructing {
 			if (u.getID() == builderID) {
 				continue;
 			}
-			if ((Math.abs(u.getTileX() - tileX) < 4)
-					&& (Math.abs(u.getTileY() - tileY) < 4)) {
+			if (xvr.getDistanceBetween(u, tileX * 32, tileY * 32) <= 3) {
 				unitsInWay = true;
 			}
 		}
@@ -432,7 +433,7 @@ public class Constructing {
 		// }
 
 		// Define tile where to build according to type of building.
-		Point buildTile = getTileAccordingToBuildingType(building);
+		MapPoint buildTile = getTileAccordingToBuildingType(building);
 		// System.out.println("buildTile FOR: " + building + " = " + buildTile);
 
 		// Check if build tile is okay.
@@ -469,13 +470,12 @@ public class Constructing {
 	// }
 
 	private static boolean constructBuilding(XVR xvr, UnitTypes building,
-			Point buildTile) {
+			MapPoint buildTile) {
 		if (buildTile == null) {
 			return false;
 		}
 
-		Unit workerUnit = xvr.getOptimalBuilder(new MapPointInstance(
-				buildTile.x, buildTile.y));
+		Unit workerUnit = xvr.getOptimalBuilder(buildTile);
 		if (workerUnit != null) {
 
 			// if we found a good build position, and we aren't already
@@ -517,10 +517,11 @@ public class Constructing {
 		return false;
 	}
 
-	private static void build(Unit builder, Point buildTile, UnitTypes building) {
+	private static void build(Unit builder, MapPoint buildTile,
+			UnitTypes building) {
 		if (!weAreBuilding(building)) {
-			xvr.getBwapi().build(builder.getID(), buildTile.x, buildTile.y,
-					building.ordinal());
+			xvr.getBwapi().build(builder.getID(), buildTile.getTx(),
+					buildTile.getTy(), building.ordinal());
 			// if (Unit.getByID(worker).isConstructing()) {
 			addInfoAboutConstruction(building, builder);
 			removeDuplicateConstructionsPending(builder);
@@ -560,7 +561,7 @@ public class Constructing {
 	public static void forceConstructingPylonNear(MapPoint tryBuildingAroundHere) {
 
 		// First find proper place for building.
-		Point tileForBuilding = getLegitTileToBuildNear(getRandomWorker(),
+		MapPoint tileForBuilding = getLegitTileToBuildNear(getRandomWorker(),
 				ProtossPylon.getBuildingType(), tryBuildingAroundHere, 5, 13,
 				false);
 

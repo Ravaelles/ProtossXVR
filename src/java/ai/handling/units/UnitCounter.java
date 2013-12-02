@@ -3,9 +3,9 @@ package ai.handling.units;
 import java.util.HashMap;
 import java.util.Set;
 
-import ai.core.XVR;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
+import ai.core.XVR;
 
 public class UnitCounter {
 
@@ -69,7 +69,12 @@ public class UnitCounter {
 	}
 
 	public static int getNumberOfBattleUnits() {
-		return getNumberOfInfantryUnits();
+		return getNumberOfInfantryUnits() + 
+				+ getNumberOfUnits(UnitTypes.Protoss_Reaver)
+				+ getNumberOfUnits(UnitTypes.Protoss_Corsair)
+				+ getNumberOfUnits(UnitTypes.Protoss_Scout)
+				+ getNumberOfUnits(UnitTypes.Protoss_Carrier)
+				+ getNumberOfUnits(UnitTypes.Protoss_Arbiter);
 	}
 
 	public static boolean weHaveBuilding(UnitTypes unitType) {

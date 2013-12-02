@@ -2,12 +2,12 @@ package ai.protoss;
 
 import java.util.ArrayList;
 
+import jnibwapi.model.Unit;
+import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
 import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.units.UnitCounter;
-import jnibwapi.model.Unit;
-import jnibwapi.types.UnitType.UnitTypes;
 
 public class ProtossRoboticsFacility {
 
@@ -16,8 +16,9 @@ public class ProtossRoboticsFacility {
 	public static UnitTypes SHUTTLE = UnitTypes.Protoss_Shuttle;
 
 	private static final int MINIMUM_OBSERVERS = 6;
-	private static final double REAVERS_TO_INFANTRY_RATIO = 0.2;
-	
+	private static final int MINIMUM_REAVERS = 5;
+	private static final double REAVERS_TO_INFANTRY_RATIO = 0.23;
+
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Robotics_Facility;
 	private static XVR xvr = XVR.getInstance();
 
@@ -28,15 +29,17 @@ public class ProtossRoboticsFacility {
 	}
 
 	public static boolean shouldBuild() {
-		// UnitCounter.weHaveBuilding(UnitTypes.Protoss_Citadel_of_Adun)
+		int facilities = UnitCounter.getNumberOfUnits(buildingType);
+
 		if (UnitCounter.getNumberOfUnits(ProtossGateway.getBuildingType()) >= 2
-				&& UnitCounter.getNumberOfUnits(buildingType) <= 1
-				&& !Constructing.weAreBuilding(buildingType)) {
-			if (UnitCounter.getNumberOfBattleUnits() >= 3) {
+				&& facilities <= 2 && !Constructing.weAreBuilding(buildingType)) {
+			if (UnitCounter.getNumberOfBattleUnits() >= (9 + 10 * facilities)
+					|| xvr.canAfford(450 + 300 * facilities)) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
 		}
+
 		ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 		return false;
 	}
@@ -57,7 +60,7 @@ public class ProtossRoboticsFacility {
 	public static ArrayList<Unit> getAllObjects() {
 		return xvr.getUnitsOfTypeCompleted(buildingType);
 	}
-	
+
 	// ==========================
 	// Unit creating
 
@@ -65,7 +68,7 @@ public class ProtossRoboticsFacility {
 		if (facility == null) {
 			return;
 		}
-		
+
 		int[] buildingQueueDetails = Constructing.shouldBuildAnyBuilding();
 		int freeMinerals = xvr.getMinerals();
 		int freeGas = xvr.getGas();
@@ -74,7 +77,8 @@ public class ProtossRoboticsFacility {
 			freeGas -= buildingQueueDetails[1];
 		}
 
-		if (buildingQueueDetails == null || (freeMinerals >= 125 && freeGas >= 25)) {
+		if (buildingQueueDetails == null
+				|| (freeMinerals >= 125 && freeGas >= 25)) {
 			if (facility.getTrainingQueueSize() == 0) {
 				xvr.buildUnit(facility,
 						defineUnitToBuild(freeMinerals, freeGas));
@@ -101,7 +105,8 @@ public class ProtossRoboticsFacility {
 		if (reaversAllowed) {
 			int totalInfantry = UnitCounter.getNumberOfInfantryUnits() + 1;
 			int totalReavers = UnitCounter.getNumberOfUnits(REAVER);
-			if ((double) totalReavers / totalInfantry <= REAVERS_TO_INFANTRY_RATIO) {
+			if ((double) totalReavers / totalInfantry <= REAVERS_TO_INFANTRY_RATIO
+					|| totalReavers < MINIMUM_REAVERS) {
 				return REAVER;
 			}
 		}
