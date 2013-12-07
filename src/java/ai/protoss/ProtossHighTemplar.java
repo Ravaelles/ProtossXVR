@@ -6,6 +6,7 @@ import jnibwapi.model.Unit;
 import jnibwapi.types.TechType.TechTypes;
 import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
+import ai.handling.army.TargetHandling;
 import ai.handling.units.UnitActions;
 import ai.handling.units.UnitCounter;
 import ai.managers.TechnologyManager;
@@ -48,14 +49,16 @@ public class ProtossHighTemplar {
 			Unit unitToStrike = null;
 
 			// Try to find top priority target.
-			ArrayList<Unit> topPriorityTargets = xvr.getUnitsInRadius(
-					highTemplar, 20, xvr.getEnemyUnitsOfType(
-							UnitTypes.Protoss_Carrier,
-							UnitTypes.Terran_Siege_Tank_Siege_Mode,
-							UnitTypes.Terran_Siege_Tank_Tank_Mode,
-							UnitTypes.Zerg_Guardian, UnitTypes.Zerg_Lurker));
+			ArrayList<Unit> topPriorityTargets = TargetHandling
+					.getTopPriorityTargetsNear(highTemplar, 20);
 			if (!topPriorityTargets.isEmpty()) {
-				unitToStrike = topPriorityTargets.get(0);
+				for (Unit possibleTarget : topPriorityTargets) {
+					if (!possibleTarget.isUnderStorm()
+							&& !possibleTarget.isStasised()) {
+						unitToStrike = possibleTarget;
+						break;
+					}
+				}
 			}
 
 			if (unitToStrike == null) {
@@ -63,8 +66,12 @@ public class ProtossHighTemplar {
 				// Find any target
 				ArrayList<Unit> enemies = xvr.getUnitsInRadius(highTemplar, 15,
 						xvr.getEnemyArmyUnits());
-				if (!enemies.isEmpty()) {
-					unitToStrike = enemies.get(0);
+				for (Unit possibleTarget : enemies) {
+					if (!possibleTarget.isUnderStorm()
+							&& !possibleTarget.isStasised()) {
+						unitToStrike = possibleTarget;
+						break;
+					}
 				}
 			}
 
@@ -76,35 +83,76 @@ public class ProtossHighTemplar {
 		}
 	}
 
-//	private static void tryUsingHallucination(Unit highTemplar) {
-//		if (highTemplar.getEnergy() >= 100) {
-//			ArrayList<Unit> ourUnits = xvr
-//					.getUnitsOfType(UnitTypes.Protoss_Zealot);
-//			Unit sheepDolly = xvr.getUnitNearestFromList(highTemplar, ourUnits);
-//			UnitActions.useTech(highTemplar, TechnologyManager.HALLUCINATION,
-//					sheepDolly);
-//		}
-//	}
+	private static void tryUsingHallucination(Unit highTemplar) {
+		if (highTemplar.getEnergy() >= 100) {
+			Unit sheepDolly = null;
+
+			if (sheepDolly == null
+					|| xvr.getDistanceSimple(highTemplar, sheepDolly) > 20) {
+				sheepDolly = xvr.getUnitOfTypeNearestTo(ARCHON, highTemplar);
+			}
+
+			if (sheepDolly == null
+					|| xvr.getDistanceSimple(highTemplar, sheepDolly) > 20) {
+				sheepDolly = xvr.getUnitOfTypeNearestTo(
+						UnitTypes.Protoss_Dragoon, highTemplar);
+			}
+			
+			if (sheepDolly == null
+					|| xvr.getDistanceSimple(highTemplar, sheepDolly) > 20) {
+				ArrayList<Unit> ourUnits = xvr
+						.getUnitsOfType(UnitTypes.Protoss_Zealot);
+				sheepDolly = xvr.getUnitNearestFromList(highTemplar, ourUnits);
+			}
+
+			if (sheepDolly != null) {
+				UnitActions.useTech(highTemplar,
+						TechnologyManager.HALLUCINATION, sheepDolly);
+			}
+		}
+	}
 
 	private static boolean tryWarpingArchon(Unit highTemplar) {
 		if (UnitCounter.getNumberOfUnits(HIGH_TEMPLAR) >= 2) {
 
 			// If we need to create archons (because there aren't enough)
 			if (UnitCounter.getNumberOfUnits(ARCHON) < MINIMAL_ARCHONS) {
-				ArrayList<Unit> otherTemplars = xvr
-						.getUnitsOfType(HIGH_TEMPLAR);
-				otherTemplars.remove(highTemplar);
-				Unit otherHighTemplar = xvr.getUnitNearestFromList(
-						highTemplar.getX(), highTemplar.getY(), otherTemplars);
-				if (otherHighTemplar != null) {
-					xvr.getBwapi().useTech(highTemplar.getID(),
-							TechTypes.Archon_Warp.ordinal(),
-							otherHighTemplar.getID());
-					return true;
+				Unit otherHighTemplar = getOtherHighTemplarNear(highTemplar);
+
+				// Check if use existing energy of templars before warping
+				if (highTemplar.getEnergy() >= 100) {
+					tryUsingHallucination(highTemplar);
+				} else if (otherHighTemplar.getEnergy() >= 100) {
+					tryUsingHallucination(otherHighTemplar);
+				}
+
+				// If both templars don't have too much energy, warp an archon.
+				else {
+					if (otherHighTemplar != null) {
+						xvr.getBwapi().useTech(highTemplar.getID(),
+								TechTypes.Archon_Warp.ordinal(),
+								otherHighTemplar.getID());
+						return true;
+					}
 				}
 			}
 		}
 
 		return false;
 	}
+
+	private static Unit getOtherHighTemplarNear(Unit highTemplar) {
+		ArrayList<Unit> otherTemplars = xvr.getUnitsInRadius(highTemplar, 30,
+				xvr.getUnitsOfType(HIGH_TEMPLAR));
+		otherTemplars.remove(highTemplar);
+
+		for (Unit otherUnit : otherTemplars) {
+			if (otherUnit.getEnergy() < 140) {
+				return otherUnit;
+			}
+		}
+
+		return null;
+	}
+
 }

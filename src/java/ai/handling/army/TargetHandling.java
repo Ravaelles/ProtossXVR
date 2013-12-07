@@ -1,9 +1,11 @@
 package ai.handling.army;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType;
+import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
 import ai.handling.map.MapPoint;
 
@@ -21,14 +23,14 @@ public class TargetHandling {
 		// Look for crucial units first
 		for (Unit unit : enemyUnits) {
 			UnitType type = unit.getType();
-			
+
 			if (type.isFlyer() && !includeAirUnits) {
 				continue;
 			}
 			if (!type.isFlyer() && !includeGroundUnits) {
 				continue;
 			}
-			
+
 			if (unit.isExists()
 					&& unit.getHitPoints() > 0
 					&& (type.isLurker() || type.isTank() || type.isReaver()
@@ -78,7 +80,7 @@ public class TargetHandling {
 		boolean isProper;
 		UnitType type = target.getType();
 
-		if (type.isOnGeyser()) {
+		if (type.isOnGeyser() || target.isStasised()) {
 			return false;
 		}
 
@@ -148,6 +150,16 @@ public class TargetHandling {
 		} else {
 			return null;
 		}
+	}
+
+	public static ArrayList<Unit> getTopPriorityTargetsNear(MapPoint near,
+			int tileRadius) {
+		return xvr.getUnitsInRadius(near, tileRadius, xvr.getEnemyUnitsOfType(
+				UnitTypes.Protoss_Carrier, UnitTypes.Terran_Battlecruiser,
+				UnitTypes.Terran_Siege_Tank_Siege_Mode,
+				UnitTypes.Terran_Siege_Tank_Tank_Mode,
+				UnitTypes.Zerg_Ultralisk, UnitTypes.Zerg_Guardian,
+				UnitTypes.Zerg_Lurker));
 	}
 
 }

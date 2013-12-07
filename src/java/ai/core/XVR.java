@@ -105,6 +105,7 @@ public class XVR {
 				// These two MUST BE TOGETHER.
 				UnitManager.act();
 				UnitManager.actWithArmyUnitsWhenEnemyNearby();
+				UnitManager.avoidSeriousSpellEffectsIfNecessary();
 			}
 
 			// Handle Nexus behavior differently, more often.

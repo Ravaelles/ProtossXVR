@@ -151,8 +151,6 @@ public class UnitManager {
 			ProtossArbiter.act(unit);
 			return;
 		}
-
-		avoidSeriousSpellEffectsIfNecessary(unit);
 	}
 
 	private static void actWhenUnitIsStillIdle(Unit unit) {
@@ -452,6 +450,12 @@ public class UnitManager {
 
 	private static boolean isUnitAttackingSomeone(Unit unit) {
 		return unit.getOrderTargetID() != -1 || unit.getTargetUnitID() != -1;
+	}
+
+	public static void avoidSeriousSpellEffectsIfNecessary() {
+		for (Unit unit : xvr.getBwapi().getMyUnits()) {
+			avoidSeriousSpellEffectsIfNecessary(unit);
+		}
 	}
 
 	// private static boolean isPartOfClusterOfMinXUnits(Unit unit) {

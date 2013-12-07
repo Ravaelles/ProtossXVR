@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import jnibwapi.model.Unit;
 import ai.core.XVR;
+import ai.handling.army.TargetHandling;
 import ai.handling.units.UnitActions;
 import ai.managers.TechnologyManager;
 
@@ -34,19 +35,36 @@ public class ProtossArbiter {
 
 	private static void tryUsingStasisField(Unit unit) {
 		if (unit.getEnergy() >= 100) {
-			ArrayList<Unit> enemies = xvr.getUnitsInRadius(unit, 15,
-					xvr.getEnemyArmyUnits());
+			Unit target = null;
+
+			// Try to find top priority target.
+			ArrayList<Unit> enemies = TargetHandling.getTopPriorityTargetsNear(
+					unit, 20);
+
 			if (!enemies.isEmpty()) {
-				Unit target = null;
 				for (Unit possibleTarget : enemies) {
-					if (xvr.countUnitsInRadius(possibleTarget, 3, true) == 0) {
+					if (!possibleTarget.isStasised()
+							&& xvr.countUnitsInRadius(possibleTarget, 3, true) == 0) {
 						target = possibleTarget;
 						break;
 					}
 				}
-				if (target != null) {
-					UnitActions.useTech(unit, TechnologyManager.STASIS_FIELD, target);
+			}
+
+			if (!enemies.isEmpty()) {
+				enemies = xvr.getUnitsInRadius(unit, 15,
+						xvr.getEnemyArmyUnits());
+				for (Unit possibleTarget : enemies) {
+					if (!possibleTarget.isStasised()) {
+						target = possibleTarget;
+						break;
+					}
 				}
+			}
+
+			if (target != null) {
+				UnitActions.useTech(unit, TechnologyManager.STASIS_FIELD,
+						target);
 			}
 		}
 	}

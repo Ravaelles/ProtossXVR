@@ -72,7 +72,8 @@ public class ProtossPylon {
 			return null;
 		}
 
-		if (RUtilities.rand(0, 4) == 0) {
+		if (UnitCounter.getNumberOfUnits(UnitManager.BASE) >= 3
+				&& RUtilities.rand(0, 4) == 0) {
 			base = ProtossNexus.getRandomBase();
 		}
 

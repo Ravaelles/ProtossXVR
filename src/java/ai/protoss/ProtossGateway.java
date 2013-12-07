@@ -32,17 +32,20 @@ public class ProtossGateway {
 	public static boolean shouldBuild() {
 		if (xvr.canAfford(150) && UnitCounter.weHavePylonFinished()) {
 			int barracks = UnitCounter.getNumberOfUnits(buildingType);
+			int bases = UnitCounter.getNumberOfUnitsCompleted(UnitManager.BASE);
 
 			// 0 barracks
-			if (barracks == 0
-					&& (UnitCounter.weHaveBuilding(ProtossForge
-							.getBuildingType()) || xvr.canAfford(150))) {
+			if (barracks == 0 && xvr.canAfford(150)) {
 				return true;
 			}
 
 			// 1 barracks
-			if (barracks == 1) {
+			if (barracks == 1 && xvr.canAfford(150)) {
 				return true;
+			}
+			
+			if (bases <= 1) {
+				return false;
 			}
 
 			// 2 barracks or more
@@ -51,8 +54,7 @@ public class ProtossGateway {
 					return true;
 				}
 			}
-			if (barracks >= 2
-					&& UnitCounter.getNumberOfUnitsCompleted(UnitManager.BASE) >= 2
+			if (barracks >= 2 && bases >= 2
 					&& UnitCounter
 							.weHaveBuilding(UnitTypes.Protoss_Observatory)
 					&& UnitCounter
@@ -85,7 +87,7 @@ public class ProtossGateway {
 			}
 		}
 
-		return ((double) busy / all) >= 0.7;
+		return ((double) busy / all) >= 0.6 || all <= 1;
 	}
 
 	public static ArrayList<Unit> getAllObjects() {

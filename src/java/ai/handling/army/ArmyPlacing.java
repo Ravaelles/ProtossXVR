@@ -62,7 +62,7 @@ public class ArmyPlacing {
 		// if (distance > 40) {
 		// UnitActions.moveTo(unit, safePlace.x, safePlace.y);
 		// } else if (distance >= 3) {
-		if (xvr.getDistanceSimple(unit, safePlace) >= 11) {
+		if (xvr.getDistanceSimple(unit, safePlace) >= 7) {
 			UnitActions.attackTo(unit, safePlace.getX(), safePlace.getY());
 		}
 		// }

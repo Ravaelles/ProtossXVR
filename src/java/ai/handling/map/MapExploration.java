@@ -177,7 +177,7 @@ public class MapExploration {
 
 		for (ChokePoint object : chokePointsProcessed) {
 			double distance = xvr.getDistanceBetween(x, y, object.getCenterX(),
-					object.getCenterY());
+					object.getCenterY()) - object.getRadius() / 50;
 			if (distance < nearestDistance) {
 				nearestDistance = distance;
 				nearestObject = object;
