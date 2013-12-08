@@ -37,17 +37,20 @@ public class ProtossGateway {
 			if (barracks == 0
 					&& (UnitCounter.weHaveBuilding(ProtossForge
 							.getBuildingType()) || xvr.canAfford(150))) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
 
 			// 1 barracks
 			if (barracks == 1) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
 
 			// 2 barracks or more
 			if (barracks >= 2 && (barracks <= 5 || xvr.canAfford(520))) {
 				if (isMajorityOfGatewaysTrainingUnits()) {
+					ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 					return true;
 				}
 			}
@@ -60,6 +63,7 @@ public class ProtossGateway {
 				int HQs = UnitCounter.getNumberOfUnits(UnitManager.BASE);
 				if ((double) barracks / HQs <= 2 && xvr.canAfford(560)) {
 					if (isMajorityOfGatewaysTrainingUnits()) {
+						ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 						return true;
 					}
 				}
@@ -68,10 +72,12 @@ public class ProtossGateway {
 
 		if (xvr.canAfford(1500)) {
 			if (isMajorityOfGatewaysTrainingUnits()) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
 		}
 
+		ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 		return false;
 	}
 
@@ -85,7 +91,7 @@ public class ProtossGateway {
 			}
 		}
 
-		return ((double) busy / all) >= 0.7;
+		return ((double) busy / all) >= 0.6;
 	}
 
 	public static ArrayList<Unit> getAllObjects() {

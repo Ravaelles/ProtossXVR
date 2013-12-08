@@ -570,4 +570,9 @@ public class UnitType {
 		return getID() == UnitTypes.Terran_Vulture_Spider_Mine.ordinal();
 	}
 
+	
+	public WeaponType getGroundWeapon() {
+		return WeaponType.getWeaponByID(groundWeaponID);
+	}
+
 }

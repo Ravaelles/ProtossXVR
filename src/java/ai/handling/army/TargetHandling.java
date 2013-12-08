@@ -21,19 +21,19 @@ public class TargetHandling {
 		// Look for crucial units first
 		for (Unit unit : enemyUnits) {
 			UnitType type = unit.getType();
-			
+
 			if (type.isFlyer() && !includeAirUnits) {
 				continue;
 			}
 			if (!type.isFlyer() && !includeGroundUnits) {
 				continue;
 			}
-			
+
 			if (unit.isExists()
 					&& unit.getHitPoints() > 0
-					&& (type.isLurker() || type.isTank() || type.isReaver()
-							|| type.isHighTemplar() || (type.isDarkTemplar() && unit
-							.isDetected()))
+					&& (type.isTerranMine() || type.isLurker() || type.isTank()
+							|| type.isReaver() || type.isHighTemplar() || (type
+							.isDarkTemplar() && unit.isDetected()))
 					&& xvr.getDistanceBetween(unit, point) <= 20) {
 				if (isProperTarget(unit)) {
 					return unit;

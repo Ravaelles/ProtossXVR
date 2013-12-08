@@ -288,14 +288,20 @@ public class UnitManager {
 			return;
 		}
 
-		Unit enemyToAttack;
+		Unit enemyToAttack = null;
 
 		// Try selecting top priority units like lurkers, siege tanks.
 		Unit importantEnemyUnitNearby = TargetHandling
 				.getImportantEnemyUnitTargetIfPossibleFor(unit,
 						groundAttackCapable, airAttackCapable);
+		
 		if (importantEnemyUnitNearby != null) {
-			enemyToAttack = importantEnemyUnitNearby;
+			
+			// If it's mine, then make only units with distance weapon attack it.
+			if (!importantEnemyUnitNearby.getType().isTerranMine() ||
+					(unit.getType().getGroundWeapon().getMaxRange() / 32) >= 1) {
+				enemyToAttack = importantEnemyUnitNearby;
+			}
 		}
 
 		// If no such unit is nearby then attack the closest one.
