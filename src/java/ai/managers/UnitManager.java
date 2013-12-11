@@ -1,7 +1,5 @@
 package ai.managers;
 
-import java.util.ArrayList;
-
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
@@ -46,7 +44,34 @@ public class UnitManager {
 
 		// Act with non workers
 		for (Unit unit : xvr.getUnitsNonWorker()) {
+
+			// ===============
+			// Act according to strategy, attack strategic targets, go healing,
+			// place properly (Strategy phase)
 			act(unit);
+
+			UnitType type = unit.getType();
+			if (type.isReaver() || type.isHighTemplar() || type.isObserver()
+					|| type.isDarkTemplar()) {
+
+				// Wounded units should avoid being killed if possible
+				handleWoundedUnitBehaviourIfNecessary(unit);
+				continue;
+			}
+
+			// ===============
+			// Attack close targets (Tactics phase)
+			actTryAttackingCloseEnemyUnits(unit);
+
+			// ==================================
+			// Anti-HERO-One-fights-the-army code, avoid being overwhelmed
+			decideSkirmishIfToFightOrRetreat(unit);
+
+			// Wounded units should avoid being killed if possible
+			handleWoundedUnitBehaviourIfNecessary(unit);
+
+			// If units is jammed and is attacked, attack back
+			handleAntiStuckCode(unit);
 		}
 
 		// ===============================
@@ -72,9 +97,6 @@ public class UnitManager {
 				return;
 			}
 		}
-
-		// Wounded units should avoid being killed if possible
-		handleWoundedUnitBehaviourIfNecessary(unit);
 
 		// ======================================
 		// OVERRIDE COMMANDS FOR SPECIFIC UNITS
@@ -113,9 +135,10 @@ public class UnitManager {
 			}
 
 			// If unit is still idle, try to do something
-			actWhenUnitIsStillIdle(unit);
+			// actWhenUnitIsStillIdle(unit);
 
 			// ==================================
+			avoidHiddenUnitsIfNecessary(unit);
 
 			// Increase unit counter, so we can know which unit in order it was.
 			_unitCounter++;
@@ -149,24 +172,54 @@ public class UnitManager {
 		}
 	}
 
-	private static void actWhenUnitIsStillIdle(Unit unit) {
+	private static void handleAntiStuckCode(Unit unit) {
 
-		// get enemies "nearby"
-		ArrayList<Unit> enemiesNearby = xvr.getUnitsInRadius(unit.getX(),
-				unit.getY(), 25, xvr.getEnemyUnitsVisible());
-		if (!enemiesNearby.isEmpty()) {
-			for (Unit enemy : enemiesNearby) {
-				if (unit.canAttack(enemy)) {
+		// If unit is stuck, attack.
+		if (unit.isStuck() && unit.isUnderAttack()) {
+			actTryAttackingCloseEnemyUnits(unit);
+		}
 
-					// If you have less than X to the enemy, attack him
-					if (xvr.getDistanceBetween(unit, enemy) <= 20) {
-						UnitActions.attackTo(unit, enemy);
-						break;
-					}
-				}
+		else if (unit.getGroundWeaponCooldown() == 0 && unit.isUnderAttack()
+				&& xvr.getNearestEnemyInRadius(unit, 1) != null) {
+			if (!StrengthEvaluator.isStrengthRatioCriticalFor(unit)) {
+				actTryAttackingCloseEnemyUnits(unit);
 			}
 		}
 	}
+
+	public static void applyStrengthEvaluatorToAllUnits() {
+		for (Unit unit : xvr.getUnitsNonBuilding()) {
+			UnitType type = unit.getType();
+			if (type.isReaver() || type.isHighTemplar() || type.isObserver()
+					|| type.isDarkTemplar()) {
+				continue;
+			}
+			decideSkirmishIfToFightOrRetreat(unit);
+		}
+	}
+
+	// private static void actWhenUnitIsStillIdle(Unit unit) {
+	// if (unit.isIdle()) {
+	//
+	// // get enemies "nearby"
+	// ArrayList<Unit> enemiesNearby = xvr.getUnitsInRadius(unit, 25,
+	// xvr.getEnemyUnitsVisible());
+	// if (!enemiesNearby.isEmpty()) {
+	// for (Unit enemy : enemiesNearby) {
+	// if (unit.canAttack(enemy)) {
+	//
+	// // if (xvr.getDistanceBetween(unit, enemy) <= 22
+	// // && StrengthEvaluator
+	// if (StrengthEvaluator.isStrengthRatioFavorableFor(unit)
+	// && !unit.isHidden()) {
+	// UnitActions.attackTo(unit, enemy);
+	// break;
+	// }
+	// }
+	// }
+	// }
+	// }
+	// }
 
 	private static void handleWoundedUnitBehaviourIfNecessary(Unit unit) {
 		UnitType type = unit.getType();
@@ -197,9 +250,12 @@ public class UnitManager {
 	}
 
 	private static boolean isInSuicideShouldFightPosition(Unit unit) {
+		if (!unit.getType().isDarkTemplar()) {
+			return false;
+		}
 
 		// Only if we're only unit in this region it makes sense to die.
-		int alliesNearby = -1 + xvr.countUnitsInRadius(unit, 4, true);
+		int alliesNearby = -1 + xvr.countUnitsInRadius(unit, 5, true);
 		if (alliesNearby <= 0) {
 			Unit enemy = xvr.getEnemyDefensiveGroundBuildingNear(unit.getX(),
 					unit.getY());
@@ -221,19 +277,29 @@ public class UnitManager {
 	}
 
 	private static void avoidSeriousSpellEffectsIfNecessary(Unit unit) {
-		if (unit.isUnderStorm() || unit.isUnderDisruptionWeb()
-				|| unit.isUnderDarkSwarm()) {
+		if (unit.isUnderStorm() || unit.isUnderDisruptionWeb()) {
+			if (unit.isMoving()) {
+				return;
+			}
 			UnitActions.moveTo(unit,
-					unit.getX() + 4 * 32 - RUtilities.rand(0, 8 * 32),
-					unit.getY() + 4 * 32 - RUtilities.rand(0, 8 * 32));
+					unit.getX() + 5 * 32 * (-1 * RUtilities.rand(0, 1)),
+					unit.getY() + 5 * 32 * (-1 * RUtilities.rand(0, 1)));
 		}
 	}
 
 	private static void decideSkirmishIfToFightOrRetreat(Unit unit) {
-		if (!unit.isAttacking() || !unit.isUnderAttack()
-				|| xvr.getDistanceBetween(unit, xvr.getFirstBase()) <= 12) {
+		Unit firstBase = xvr.getFirstBase();
+		if (firstBase == null) {
 			return;
 		}
+
+		if (!unit.isAttacking() || xvr.getDistanceSimple(unit, firstBase) <= 12) {
+			return;
+		}
+		// if (!unit.isAttacking() || !unit.isUnderAttack()
+		// || xvr.getDistanceBetween(unit, firstBase) <= 12) {
+		// return;
+		// }
 
 		if (unit.getType().isDarkTemplar() || unit.getType().isObserver()) {
 			if (!unit.isDetected()) {
@@ -241,35 +307,18 @@ public class UnitManager {
 			}
 		}
 
-//		if (xvr.countUnitsInRadius(unit, 8, true) >= 2) {
-//			return;
-//		}
-
-		double ourStrengthRatio = StrengthEvaluator
-				.calculateOurStrengthRatio(unit);
-		System.out.println("STRENGTH RATIO: " + ourStrengthRatio);
-		if (ourStrengthRatio < 1.1) {
-			// System.out.println("RUN! " + unit.getName());
-			UnitActions.moveTo(unit, xvr.getFirstBase().getX(), xvr
-					.getFirstBase().getY());
+		// If there's tank nearby, DON't retreat
+		if (xvr.getUnitsOfGivenTypeInRadius(
+				UnitTypes.Terran_Siege_Tank_Siege_Mode, 13, unit, false).size() > 1) {
+			return;
 		}
-	}
 
-	public static void actWithArmyUnitsWhenEnemyNearby() {
-//		if (StrategyManager.isRetreatNecessary()) {
-//			return;
-//		}
+		// System.out.println(unit.getName() + ": "
+		// + StrengthEvaluator.isStrengthRatioFavorableFor(unit) + " : "
+		// + StrengthEvaluator.calculateStrengthRatioFor(unit));
 
-		// Act with non workers
-		for (Unit unit : xvr.getUnitsNonWorker()) {
-			UnitType type = unit.getType();
-			if (!type.isObserver()) {
-				actTryAttackingCloseEnemyUnits(unit);
-
-				// ==================================
-				// Anti-HERO-One-fights-the-army code
-				decideSkirmishIfToFightOrRetreat(unit);
-			}
+		if (!StrengthEvaluator.isStrengthRatioFavorableFor(unit)) {
+			UnitActions.moveTo(unit, xvr.getLastBase());
 		}
 	}
 
@@ -278,6 +327,10 @@ public class UnitManager {
 		// || !unit.isMoving()) {
 		// return;
 		// }
+		if (unit.getType().isObserver()) {
+			return;
+		}
+
 		boolean groundAttackCapable = unit.canAttackGroundUnits();
 		boolean airAttackCapable = unit.canAttackAirUnits();
 
@@ -294,9 +347,9 @@ public class UnitManager {
 				.getImportantEnemyUnitTargetIfPossibleFor(unit,
 						groundAttackCapable, airAttackCapable);
 		if (importantEnemyUnitNearby != null) {
-			if (!importantEnemyUnitNearby.getType().isTerranMine() ||
-					(unit.getType().getGroundWeapon().getMaxRange() / 32) >= 2)
-			enemyToAttack = importantEnemyUnitNearby;
+			if (!importantEnemyUnitNearby.getType().isTerranMine()
+					|| (unit.getType().getGroundWeapon().getMaxRange() / 32) >= 2)
+				enemyToAttack = importantEnemyUnitNearby;
 		}
 
 		// If no such unit is nearby then attack the closest one.
@@ -308,9 +361,26 @@ public class UnitManager {
 
 		// Attack selected target if it's not too far away.
 		if (enemyToAttack != null) {
-			int distance = (int) xvr.getDistanceSimple(unit, enemyToAttack);
-			if (distance < 19) {
-				UnitActions.attackTo(unit, enemyToAttack);
+			Unit nearestEnemy = xvr.getUnitNearestFromList(unit,
+					xvr.getEnemyUnitsVisible(groundAttackCapable,
+							airAttackCapable));
+
+			// If there's an enemy near to this unit, don't change the target.
+			if (nearestEnemy != null
+					&& xvr.getDistanceBetween(unit, nearestEnemy) <= 1) {
+				return;
+			}
+
+			// There's no valid target, attack this enemy.
+			else {
+				if (!StrengthEvaluator.isStrengthRatioFavorableFor(unit)) {
+					return;
+				}
+
+				int distance = (int) xvr.getDistanceSimple(unit, enemyToAttack);
+				if (distance < TargetHandling.MAX_DIST) {
+					UnitActions.attackTo(unit, enemyToAttack);
+				}
 			}
 		}
 	}
@@ -325,7 +395,9 @@ public class UnitManager {
 
 		// Still way to go!
 		else {
-			UnitActions.attackTo(unit, caller.getX(), caller.getY());
+			if (StrengthEvaluator.isStrengthRatioFavorableFor(unit)) {
+				UnitActions.attackTo(unit, caller.getX(), caller.getY());
+			}
 		}
 	}
 
@@ -381,11 +453,10 @@ public class UnitManager {
 		// if (unit.isNotMedic()) {
 		// ProtossCannon.tryToLoadIntoBunker(unit);
 		// }
-		avoidHiddenUnitsIfNecessary(unit);
 	}
 
 	private static boolean shouldUnitBeExplorer(Unit unit) {
-		return (_unitCounter == 1 || _unitCounter == 14)
+		return (_unitCounter == 5 || _unitCounter == 14)
 				|| unit.getTypeID() == UnitTypes.Protoss_Dark_Templar.ordinal();
 	}
 
@@ -443,6 +514,10 @@ public class UnitManager {
 		// else {
 		// goToNearestUnitIfNotAlreadyThere(unit);
 		// }
+
+		if (!StrengthEvaluator.isStrengthRatioFavorableFor(unit)) {
+			UnitActions.moveToMainBase(unit);
+		}
 	}
 
 	private static boolean isUnitFullyIdle(Unit unit) {
@@ -460,14 +535,5 @@ public class UnitManager {
 			avoidSeriousSpellEffectsIfNecessary(unit);
 		}
 	}
-
-	// private static boolean isPartOfClusterOfMinXUnits(Unit unit) {
-	// // System.out.println("SIZE CLUSTER = "
-	// // + xvr.countUnitsInRadius(unit.getX(), unit.getY(),
-	// // UNIT_CLUSTER_WIDTH, true));
-	// // return xvr.countUnitsInRadius(unit.getX(), unit.getY(),
-	// // UNIT_CLUSTER_WIDTH, true) >= UNIT_CLUSTER_MIN_UNITS;
-	// return true;
-	// }
 
 }

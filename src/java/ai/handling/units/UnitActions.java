@@ -8,6 +8,7 @@ import jnibwapi.types.TechType.TechTypes;
 import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
+import ai.handling.army.StrengthEvaluator;
 import ai.handling.army.TargetHandling;
 import ai.handling.map.MapExploration;
 import ai.handling.map.MapPoint;
@@ -28,8 +29,8 @@ public class UnitActions {
 
 	public static void moveTo(Unit unit, Unit destination) {
 		if (unit == null || destination == null) {
-			System.err.println("moveTo # unit: " + unit + " # destination: "
-					+ destination);
+//			System.err.println("moveTo # unit: " + unit + " # destination: "
+//					+ destination);
 			return;
 		}
 		moveTo(unit, destination.getX(), destination.getY());
@@ -43,11 +44,11 @@ public class UnitActions {
 		XVR.getInstance().getBwapi().move(unit.getID(), x, y);
 	}
 
-	public static void attackTo(Unit ourUnit, Unit enemyUnit) {
-		if (ourUnit == null || enemyUnit == null) {
+	public static void attackTo(Unit ourUnit, MapPoint point) {
+		if (ourUnit == null || point == null) {
 			return;
 		}
-		attackTo(ourUnit, enemyUnit.getX(), enemyUnit.getY());
+		attackTo(ourUnit, point.getX(), point.getY());
 	}
 
 	public static void attackTo(Unit ourUnit, int x, int y) {
@@ -57,7 +58,7 @@ public class UnitActions {
 	}
 
 	public static void attackEnemyUnit(Unit ourUnit, Unit enemy) {
-		if (ourUnit != null) {
+		if (ourUnit != null && enemy != null) {
 			xvr.getBwapi().attack(ourUnit.getID(), enemy.getID());
 		}
 	}
@@ -100,7 +101,7 @@ public class UnitActions {
 	}
 
 	public static void moveAwayFromUnitIfPossible(Unit unit,
-			Unit unitToMoveAwayFrom, int howManyTiles) {
+			MapPoint unitToMoveAwayFrom, int howManyTiles) {
 		if (unit == null || unitToMoveAwayFrom == null) {
 			return;
 		}
@@ -118,6 +119,10 @@ public class UnitActions {
 	}
 
 	public static void spreadOutRandomly(Unit unit) {
+		if (!StrengthEvaluator.isStrengthRatioFavorableFor(unit)) {
+			UnitActions.moveToMainBase(unit);
+			return;
+		}
 
 		// Act when enemy detector is nearby, run away
 		if (!StrategyManager.isAttackPending()
@@ -173,6 +178,14 @@ public class UnitActions {
 		} else if (unit.isWorker() && unit.isUnderAttack()) {
 			UnitActions.moveTo(unit, xvr.getFirstBase());
 		}
+		
+		if (unit.isAttacking() && !StrengthEvaluator.isStrengthRatioFavorableFor(unit)) {
+			UnitActions.moveToMainBase(unit);
+		}
+	}
+
+	public static void moveToMainBase(Unit unit) {
+		moveTo(unit, xvr.getFirstBase());
 	}
 
 	public static boolean runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
@@ -270,7 +283,7 @@ public class UnitActions {
 
 		// =====================================================================
 		// If unit is close to base then run away only if critically wounded.
-		if (xvr.countUnitsOfGivenTypeInRadius(UnitManager.BASE, 20, unit, true) >= 1) {
+		if (xvr.countUnitsOfGivenTypeInRadius(UnitManager.BASE, 13, unit, true) >= 1) {
 			if (unit.getHitPoints() > (type.getMaxHitPoints() / 3 + 3)) {
 				return;
 			}
@@ -308,8 +321,8 @@ public class UnitActions {
 		}
 
 		if (goTo != null) {
-//			UnitActions.moveTo(unit, goTo);
-			UnitActions.attackTo(unit, goTo);
+			UnitActions.moveTo(unit, goTo);
+//			UnitActions.attackTo(unit, goTo);
 		}
 	}
 

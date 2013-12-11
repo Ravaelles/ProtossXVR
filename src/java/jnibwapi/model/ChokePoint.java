@@ -13,6 +13,8 @@ public class ChokePoint extends MapPoint {
 	public static final int numAttributes = 9;
 	public static final double fixedScale = 100.0;
 
+	private static int firstFreeID = 1;
+	private int ID;
 	private int centerX;
 	private int centerY;
 	private double radius;
@@ -26,6 +28,8 @@ public class ChokePoint extends MapPoint {
 	private Region secondRegion;
 
 	public ChokePoint(int[] data, int index) {
+		ID = firstFreeID++;
+
 		centerX = data[index++];
 		centerY = data[index++];
 		radius = data[index++] / fixedScale;
@@ -97,10 +101,35 @@ public class ChokePoint extends MapPoint {
 	public int getX() {
 		return getCenterX();
 	}
-
+	
+	
 	@Override
 	public int getY() {
 		return getCenterY();
+	}
+
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ID;
+		return result;
+	}
+	
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ChokePoint other = (ChokePoint) obj;
+		if (ID != other.ID)
+			return false;
+		return true;
 	}
 
 }

@@ -33,19 +33,20 @@ public class ProtossStargate {
 		// UnitCounter.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core)
 		if (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Templar_Archives)
 				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Observatory)
+				&& UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Observer) > 0
 				&& !UnitCounter.weHaveBuilding(buildingType)
 				&& xvr.canAfford(150, 150)
 				&& !Constructing.weAreBuilding(buildingType)) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
 		}
-		
-		if (UnitCounter.getNumberOfUnits(buildingType) == 1 
+
+		if (UnitCounter.getNumberOfUnits(buildingType) == 1
 				&& xvr.canAfford(800, 300)) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
 		}
-		
+
 		ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 		return false;
 	}
@@ -100,7 +101,7 @@ public class ProtossStargate {
 		if (arbiterAllowed && xvr.countUnitsOfType(ARBITER) < MINIMUM_ARBITERS) {
 			return ARBITER;
 		}
-		
+
 		// SCOUT
 		if (UnitCounter.getNumberOfUnits(SCOUT) < MINIMUM_SCOUTS) {
 			return SCOUT;

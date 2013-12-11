@@ -22,14 +22,13 @@ public class ProtossCyberneticsCore {
 
 	public static boolean shouldBuild() {
 		if (!Constructing.weAreBuilding(buildingType)
-//				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Forge)
-				&& (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Photon_Cannon)
-						|| xvr.canAfford(300))
-				&& xvr.canAfford(150)) {
-			if (UnitCounter
-					.getNumberOfUnitsCompleted(UnitTypes.Protoss_Gateway) >= 2
-					&& UnitCounter.getNumberOfBattleUnits() >= 7
-					&& !UnitCounter.weHaveBuilding(buildingType)) {
+				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Forge)
+				&& !UnitCounter.weHaveBuilding(buildingType)
+				&& (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Photon_Cannon) || xvr
+						.canAfford(320)) && xvr.canAfford(150)) {
+			if ((UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Gateway) >= 3 || xvr
+					.canAfford(320))
+					&& UnitCounter.getNumberOfBattleUnits() >= ProtossGateway.MIN_UNITS_FOR_DIFF_BUILDING) {
 				return true;
 			}
 		}

@@ -10,6 +10,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 
+import ai.handling.map.MapPoint;
+
 /**
  * Stores information about a StarCraft map.
  */
@@ -173,9 +175,9 @@ public class Map {
 			return null;
 		}
 	}
-	
-	public Region getRegion(Unit unit) {
-		return getRegion(unit.getTileX(), unit.getTileY());
+
+	public Region getRegion(MapPoint unit) {
+		return getRegion(unit.getTx(), unit.getTy());
 	}
 
 	public boolean isBuildable(int tx, int ty) {
@@ -234,6 +236,10 @@ public class Map {
 		return startLocations;
 	}
 
+	public double getGroundDistance(MapPoint p1, MapPoint p2) {
+		return getGroundDistance(p1.getTx(), p1.getTy(), p2.getTx(), p2.getTy());
+	}
+
 	/**
 	 * Find the shortest walkable distance, in pixels, between two tile
 	 * positions or -1 if not reachable. Works only after initialize(). Ported
@@ -273,9 +279,9 @@ public class Map {
 		return isConnected(unit.getX() / 32, unit.getY() / 32, endTx, endTy);
 	}
 
-	public boolean isConnected(Unit unit, Unit unit2) {
-		return isConnected(unit.getX() / 32, unit.getY() / 32,
-				unit2.getX() / 32, unit2.getY() / 32);
+	public boolean isConnected(MapPoint point, MapPoint point2) {
+		return isConnected(point.getTx(), point.getTy(), point2.getTx(),
+				point2.getTy());
 	}
 
 	/**

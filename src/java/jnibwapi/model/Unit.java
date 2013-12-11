@@ -3,7 +3,6 @@ package jnibwapi.model;
 import jnibwapi.types.UnitCommandType.UnitCommandTypes;
 import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
-import jnibwapi.types.WeaponType;
 import jnibwapi.types.WeaponType.WeaponTypes;
 import ai.core.XVR;
 import ai.handling.map.MapPoint;
@@ -24,6 +23,7 @@ public class Unit extends MapPoint implements Comparable<Unit> {
 	private Unit mineralGathered = null;
 	private boolean shouldScrapUnit = false;
 	private CallForHelp callForHelpMission = null;
+	private int lastTimeWorkerDiedNear = -1;
 	// ========
 
 	private int ID;
@@ -930,12 +930,7 @@ public class Unit extends MapPoint implements Comparable<Unit> {
 		this.callForHelpMission = call;
 	}
 
-	public boolean canGroundAttack() {
-		UnitType type = getType();
-		return type.isAttackCapable() && type.getGroundWeaponID() != -1;
-	}
-
-	public int getGroundAttack() {
+	public double getGroundAttackNormalized() {
 		// System.out.println();
 		// System.out.println("## " + getType().getName() + " weapon:");
 		// System.out.println("  damage: " +
@@ -944,19 +939,19 @@ public class Unit extends MapPoint implements Comparable<Unit> {
 		// WeaponType.getWeaponByID(getType().getGroundWeaponID()).getDamageBonus());
 		// System.out.println("  factor: " +
 		// WeaponType.getWeaponByID(getType().getGroundWeaponID()).getDamageFactor());
+		return getType().getGroundAttackNormalized();
+	}
 
-		if (!canGroundAttack()) {
-			return 0;
-		}
-		return WeaponType.getWeaponByID(getType().getGroundWeaponID())
-				.getDamageAmount();
+	public boolean canGroundAttack() {
+		return getType().canGroundAttack();
 	}
 
 	public boolean isDefensiveBuilding() {
-		// return isPhotonCannon() || isSunkenColony() || isBunker();
+//		UnitType type = getType();
+//		 return type.isPhotonCannon() || type.isSunkenColony() || type.isBunker();
 		UnitType type = getType();
-		return type.isBuilding() && type.getGroundWeaponID() != -1
-				&& type.isAttackCapable();
+		return type.isBuilding() && type.getGroundWeaponID() != WeaponTypes.None.ordinal()
+				&& type.isAttackCapable() || type.isBunker();
 	}
 
 	public boolean isHidden() {
@@ -974,19 +969,25 @@ public class Unit extends MapPoint implements Comparable<Unit> {
 	public boolean canAttackGroundUnits() {
 		return getType().getGroundWeaponID() != WeaponTypes.None.ordinal();
 	}
-	
+
 	public boolean canAttackAirUnits() {
 		return getType().getAirWeaponID() != WeaponTypes.None.ordinal();
 	}
 
-	
 	public boolean canAttack(Unit enemy) {
 		if (!enemy.getType().isFlyer()) {
 			return canAttackGroundUnits();
-		}
-		else {
+		} else {
 			return canAttackAirUnits();
 		}
+	}
+
+	public int getLastTimeWorkerDiedNear() {
+		return lastTimeWorkerDiedNear;
+	}
+
+	public void setLastTimeWorkerDiedNear(int lastTimeWorkerDiedNear) {
+		this.lastTimeWorkerDiedNear = lastTimeWorkerDiedNear;
 	}
 
 }

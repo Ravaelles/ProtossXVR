@@ -17,6 +17,7 @@ import jnibwapi.types.UnitType;
 import ai.core.Debug;
 import ai.core.XVR;
 import ai.handling.units.UnitActions;
+import ai.protoss.ProtossNexus;
 import ai.utils.RUtilities;
 
 public class MapExploration {
@@ -35,12 +36,16 @@ public class MapExploration {
 
 	private static Unit explorer;
 	private static boolean hasExplorerJustAttacked = false;
+	private static boolean _removedChokePointsNearMainBase = false;
 
 	public static Unit getExplorer() {
 		return explorer;
 	}
 
 	public static void explore(Unit explorer) {
+		if (explorer.isConstructing()) {
+			return;
+		}
 
 		// Define nearest enemy
 		Unit nearestEnemy = xvr.getUnitNearestFromList(explorer.getX(),
@@ -53,8 +58,9 @@ public class MapExploration {
 			// If we're worker and found hidden unit like dark templar, get the
 			// hell out of there.
 			if (explorer.isWorker()) {
-//				UnitActions.moveAwayFromUnitIfPossible(explorer, nearestEnemy,
-//						12);
+				// UnitActions.moveAwayFromUnitIfPossible(explorer,
+				// nearestEnemy,
+				// 12);
 				UnitActions.moveTo(explorer, xvr.getFirstBase());
 				return;
 			}
@@ -86,8 +92,11 @@ public class MapExploration {
 			if (baseLocationsDiscovered.isEmpty()) {
 				initial = true;
 				goTo = getMostDistantBaseLocation(xvr.getFirstBase());
-				Debug.message(xvr, "Initial scouting: go to [" + goTo.getX()
-						/ 32 + ", " + goTo.getY() / 32 + "]");
+				if (goTo != null) {
+					Debug.message(xvr,
+							"Initial scouting: go to [" + goTo.getX() / 32
+									+ ", " + goTo.getY() / 32 + "]");
+				}
 			}
 
 			// Non-initial scout behavior
@@ -129,14 +138,17 @@ public class MapExploration {
 	}
 
 	public static BaseLocation getMostDistantBaseLocation(Unit unit) {
-		double nearestDistance = 2;
+		double mostFarDistance = 2;
 		BaseLocation nearestObject = null;
 
 		for (BaseLocation object : xvr.getBwapi().getMap().getBaseLocations()) {
+			// double distance = xvr.getBwapi().getMap()
+			// .getGroundDistance(unit, object.getX(), object.getY()) / 32;
 			double distance = xvr.getDistanceBetween(unit, object.getX(),
 					object.getY());
-			if (distance > nearestDistance) {
-				nearestDistance = distance;
+			if (distance > mostFarDistance) {
+				// System.out.println("DIST " + distance);
+				mostFarDistance = distance;
 				nearestObject = object;
 			}
 		}
@@ -167,8 +179,8 @@ public class MapExploration {
 		return goTo;
 	}
 
-	public static ChokePoint getNearestChokePointFor(Unit unit) {
-		return getNearestChokePointFor(unit.getX(), unit.getY());
+	public static ChokePoint getNearestChokePointFor(MapPoint point) {
+		return getNearestChokePointFor(point.getX(), point.getY());
 	}
 
 	public static ChokePoint getNearestChokePointFor(int x, int y) {
@@ -187,15 +199,15 @@ public class MapExploration {
 		return nearestObject;
 	}
 
-	public static ArrayList<ChokePoint> getNearestChokePointsFor(Unit unit) {
+	public static ArrayList<ChokePoint> getNearestChokePointsFor(MapPoint point) {
 		HashMap<ChokePoint, Double> chokes = new HashMap<ChokePoint, Double>();
-		if (unit == null) {
+		if (point == null) {
 			return new ArrayList<ChokePoint>();
 		}
 
 		for (ChokePoint object : chokePointsProcessed) {
-			double distance = xvr.getDistanceBetween(unit, object.getCenterX(),
-					object.getCenterY()) / 32;
+			double distance = xvr.getDistanceBetween(point,
+					object.getCenterX(), object.getCenterY()) / 32;
 			chokes.put(object, distance);
 		}
 
@@ -289,9 +301,9 @@ public class MapExploration {
 		} else {
 			return (Unit) RUtilities.getRandomElement(enemyBuildingsDiscovered
 					.values());
-		}		
+		}
 	}
-	
+
 	public static Unit getNearestEnemyBuilding() {
 		if (enemyBuildingsDiscovered.isEmpty()) {
 			return null;
@@ -441,8 +453,8 @@ public class MapExploration {
 		return result;
 	}
 
-	public static ArrayList<? extends MapPoint> getBaseLocationsNear(MapPoint point,
-			int tileRadius) {
+	public static ArrayList<? extends MapPoint> getBaseLocationsNear(
+			MapPoint point, int tileRadius) {
 		ArrayList<BaseLocation> bases = new ArrayList<BaseLocation>();
 		if (point == null) {
 			return bases;
@@ -464,7 +476,7 @@ public class MapExploration {
 
 	public static void updateInfoAboutHiddenUnits() {
 		_hiddenEnemyUnits.clear();
-		for (Unit unit : enemyUnitsDiscovered.values()) {
+		for (Unit unit : xvr.getEnemyArmyUnits()) {
 			if (unit.isEnemy()
 					&& (unit.isCloaked() || unit.isBurrowed() || !unit
 							.isDetected())) {
@@ -508,12 +520,6 @@ public class MapExploration {
 						|| choke.getTx() >= (mapWidth - MIN_DIST_FROM_BORDER)
 						|| choke.getTy() <= MIN_DIST_FROM_BORDER
 						|| choke.getTy() >= (mapHeight - MIN_DIST_FROM_BORDER)) {
-					// Debug.message(xvr, "Skipped choke: " + choke.getTx() +
-					// ","
-					// + choke.getTy());
-					// System.out.println("Skipped choke: " + choke.getTx() +
-					// ","
-					// + choke.getTy());
 					continue;
 				} else {
 					chokePointsProcessed.add(choke);
@@ -526,17 +532,35 @@ public class MapExploration {
 			System.out.println("Skipped " + percentSkipped
 					+ "% of initial choke points");
 		}
+
+		// // Remove nearest choke point from perspective of the first base
+		// ChokePoint choke = MapExploration.getImportantChokePointNear(xvr
+		// .getFirstBase());
+		// if (chokePointsProcessed.remove(choke)) {
+		// System.out.println("Removed nearest choke point to the main base.");
+		// }
 	}
 
-	public static ChokePoint getImportantChokePointNear(Unit base) {
+	public static ChokePoint getImportantChokePointNear(MapPoint point) {
 		ArrayList<ChokePoint> nearestChokePoints = getChokePointsForRegion(xvr
-				.getBwapi().getMap().getRegion(base));
+				.getBwapi().getMap().getRegion(point));
 
 		if (!nearestChokePoints.isEmpty()) {
-			return nearestChokePoints.get(0);
-		}
-		else {
-			return getNearestChokePointFor(base);
+			MapPoint secondBase = ProtossNexus.getSecondBaseLocation();
+
+			// We're at second base
+			if (xvr.getDistanceBetween(secondBase, point) < 10) {
+				ChokePoint chokeNearMainBase = MapExploration
+						.getImportantChokePointNear(xvr.getFirstBase());
+				boolean removed = nearestChokePoints.remove(chokeNearMainBase);
+				System.out.println("removed = " + removed);
+				return nearestChokePoints.isEmpty() ? chokeNearMainBase
+						: nearestChokePoints.get(0);
+			} else {
+				return nearestChokePoints.get(0);
+			}
+		} else {
+			return getNearestChokePointFor(point);
 		}
 
 		// int mapWidth = xvr.getBwapi().getMap().getWidth();
@@ -593,6 +617,9 @@ public class MapExploration {
 
 	private static ArrayList<ChokePoint> getChokePointsForRegion(Region region) {
 		ArrayList<ChokePoint> result = new ArrayList<ChokePoint>();
+		if (region == null) {
+			return result;
+		}
 		for (ChokePoint choke : chokePointsProcessed) {
 			if (choke.getFirstRegionID() == region.getID()
 					|| choke.getSecondRegionID() == region.getID()) {
@@ -606,7 +633,6 @@ public class MapExploration {
 		return chokePointsProcessed;
 	}
 
-	
 	public static Collection<ChokePoint> getChokePointsNear(MapPoint near,
 			int tileRadius) {
 		ArrayList<ChokePoint> chokes = new ArrayList<>();
@@ -625,5 +651,20 @@ public class MapExploration {
 		}
 
 		return chokes;
+	}
+
+	public static void removeChokePointsNearFirstBase() {
+		if (!_removedChokePointsNearMainBase) {
+			Collection<ChokePoint> chokes = MapExploration.getChokePointsNear(
+					ProtossNexus.getSecondBaseLocation(), 20);
+			Region baseRegion = xvr.getBwapi().getMap()
+					.getRegion(xvr.getFirstBase());
+			for (ChokePoint choke : chokes) {
+				if (baseRegion.getChokePoints().contains(choke)) {
+					chokePointsProcessed.remove(choke);
+				}
+			}
+			_removedChokePointsNearMainBase = true;
+		}
 	}
 }

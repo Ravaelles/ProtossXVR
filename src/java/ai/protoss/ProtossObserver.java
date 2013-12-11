@@ -81,10 +81,8 @@ public class ProtossObserver {
 
 	private static Unit getNearestFreeObserverTo(
 			MapPoint sortByDistanceToThisPoint) {
-		for (Unit observer : xvr.getUnitsInRadius(
-				sortByDistanceToThisPoint.getX(),
-				sortByDistanceToThisPoint.getY(), 300,
-				xvr.getUnitsOfType(OBSERVER))) {
+		for (Unit observer : xvr.getUnitsInRadius(sortByDistanceToThisPoint,
+				300, xvr.getUnitsOfType(OBSERVER))) {
 			if (observer.isCompleted()
 					&& isObserverFreeFromScanMissions(observer)) {
 				return observer;
@@ -190,20 +188,44 @@ public class ProtossObserver {
 		int observerIndex = getIndexOfObserver(observer);
 
 		// Get the units to assign observers to.
-		Unit unit1 = null;
-		Unit unit2 = null;
-		Unit unit3 = null;
-
 		ArrayList<Unit> zealots = xvr.getUnitsOfType(UnitTypes.Protoss_Zealot);
 
-		// Two observers should follow the main army
+		// Be in front of the cannons at the second base, to widen rangeF
 		if (observerIndex == 0) {
+//			if (UnitCounter.getNumberOfUnits(UnitManager.BASE) > 1) {
+//				MapPoint secondBase = ProtossNexus.getSecondBaseLocation();
+//				ChokePoint choke = MapExploration
+//						.getImportantChokePointNear(secondBase);
+//				Unit nearestCannon = xvr.getUnitOfTypeNearestTo(
+//						UnitTypes.Protoss_Photon_Cannon, choke);
+//				if (xvr.getDistanceBetween(choke, nearestCannon) <= 8) {
+//					secondBase = nearestCannon;
+//				}
+//
+//				MapPointInstance observationPoint = MapPointInstance
+//						.getMiddlePointBetween(secondBase, choke);
+//
+//				UnitActions.moveTo(observer, observationPoint);
+//			}
+//			return;
+			Unit unit1 = null;
+			if (zealots.size() > 2) {
+				unit1 = zealots.get(2);
+				UnitActions.moveTo(observer, unit1);
+				return;
+			}
+		}
+
+		// Two observers should follow the main army
+		else if (observerIndex == 1) {
+			Unit unit1 = null;
 			if (!zealots.isEmpty()) {
 				unit1 = zealots.get(0);
 				UnitActions.moveTo(observer, unit1);
 				return;
 			}
-		} else if (observerIndex == 1) {
+		} else if (observerIndex == 2) {
+			Unit unit2 = null;
 			ArrayList<Unit> dragoons = xvr
 					.getUnitsOfType(UnitTypes.Protoss_Dragoon);
 			if (!dragoons.isEmpty()) {
@@ -215,20 +237,20 @@ public class ProtossObserver {
 				UnitActions.moveTo(observer, unit2);
 				return;
 			}
-		} else if (observerIndex == 2) {
-			ArrayList<Unit> arbiters = xvr
-					.getUnitsOfType(UnitTypes.Protoss_Arbiter);
-			if (!arbiters.isEmpty()) {
-				unit3 = arbiters.get(0);
-				UnitActions.moveTo(observer, unit3);
-				return;
-			} else {
-				if (!zealots.isEmpty()) {
-					unit3 = zealots.get(zealots.size() / 2);
-					UnitActions.moveTo(observer, unit3);
-					return;
-				}
-			}
+			// ArrayList<Unit> arbiters = xvr
+			// .getUnitsOfType(UnitTypes.Protoss_Arbiter);
+			// Unit unit3 = null;
+			// if (!arbiters.isEmpty()) {
+			// unit3 = arbiters.get(0);
+			// UnitActions.moveTo(observer, unit3);
+			// return;
+			// } else {
+			// if (!zealots.isEmpty()) {
+			// unit3 = zealots.get(zealots.size() / 2);
+			// UnitActions.moveTo(observer, unit3);
+			// return;
+			// }
+			// }
 		} else {
 			UnitActions.moveTo(observer, ArmyPlacing.getArmyCenterPoint());
 		}

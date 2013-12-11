@@ -1,6 +1,7 @@
 package ai.protoss;
 
 import ai.core.XVR;
+import ai.handling.units.UnitActions;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
 
@@ -20,6 +21,11 @@ public class ProtossReaver {
 
 	public static void act(Unit unit) {
 		checkIfBuildScarabs(unit);
+		
+		if (unit.getScarabCount() > 0) {
+			Unit closeEnemy = xvr.getNearestEnemyInRadius(unit, 8);
+			UnitActions.attackTo(unit, closeEnemy);
+		}
 	}
 
 }

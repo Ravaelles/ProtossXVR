@@ -18,20 +18,20 @@ public class ArmyCreationManager {
 	public static void act() {
 		if (weShouldBuildBattleUnits()) {
 
-			// GATEWAY
-			ArrayList<Unit> gatewayList = ProtossGateway.getAllObjects();
-			if (!gatewayList.isEmpty()) {
-				for (Unit gateway : gatewayList) {
-					ProtossGateway.act(gateway);
-				}
-			}
-
 			// ROBOTICS FACILITY
 			ArrayList<Unit> roboticsFacilitiesList = ProtossRoboticsFacility
 					.getAllObjects();
 			if (!roboticsFacilitiesList.isEmpty()) {
 				for (Unit roboticsFacility : roboticsFacilitiesList) {
 					ProtossRoboticsFacility.act(roboticsFacility);
+				}
+			}
+			
+			// GATEWAY
+			ArrayList<Unit> gatewayList = ProtossGateway.getAllObjects();
+			if (!gatewayList.isEmpty()) {
+				for (Unit gateway : gatewayList) {
+					ProtossGateway.act(gateway);
 				}
 			}
 
@@ -68,20 +68,24 @@ public class ArmyCreationManager {
 
 		int battleUnits = UnitCounter.getNumberOfBattleUnits();
 		
+		if (ProtossNexus.shouldBuild() || xvr.canAfford(525)) {
+			return false;
+		}
+		
 		// If enemy is Protoss, force more units
 //		if (xvr.getENEMY().isProtoss()) {
 //			if (battleUnits <= 9) {
 //				return true;
 //			}
 //		}
-		if (battleUnits <= 15) {
+		if (battleUnits <= 20) {
 			return true;
 		}
 		
 		return xvr.canAfford(700)
 				|| (!ProtossNexus.shouldBuild() || xvr.canAfford(525) || battleUnits < 10)
 				&& (UnitCounter
-						.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core) || battleUnits < 5);
+						.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core) || battleUnits < 15);
 	}
 
 }

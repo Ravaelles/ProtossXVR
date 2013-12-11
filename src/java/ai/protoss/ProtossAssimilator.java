@@ -15,16 +15,18 @@ public class ProtossAssimilator {
 
 	public static boolean shouldBuild() {
 		if (!Constructing.weAreBuilding(buildingType)
-				&& xvr.canAfford(100)
 				&& (UnitCounter
-						.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core) || UnitCounter
-						.getNumberOfUnits(UnitManager.GATEWAY) >= 2)
+						.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core)
+						|| UnitCounter.getNumberOfUnits(UnitManager.GATEWAY) >= 3 || xvr
+							.canAfford(700))
 				&& UnitCounter.getNumberOfUnits(buildingType) < UnitCounter
 						.getNumberOfUnitsCompleted(UnitManager.BASE)) {
-			if (UnitCounter.getNumberOfBattleUnits() >= 6) {
+			if (UnitCounter.getNumberOfBattleUnits() >= ProtossGateway.MIN_UNITS_FOR_DIFF_BUILDING) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
 		}
+		ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 		return false;
 	}
 

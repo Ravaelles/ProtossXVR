@@ -19,12 +19,15 @@ public class ProtossGateway {
 
 	private static boolean isPlanAntiAirActive = false;
 
-	private static int zealotBuildRatio = 72;
-	private static int dragoonBuildRatio = 18;
-	private static int darkTemplarBuildRatio = 60;
+	public static int MIN_UNITS_FOR_DIFF_BUILDING = 20;
+
+	private static int zealotBuildRatio = 20;
+	private static int dragoonBuildRatio = 50;
+	private static int darkTemplarBuildRatio = 50;
 	// private static int highTemplarBuildRatio = 19;
 
 	private static final int MINIMAL_HIGH_TEMPLARS = 5;
+	// private static final int MAX_ZEALOTS = 5;
 
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Gateway;
 	private static XVR xvr = XVR.getInstance();
@@ -34,30 +37,66 @@ public class ProtossGateway {
 			int barracks = UnitCounter.getNumberOfUnits(buildingType);
 			int bases = UnitCounter.getNumberOfUnitsCompleted(UnitManager.BASE);
 
-			// 0 barracks
-			if (barracks <= 2 && xvr.canAfford(130)) {
+			// ### VERSION ### Cannons defence
+			// int cannons = UnitCounter
+			// .getNumberOfUnitsCompleted(UnitTypes.Protoss_Photon_Cannon);
+			// if (!UnitCounter.weHaveBuilding(UnitTypes.Protoss_Forge)
+			// || (cannons <= 1 && !xvr.canAfford(300))) {
+			// ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
+			// return false;
+			// }
+			//
+			// if (barracks >= 3) {
+			// ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
+			// return false;
+			// }
+			//
+			// // <= 2 barracks
+			// if (barracks <= 2
+			// && cannons >= ProtossPhotonCannon.MAX_CANNON_STACK
+			// && xvr.canAfford(240) || xvr.canAfford(340)) {
+			// if (barracks <= 1 || isMajorityOfGatewaysTrainingUnits()) {
+			// ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			// return true;
+			// }
+			// }
+
+			// ### Version ### Expansion with cannons
+			int cannons = UnitCounter
+					.getNumberOfUnitsCompleted(UnitTypes.Protoss_Photon_Cannon);
+			if ((cannons >= ProtossPhotonCannon.MAX_CANNON_STACK || xvr
+					.canAfford(300)) && barracks <= 2 && xvr.canAfford(140)) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
 
-			// 1 barracks
-//			if (barracks == 1 && xvr.canAfford(150)) {
-//				return true;
-//			}
+			// ### Version ### Expansion with gateways
+			// if (barracks <= 2 && xvr.canAfford(140)) {
+			// ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			// return true;
+			// }
 			
 			if (bases <= 1) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 				return false;
 			}
 
-			// 2 barracks or more
-			if (barracks >= 2 && (barracks <= 5 || xvr.canAfford(520))) {
+			if (barracks >= 3 && xvr.canAfford(140)) {
 				if (isMajorityOfGatewaysTrainingUnits()) {
 					ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 					return true;
 				}
 			}
-			if (barracks >= 2 && bases >= 2
+
+			// 3 barracks or more
+			if (barracks >= 3 && (barracks <= 5 || xvr.canAfford(520))) {
+				if (isMajorityOfGatewaysTrainingUnits()) {
+					ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+					return true;
+				}
+			}
+			if (barracks >= 2
+					&& bases >= 2
 					&& UnitCounter
 							.weHaveBuilding(UnitTypes.Protoss_Observatory)
 					&& UnitCounter
@@ -65,7 +104,8 @@ public class ProtossGateway {
 				int HQs = UnitCounter.getNumberOfUnits(UnitManager.BASE);
 				if ((double) barracks / HQs <= 2 && xvr.canAfford(560)) {
 					if (isMajorityOfGatewaysTrainingUnits()) {
-						ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+						ShouldBuildCache.cacheShouldBuildInfo(buildingType,
+								true);
 						return true;
 					}
 				}
@@ -84,7 +124,7 @@ public class ProtossGateway {
 	}
 
 	private static boolean isMajorityOfGatewaysTrainingUnits() {
-		ArrayList<Unit> allObjects = getAllObjects();
+		ArrayList<Unit> allObjects = xvr.getUnitsOfType(buildingType);
 		int all = allObjects.size();
 		int busy = 0;
 		for (Unit gateway : allObjects) {
@@ -93,7 +133,7 @@ public class ProtossGateway {
 			}
 		}
 
-		return ((double) busy / all) >= 0.6 || all <= 1;
+		return ((double) busy / all) >= 0.8 || all <= 2;
 	}
 
 	public static ArrayList<Unit> getAllObjects() {
@@ -122,7 +162,7 @@ public class ProtossGateway {
 		}
 
 		boolean shouldAlwaysBuild = xvr.canAfford(100)
-				&& UnitCounter.getNumberOfBattleUnits() <= 6;
+				&& UnitCounter.getNumberOfBattleUnits() <= 15;
 		if (shouldAlwaysBuild || buildingQueueDetails == null
 				|| freeMinerals >= 100) {
 			if (barracks.getTrainingQueueSize() == 0) {
@@ -133,6 +173,7 @@ public class ProtossGateway {
 	}
 
 	private static UnitTypes defineUnitToBuild(int freeMinerals, int freeGas) {
+		int zealots = UnitCounter.getNumberOfUnits(ZEALOT);
 
 		// If we don't have Observatory build than disallow production of units
 		// which cost lot of gas.
@@ -158,7 +199,7 @@ public class ProtossGateway {
 		boolean highTemplarAllowed = darkTemplarAllowed
 				&& (freeMinerals >= 50 && (freeGas - forceFreeGas) >= 100);
 
-		UnitTypes typeToBuild = ZEALOT;
+		UnitTypes typeToBuild = null;
 
 		// Calculate ratio
 		double totalRatio = zealotBuildRatio
@@ -174,7 +215,8 @@ public class ProtossGateway {
 			int highTemplars = UnitCounter.getNumberOfUnits(HIGH_TEMPLAR);
 
 			// Build some HIGH Templars if there'are none.
-			if (highTemplarAllowed && darkTemplars >= 2 && highTemplars < 2) {
+			if (highTemplarAllowed
+					&& (darkTemplars >= 2 && highTemplars < 2 || freeGas > 1000)) {
 				return HIGH_TEMPLAR;
 			}
 
@@ -200,9 +242,9 @@ public class ProtossGateway {
 		}
 
 		// ZEALOT
-		double zealotPercent = UnitCounter.getNumberOfUnits(ZEALOT)
-				/ totalInfantry;
-		if (zealotPercent < zealotBuildRatio / totalRatio) {
+		double zealotPercent = zealots / totalInfantry;
+		if (// zealots < MAX_ZEALOTS &&
+		zealotPercent < zealotBuildRatio / totalRatio) {
 			return ZEALOT;
 		}
 

@@ -22,19 +22,29 @@ public class ProtossForge {
 
 	public static boolean shouldBuild() {
 		int forges = UnitCounter.getNumberOfUnits(buildingType);
-		int gateways = UnitCounter.getNumberOfUnits(ProtossGateway
-				.getBuildingType());
-		int gatewaysFinished = UnitCounter
-				.getNumberOfUnitsCompleted(ProtossGateway.getBuildingType());
+//		int gateways = UnitCounter.getNumberOfUnits(ProtossGateway
+//				.getBuildingType());
+//		int gatewaysFinished = UnitCounter
+//				.getNumberOfUnitsCompleted(ProtossGateway.getBuildingType());
 
-		if (!UnitCounter.weHaveBuilding(buildingType)
-				&& (gateways >= 3 || gatewaysFinished >= 2)
+		// Version for expansion with cannons
+		if (forges == 0 && xvr.canAfford(134) //UnitCounter.weHavePylonFinished()
 				&& !Constructing.weAreBuilding(buildingType)) {
 			// if (UnitCounter.getNumberOfBattleUnits() >= 15) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
 			// }
 		}
+
+		// Version for expansion with gateways
+		// if (forges == 0 && (gateways >= 3 || gatewaysFinished >= 2)
+		// && !Constructing.weAreBuilding(buildingType)) {
+		// // if (UnitCounter.getNumberOfBattleUnits() >=
+		// // ProtossGateway.MIN_UNITS_FOR_DIFF_BUILDING - 8) {
+		// ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+		// return true;
+		// // }
+		// }
 
 		if (forges == 1
 				&& UnitCounter.getNumberOfUnits(ProtossGateway

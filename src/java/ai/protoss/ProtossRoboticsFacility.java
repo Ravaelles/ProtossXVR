@@ -16,7 +16,7 @@ public class ProtossRoboticsFacility {
 	public static UnitTypes SHUTTLE = UnitTypes.Protoss_Shuttle;
 
 	private static final int MINIMUM_OBSERVERS = 6;
-	private static final int MINIMUM_REAVERS = 5;
+	private static final int MINIMUM_REAVERS = 10;
 	private static final double REAVERS_TO_INFANTRY_RATIO = 0.23;
 
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Robotics_Facility;

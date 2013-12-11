@@ -11,6 +11,8 @@ import ai.handling.map.MapPoint;
 
 public class TargetHandling {
 
+	public static final int MAX_DIST = 50;
+	
 	private static XVR xvr = XVR.getInstance();
 
 	public static Unit getImportantEnemyUnitTargetIfPossibleFor(MapPoint point,
@@ -33,10 +35,12 @@ public class TargetHandling {
 
 			if (unit.isExists()
 					&& unit.getHitPoints() > 0
-					&& (type.isTerranMine() || type.isLurker() || type.isTank()
-							|| type.isReaver() || type.isHighTemplar() || (type
-							.isDarkTemplar() && unit.isDetected()))
-					&& xvr.getDistanceBetween(unit, point) <= 20) {
+					&& (type.isTerranMine() || type.isLurker()
+							|| type.isObserver() || type.isScienceVessel()
+							|| type.isTank() || type.isReaver()
+							|| type.isHighTemplar() || (type.isDarkTemplar() && unit
+							.isDetected()))
+					&& xvr.getDistanceBetween(unit, point) <= MAX_DIST) {
 				if (isProperTarget(unit)) {
 					return unit;
 				}
@@ -59,8 +63,8 @@ public class TargetHandling {
 			Collection<Unit> enemyBuildings) {
 		for (Unit unit : enemyBuildings) {
 			UnitType type = unit.getType();
-			if (type.isBunker() || type.isPhotonCannon()
-					|| type.isSunkenColony()) {
+			if (type.isBunker() || type.isPhotonCannon() || type.isObserver()
+					|| type.isScienceVessel() || type.isSunkenColony()) {
 				if (isProperTarget(unit)) {
 					return unit;
 				}
@@ -92,6 +96,10 @@ public class TargetHandling {
 			}
 
 			isProper = target.isExists() || !target.isVisible();
+
+			if (isProper && target.isHidden()) {
+				return false;
+			}
 		}
 
 		// if (!isProper) {

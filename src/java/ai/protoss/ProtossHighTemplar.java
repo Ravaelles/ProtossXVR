@@ -33,14 +33,23 @@ public class ProtossHighTemplar {
 		if (tryWarpingArchon(highTemplar)) {
 			return;
 		}
+		
+		// ===================
+		// Check if run from opponents
+		boolean shouldRun = highTemplar.isUnderAttack();
+		if (!shouldRun && xvr.isEnemyInRadius(highTemplar, 6)) {
+			shouldRun = true;
+		}
 
+		if (shouldRun) {
+			UnitActions.moveTo(highTemplar, xvr.getLastBase());
+		}
+		
+		// =======================
+		// Above all, use spells
 		if (highTemplar.getEnergy() >= 75) {
 			// tryUsingHallucination(highTemplar);
 			tryUsingPsionicStorm(highTemplar);
-		}
-
-		if (highTemplar.isUnderAttack()) {
-			UnitActions.moveTo(highTemplar, xvr.getLastBase());
 		}
 	}
 
@@ -50,7 +59,7 @@ public class ProtossHighTemplar {
 
 			// Try to find top priority target.
 			ArrayList<Unit> topPriorityTargets = TargetHandling
-					.getTopPriorityTargetsNear(highTemplar, 20);
+					.getTopPriorityTargetsNear(highTemplar, 11);
 			if (!topPriorityTargets.isEmpty()) {
 				for (Unit possibleTarget : topPriorityTargets) {
 					if (!possibleTarget.isUnderStorm()
@@ -64,13 +73,21 @@ public class ProtossHighTemplar {
 			if (unitToStrike == null) {
 
 				// Find any target
-				ArrayList<Unit> enemies = xvr.getUnitsInRadius(highTemplar, 15,
+				ArrayList<Unit> enemies = xvr.getUnitsInRadius(highTemplar, 11,
 						xvr.getEnemyArmyUnits());
 				for (Unit possibleTarget : enemies) {
+
+					// If target enemy isn't under other spells...
 					if (!possibleTarget.isUnderStorm()
 							&& !possibleTarget.isStasised()) {
-						unitToStrike = possibleTarget;
-						break;
+
+						// ...and if there's at least one other enemy nearby.
+						if (xvr.countUnitsInRadius(possibleTarget, 4,
+								xvr.getBwapi().getEnemyUnits()) >= 2
+								|| highTemplar.getEnergy() >= 150) {
+							unitToStrike = possibleTarget;
+							break;
+						}
 					}
 				}
 			}
@@ -97,7 +114,7 @@ public class ProtossHighTemplar {
 				sheepDolly = xvr.getUnitOfTypeNearestTo(
 						UnitTypes.Protoss_Dragoon, highTemplar);
 			}
-			
+
 			if (sheepDolly == null
 					|| xvr.getDistanceSimple(highTemplar, sheepDolly) > 20) {
 				ArrayList<Unit> ourUnits = xvr
@@ -118,7 +135,7 @@ public class ProtossHighTemplar {
 			// If we need to create archons (because there aren't enough)
 			if (UnitCounter.getNumberOfUnits(ARCHON) < MINIMAL_ARCHONS) {
 				Unit otherHighTemplar = getOtherHighTemplarNear(highTemplar);
-				
+
 				if (otherHighTemplar == null) {
 					return false;
 				}

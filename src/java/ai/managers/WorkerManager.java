@@ -6,7 +6,7 @@ import java.util.HashMap;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
-import ai.handling.constructing.Constructing;
+import ai.handling.army.StrengthEvaluator;
 import ai.handling.map.MapExploration;
 import ai.handling.map.MapPoint;
 import ai.handling.units.UnitActions;
@@ -20,7 +20,7 @@ public class WorkerManager {
 	public static void act() {
 		int counter = 0;
 		for (Unit worker : xvr.getUnitsOfType(UnitManager.WORKER)) {
-			if (counter != 5) {
+			if (counter != 7) {
 				WorkerManager.act(worker);
 			} else {
 				MapExploration.explore(worker);
@@ -33,14 +33,38 @@ public class WorkerManager {
 	public static void act(Unit unit) {
 
 		// If we should destroy this unit
-		if (unit.isShouldScrapUnit()) {
-			UnitActions
-					.attackTo(unit, MapExploration.getNearestEnemyBuilding());
-			return;
+		// if (unit.isShouldScrapUnit()) {
+		// UnitActions
+		// .attackTo(unit, MapExploration.getNearestEnemyBuilding());
+		// return;
+		// }
+
+		// If this worker is attacking, and he's far from base, make him go
+		// back.
+		if (unit.isAttacking()
+				&& xvr.getDistanceSimple(unit, xvr.getFirstBase()) >= 7
+				|| (!unit.isGatheringMinerals() && !unit.isGatheringGas()
+						&& !unit.isIdle() && StrengthEvaluator
+							.isStrengthRatioCriticalFor(unit))) {
+			UnitActions.moveTo(unit, xvr.getFirstBase());
 		}
 
 		// Act with worker that is under attack
 		if (unit.isUnderAttack()) {
+
+			// If nearest enemy is worker, attack this bastard!
+			Unit nearestEnemy = xvr.getUnitNearestFromList(unit, xvr.getBwapi()
+					.getEnemyUnits());
+			if (nearestEnemy != null && nearestEnemy.getType().isWorker()) {
+				if (xvr.getDistanceSimple(unit, xvr.getFirstBase()) < 15) {
+					UnitActions.attackEnemyUnit(unit, nearestEnemy);
+					return;
+				}
+			}
+
+			// ================================
+			// Don't attack, do something else
+
 			MapPoint goTo = null;
 
 			// Try to go to the nearest bunker
@@ -65,7 +89,7 @@ public class WorkerManager {
 		}
 
 		// Act with idle worker
-		else if (unit.isIdle()) {
+		if (unit.isIdle()) {
 
 			// Find the nearest base for this SCV
 			Unit nearestBase = ProtossNexus.getNearestBaseForUnit(unit);
@@ -82,11 +106,11 @@ public class WorkerManager {
 			UnitActions.moveTo(unit, ProtossNexus.getNearestBaseForUnit(unit));
 		}
 
-		// If unit is building something check if there's no duplicate
-		// constructions going on
-		else if (unit.isConstructing()) {
-			Constructing.removeDuplicateConstructionsPending(unit);
-		}
+		// // If unit is building something check if there's no duplicate
+		// // constructions going on
+		// else if (unit.isConstructing()) {
+		// Constructing.removeDuplicateConstructionsPending(unit);
+		// }
 	}
 
 	public static void gatherResources(Unit worker, Unit nearestBase) {
@@ -94,7 +118,7 @@ public class WorkerManager {
 				.isExistingCompletedAssimilatorNearBase(nearestBase);
 
 		if (existsAssimilatorNearBase
-				&& ProtossNexus.getNumberofGasGatherersForBase(nearestBase) <= 3) {
+				&& ProtossNexus.getNumberofGasGatherersForBase(nearestBase) <= 4) {
 			gatherGas(worker, nearestBase);
 		} else {
 			gatherMinerals(worker, nearestBase);
@@ -126,7 +150,7 @@ public class WorkerManager {
 					nearestBase.getID());
 			return;
 		}
-		
+
 		if (mineral != null) {
 			xvr.getBwapi()
 					.rightClick(gathererToAssign.getID(), mineral.getID());
@@ -139,8 +163,12 @@ public class WorkerManager {
 		// Get the minerals that are closes to the base.
 		ArrayList<Unit> minerals = ProtossNexus
 				.getMineralsNearBase(nearestBase);
+		if (minerals.isEmpty()) {
+			minerals = xvr.getUnitsOfGivenTypeInRadius(
+					UnitTypes.Resource_Mineral_Field, 50, nearestBase, false);
+		}
 
-		// Get SCV
+		// Get workers
 		ArrayList<Unit> workers = ProtossNexus.getWorkersNearBase(nearestBase);
 
 		// Build mapping of number of SCVs to mineral unit

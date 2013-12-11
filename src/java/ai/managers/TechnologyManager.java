@@ -33,18 +33,17 @@ public class TechnologyManager {
 		// TOP PRIORITY
 		// Technologies that are crucial and we don't need to have second base
 		// in order to upgrade them
+		
+		// Leg enhancement
+		upgrade = UpgradeTypes.Singularity_Charge;
+		if (isUpgradePossible(upgrade)) {
+			tryToUpgrade(ProtossCyberneticsCore.getOneNotBusy(), upgrade);
+		}
 
 		// Leg enhancement
 		upgrade = UpgradeTypes.Leg_Enhancements;
 		if (isUpgradePossible(upgrade)) {
 			tryToUpgrade(ProtossCitadelOfAdun.getOneNotBusy(), upgrade);
-		}
-
-		// Leg enhancement
-		upgrade = UpgradeTypes.Singularity_Charge;
-		if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dragoon) >= 4
-				&& xvr.canAfford(250) && isUpgradePossible(upgrade)) {
-			tryToUpgrade(ProtossCyberneticsCore.getOneNotBusy(), upgrade);
 		}
 
 		// Observer speed
@@ -91,12 +90,6 @@ public class TechnologyManager {
 		if (xvr.canAfford(500) && isUpgradePossible(upgrade)) {
 			tryToUpgrade(ProtossObservatory.getOneNotBusy(), upgrade);
 		}
-
-		// Protoss shield
-		upgrade = UpgradeTypes.Protoss_Plasma_Shields;
-		if (isUpgradePossible(upgrade)) {
-			tryToUpgrade(ProtossForge.getOneNotBusy(), upgrade);
-		}
 		
 		// Scarab damage
 		upgrade = UpgradeTypes.Scarab_Damage;
@@ -109,6 +102,12 @@ public class TechnologyManager {
 		upgrade = UpgradeTypes.Protoss_Ground_Weapons;
 		if (xvr.canAfford(600 * getTechLevelOf(upgrade), 300)
 				&& isUpgradePossible(upgrade)) {
+			tryToUpgrade(ProtossForge.getOneNotBusy(), upgrade);
+		}
+		
+		// Protoss shield
+		upgrade = UpgradeTypes.Protoss_Plasma_Shields;
+		if (isUpgradePossible(upgrade)) {
 			tryToUpgrade(ProtossForge.getOneNotBusy(), upgrade);
 		}
 

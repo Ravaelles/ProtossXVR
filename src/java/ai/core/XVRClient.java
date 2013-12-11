@@ -1,13 +1,14 @@
 package ai.core;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jnibwapi.BWAPIEventListener;
 import jnibwapi.JNIBWAPI;
 import jnibwapi.model.Player;
 import jnibwapi.model.Unit;
+import jnibwapi.types.UnitDamages;
 import jnibwapi.types.UnitType;
-import ai.handling.constructing.Constructing;
 import ai.handling.map.MapExploration;
 import ai.handling.other.NukeHandling;
 import ai.managers.StrategyManager;
@@ -21,6 +22,7 @@ public class XVRClient implements BWAPIEventListener {
 	private XVR xvr;
 
 	private ArrayList<Integer> historyOfOurUnits = new ArrayList<>(400);
+	private HashMap<Integer, UnitType> historyOfOurUnitsObjects = new HashMap<>();
 
 	// =========================================
 
@@ -63,6 +65,17 @@ public class XVRClient implements BWAPIEventListener {
 		XVR.setENEMY(enemy);
 		XVR.ENEMY_ID = enemy.getID();
 
+		// ========================================
+
+		// Creates map where values of attacks of all unit types are stored.
+		UnitDamages.rememberUnitDamageValues();
+
+		// Removes some of initial choke points e.g. those on the edge of the
+		// map.
+		MapExploration.processInitialChokePoints();
+
+		// ========================================
+
 		// Enemy -> Protoss
 		if (enemy.getRaceID() == 2) {
 			XVR.setENEMY_RACE("Protoss");
@@ -77,11 +90,16 @@ public class XVRClient implements BWAPIEventListener {
 			XVR.setENEMY_RACE("Zerg");
 		}
 
-		MapExploration.processInitialChokePoints();
-
 		// ==========
 		// HotFix
 		ProtossNexus.initialMineralGathering();
+		
+		// =========
+		
+		Debug.message(xvr, "#########################", false);
+		Debug.message(xvr, "## They see mee warping ###", false);
+		Debug.message(xvr, "###### They hating ########", false);
+		Debug.message(xvr, "#########################", false);
 	}
 
 	@Override
@@ -100,12 +118,17 @@ public class XVRClient implements BWAPIEventListener {
 	}
 
 	public void matchEnded(boolean winner) {
+		Debug.message(xvr, "###############", false);
+		Debug.message(xvr, "## For Adun! ##", false);
+		Debug.message(xvr, "###############", false);
 	}
 
 	public void sendText(String text) {
 	}
 
 	public void receiveText(String text) {
+		Debug.message(xvr, "sorry, can't talk right now");
+		Debug.message(xvr, "i have to click very fast, u kno");
 	}
 
 	public void nukeDetect(int x, int y) {
@@ -118,6 +141,9 @@ public class XVRClient implements BWAPIEventListener {
 	}
 
 	public void playerLeft(int playerID) {
+		Debug.message(xvr, "###########################", false);
+		Debug.message(xvr, "## Sayonara, gringo! ^_^ ##", false);
+		Debug.message(xvr, "###########################", false);
 	}
 
 	public void unitCreate(int unitID) {
@@ -126,15 +152,20 @@ public class XVRClient implements BWAPIEventListener {
 		UnitType unitType = unit.getType();
 		if (!unit.isEnemy()) {
 			historyOfOurUnits.add(unitID);
-			if (unitType.isBuilding() && unitType.isBase()) {
-
-				// Build pylon nearby
-				Constructing.forceConstructingPylonNear(unit);
-			}
+			historyOfOurUnitsObjects.put(unitID, unit.getType());
+//			if (unitType.isBuilding() && unitType.isBase()) {
+//
+//				// Build pylon nearby
+//				Constructing.forceConstructingPylonNear(unit);
+//			}
 		}
 		// if (unitType.isBuilding()) {
 		// TerranConstructing.removeIsBeingBuilt(unitType);
 		// }
+		
+		if (unit.isMyUnit() && unitType.isBase()) {
+			ProtossNexus.updateNextBaseToExpand();
+		}
 	}
 
 	public void unitDestroy(int unitID) {
@@ -160,11 +191,29 @@ public class XVRClient implements BWAPIEventListener {
 			}
 		}
 
-		// Unit unit = Unit.getByID(unitID);
-		// if (unit == null) {
-		// return;
-		// }
-		// System.out.println("Destroyed unit was " + unit.toStringShort());
+		// =====================================
+		// Check what type was the destroyed unit
+		UnitType unitType = null;
+		for (int historyUnitID : historyOfOurUnitsObjects.keySet()) {
+			if (historyUnitID == unitID) {
+				unitType = historyOfOurUnitsObjects.get(historyUnitID);
+				break;
+//				System.out.println();
+//				System.out.println("Destroyed unit was " + unitType);
+			}
+		}
+		
+		if (unitType != null) {
+			if (unitType.isBase() && wasOurUnit) {
+				ProtossNexus.updateNextBaseToExpand();
+			}
+		}
+		
+//		 Unit unit = Unit.getByID(unitID);
+//		 if (unit == null) {
+//		 return;
+//		 }
+//		 System.out.println("Destroyed unit was " + unit.toStringShort());
 		// UnitType unitType = UnitType.getUnitTypeByID(unit.getTypeID());
 	}
 
@@ -186,8 +235,8 @@ public class XVRClient implements BWAPIEventListener {
 		if (unit == null || !unit.isEnemy()) {
 			return;
 		}
-		System.out.println("Unit evade: "
-				+ (unit != null ? unit.getName() : "null"));
+//		System.out.println("Unit evade: "
+//				+ (unit != null ? unit.getName() : "null"));
 	}
 
 	public void unitHide(int unitID) {
@@ -196,8 +245,8 @@ public class XVRClient implements BWAPIEventListener {
 			return;
 		}
 
-//		System.out.println("Unit hide: "
-//				+ (unit != null ? unit.getName() : "null"));
+		// System.out.println("Unit hide: "
+		// + (unit != null ? unit.getName() : "null"));
 		if (unit.isEnemy()
 				&& (unit.isCloaked() || unit.isBurrowed() || !unit.isDetected())) {
 			ProtossObserver.hiddenUnitDetected(unit);
@@ -214,7 +263,8 @@ public class XVRClient implements BWAPIEventListener {
 		}
 
 		if (unit.isEnemy() && unit.isHidden()) {
-//			Debug.message(xvr, "Hidden unit: " + Unit.getByID(unitID).getName());
+			// Debug.message(xvr, "Hidden unit: " +
+			// Unit.getByID(unitID).getName());
 			ProtossObserver.hiddenUnitDetected(unit);
 		}
 
@@ -224,15 +274,30 @@ public class XVRClient implements BWAPIEventListener {
 	}
 
 	public void unitRenegade(int unitID) {
+		Unit unit = Unit.getByID(unitID);
+		if (unit == null || !unit.isEnemy()) {
+			return;
+		}
+
+		// Add info that we discovered enemy unit
+		MapExploration.enemyUnitDiscovered(unit);
 	}
 
 	public void saveGame(String gameName) {
 	}
 
 	public void unitComplete(int unitID) {
+		Unit unit = bwapi.getUnit(unitID);
+		UnitType unitType = unit.getType();
+		if (unit.isMyUnit() && unitType.isBase()) {
+			ProtossNexus.updateNextBaseToExpand();
+		}
 	}
 
 	public void playerDropped(int playerID) {
+		Debug.message(xvr, "###########################", false);
+		Debug.message(xvr, "## Sayonara, gringo! ^_^ ##", false);
+		Debug.message(xvr, "###########################", false);
 	}
 
 }

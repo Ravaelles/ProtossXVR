@@ -1,9 +1,11 @@
 package ai.protoss;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 
 import jnibwapi.model.ChokePoint;
+import jnibwapi.model.Region;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
@@ -18,10 +20,9 @@ import ai.utils.RUtilities;
 
 public class ProtossPylon {
 
-	private static int INITIAL_PYLON_MIN_DIST_FROM_BASE = 7;
-	private static int INITIAL_PYLON_MAX_DIST_FROM_BASE = 25;
+	private static int INITIAL_PYLON_MIN_DIST_FROM_BASE = 5;
+	private static int INITIAL_PYLON_MAX_DIST_FROM_BASE = 18;
 	private static int PYLON_FROM_PYLON_MIN_DISTANCE = 8;
-	// private static int PYLON_FROM_PYLON_MIN_DISTANCE_RAND = 4;
 	private static int PYLON_FROM_PYLON_MAX_DISTANCE = 20;
 
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Pylon;
@@ -41,35 +42,53 @@ public class ProtossPylon {
 	public static boolean shouldBuild() {
 		int free = xvr.getSuppliesFree();
 		int total = xvr.getSuppliesTotal();
+		int pylons = UnitCounter.getNumberOfUnits(buildingType);
+
+		if (pylons == 1) {
+			MapExploration.removeChokePointsNearFirstBase();
+		}
 
 		if (total == 200) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 			return false;
 		}
 
-		int gateways = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Gateway);
+		// int gateways =
+		// UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Gateway);
+		// int cannonsAll = UnitCounter
+		// .getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon);
+		// int cannonsCompleted = UnitCounter
+		// .getNumberOfUnitsCompleted(UnitTypes.Protoss_Photon_Cannon);
 
-		if (UnitCounter.weHaveBuilding(buildingType)
-				&& (gateways <= 1 && gateways != 0) && !xvr.canAfford(200)) {
+		// ### VERSION ### cannons
+		// if (pylons == 1 && (cannonsCompleted <= 1 || cannonsAll <= 3)
+		// && (gateways <= 1 && gateways != 0) && !xvr.canAfford(260)) {
+		// ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
+		// return false;
+		// }
+
+		if (total < 130 && Constructing.weAreBuilding(buildingType)) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 			return false;
 		}
 
 		// !Constructing.weAreBuilding(buildingType)
 		// &&
-		boolean shouldBuild = ((total <= 10 && free <= 2)
-				|| (total > 10 && total <= 18 && free <= 4)
-				|| (total > 18 && total <= 45 && free <= 7)
+		boolean shouldBuild = ((total <= 9 && free <= 3 && pylons == 0)
+				|| (total >= 10 && total <= 23 && free <= 4 && pylons <= 1 && !Constructing
+						.weAreBuilding(buildingType))
+				|| (total > 23 && total <= 45 && free <= 7)
 				|| (total > 45 && free <= 10) || (total > 90 && total < 200 && free <= 20));
 
 		ShouldBuildCache.cacheShouldBuildInfo(buildingType, shouldBuild);
 		return shouldBuild;
 	}
 
-	public static MapPoint findTileNearPylonForNewBuilding() {
+	public static MapPoint findTileNearPylonForNewBuilding(UnitTypes typeToBuild) {
 		if (!UnitCounter.weHavePylonFinished()) {
 			return null;
 		}
+		int pylons = UnitCounter.getNumberOfPylons();
 
 		// Get the pylon that has fewest buildings nearby.
 		// Unit pylonWithLeastBuildings = getPylonWithLeastBuildings();
@@ -80,12 +99,17 @@ public class ProtossPylon {
 			return null;
 		}
 
-		if (UnitCounter.getNumberOfUnits(UnitManager.BASE) >= 3
-				&& RUtilities.rand(0, 4) == 0) {
-			base = ProtossNexus.getRandomBase();
+		// if (UnitCounter.getNumberOfUnits(UnitManager.BASE) >= 3
+		// && RUtilities.rand(0, 4) == 0) {
+		// base = ProtossNexus.getRandomBase();
+		// }
+
+		int searchRadiusOfPylons = 14;
+		if (pylons > 10 || pylons == 1) {
+			searchRadiusOfPylons = 50;
 		}
 
-		for (Unit pylon : xvr.getUnitsInRadius(base, 100,
+		for (Unit pylon : xvr.getUnitsInRadius(base, searchRadiusOfPylons,
 				xvr.getUnitsOfType(buildingType))) {
 			if (pylon != null) {
 				// return Constructing.getLegitTileToBuildNear(
@@ -99,9 +123,8 @@ public class ProtossPylon {
 				// - RUtilities.rand(0,
 				// 2 * PYLON_FROM_PYLON_MIN_DISTANCE_RAND);
 
-				MapPoint tile = Constructing
-						.getLegitTileToBuildNear(xvr.getRandomWorker(),
-								buildingType, pylon, 0, 15, true);
+				MapPoint tile = Constructing.getLegitTileToBuildNear(
+						xvr.getRandomWorker(), typeToBuild, pylon, 0, 15, true);
 				if (tile != null) {
 					return tile;
 				}
@@ -113,6 +136,11 @@ public class ProtossPylon {
 	public static MapPoint findTileForPylon() {
 		Unit builder = Constructing.getRandomWorker();
 
+		if (UnitCounter.getNumberOfUnits(buildingType) == 1) {
+			return findTileForFirstPylonAtBase(builder,
+					ProtossNexus.getSecondBaseLocation());
+		}
+
 		// It's not the first pylon
 		if (UnitCounter.weHavePylonFinished()) {
 			return findTileForNextPylon(builder);
@@ -121,6 +149,8 @@ public class ProtossPylon {
 		// It's the first pylon
 		else {
 			return findTileForFirstPylon(builder, xvr.getFirstBase());
+			// return findTileForFirstPylonAtBase(builder,
+			// ProtossNexus.getSecondBaseLocation());
 		}
 	}
 
@@ -130,7 +160,7 @@ public class ProtossPylon {
 		// least one pylon nearby
 		for (Unit base : xvr.getUnitsOfType(UnitManager.BASE)) {
 			int nearbyPylons = xvr.countUnitsOfGivenTypeInRadius(buildingType,
-					9, base.getX(), base.getY(), true);
+					14, base.getX(), base.getY(), true);
 
 			// If this base has no pylons nearby, build one.
 			// if (nearbyPylons == 0) {
@@ -159,11 +189,11 @@ public class ProtossPylon {
 		if ((UnitCounter.getNumberOfUnits(buildingType) >= 5 && RUtilities
 				.rand(0, 5) == 0)
 				|| (xvr.getSuppliesTotal() > 55 && xvr.getSuppliesFree() <= 5)) {
-			return findTileNearPylonForNewBuilding();
+			return findTileNearPylonForNewBuilding(buildingType);
 		}
 
 		// Either build randomly near base
-		if (RUtilities.rand(0, 1) == 0) {
+		if (UnitCounter.getNumberOfPylons() >= 10 && RUtilities.rand(0, 3) == 0) {
 
 			// Build normally, at random base.
 			MapPoint buildTile = findTileForPylonNearby(
@@ -176,8 +206,13 @@ public class ProtossPylon {
 		}
 
 		// or build near random pylon.
-		return findTileForPylonNearby(getRandomPylon(),
+		MapPoint tile = findTileForPylonNearby(getRandomPylon(),
 				PYLON_FROM_PYLON_MIN_DISTANCE, PYLON_FROM_PYLON_MAX_DISTANCE);
+		if (tile != null) {
+			return tile;
+		} else {
+			return findTileNearPylonForNewBuilding(buildingType);
+		}
 
 		// if (RUtilities.rand(0, 6) == 0) {
 		// return findTileForPylonNearbyBase(ProtossNexus.getRandomBase());
@@ -292,13 +327,6 @@ public class ProtossPylon {
 		return null;
 	}
 
-	//
-	// private static ArrayList<Unit> getPylonsInRadius(Unit base,
-	// int iNITIAL_PYLON_MIN_DIST_FROM_BASE2) {
-	// return xvr.getUnitsInRadius(base.getX(), base.getY(),
-	// INITIAL_PYLON_MAX_DIST_FROM_BASE, getPylons());
-	// }
-
 	private static ArrayList<Unit> getPylons() {
 		ArrayList<Unit> pylons = xvr.getUnitsOfType(UnitTypes.Protoss_Pylon);
 		for (Iterator<Unit> iterator = pylons.iterator(); iterator.hasNext();) {
@@ -310,6 +338,38 @@ public class ProtossPylon {
 		return pylons;
 	}
 
+	// ### Version ### build cannons at second base
+	private static MapPoint findTileForFirstPylonAtBase(Unit builder,
+			MapPoint base) {
+		if (base == null) {
+			return null;
+		}
+
+		// Change first base to second base.
+		// base = ProtossNexus.findTileForBase(true);
+		base = ProtossNexus.getSecondBaseLocation();
+		if (base == null) {
+			return null;
+		}
+
+		// Find point being in the middle of way second base<->nearest choke
+		// point.
+		ChokePoint choke = MapExploration.getNearestChokePointFor(base);
+		if (choke == null) {
+			return null;
+		}
+		// MapPointInstance location = new MapPointInstance(
+		// (base.getX() + 2 * choke.getX()) / 3,
+		// (base.getY() + 2 * choke.getY()) / 3);
+		MapPointInstance location = MapPointInstance.getMiddlePointBetween(
+				base, choke);
+
+		// Find place for pylon between choke point and the second base.
+		return Constructing.getLegitTileToBuildNear(builder, buildingType,
+				location, 0, 100, false);
+	}
+
+	// ### Version ### normal
 	private static MapPoint findTileForFirstPylon(Unit builder, Unit base) {
 		if (base == null) {
 			return null;
@@ -320,6 +380,9 @@ public class ProtossPylon {
 		MapPointInstance location = new MapPointInstance(
 				(base.getX() + choke.getCenterX()) / 2,
 				(base.getY() + choke.getCenterY()) / 2);
+		// System.out.println();
+		// System.out.println(choke.toStringLocation());
+		// System.out.println(location.toStringLocation());
 
 		return Constructing.getLegitTileToBuildNear(builder, buildingType,
 				location, 0, 100, false);

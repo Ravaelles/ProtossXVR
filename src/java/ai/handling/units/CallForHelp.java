@@ -60,8 +60,8 @@ public class CallForHelp {
 	}
 
 	public static void issueCallForHelp(Unit toRescue, boolean critical) {
-		ArrayList<Unit> enemies = xvr.getUnitsInRadius(toRescue.getX(),
-				toRescue.getX(), 15, xvr.getEnemyUnitsVisible());
+		ArrayList<Unit> enemies = xvr.getUnitsInRadius(toRescue, 15,
+				xvr.getEnemyUnitsVisible());
 		CallForHelp call = new CallForHelp(toRescue, xvr.getTime(), enemies,
 				critical);
 		callsForHelp.add(call);

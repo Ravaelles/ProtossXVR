@@ -2,6 +2,8 @@ package jnibwapi.types;
 
 import java.util.ArrayList;
 
+import jnibwapi.types.WeaponType.WeaponTypes;
+
 /**
  * Represents a StarCraft unit type.
  * 
@@ -158,6 +160,11 @@ public class UnitType {
 		public int getID() {
 			return ordinal();
 		}
+	
+		public UnitType getType() {
+			return UnitType.getUnitTypeByID(ordinal());
+		}
+	
 	}
 
 	public UnitType(int[] data, int index) {
@@ -523,7 +530,7 @@ public class UnitType {
 	public boolean isSunkenColony() {
 		return getID() == UnitTypes.Zerg_Sunken_Colony.ordinal();
 	}
-	
+
 	public boolean isSporeColony() {
 		return getID() == UnitTypes.Zerg_Spore_Colony.ordinal();
 	}
@@ -541,25 +548,29 @@ public class UnitType {
 		return ID == UnitTypes.Terran_Siege_Tank_Siege_Mode.ordinal()
 				|| ID == UnitTypes.Terran_Siege_Tank_Tank_Mode.ordinal();
 	}
-	
+
 	public boolean isReaver() {
 		return getID() == UnitTypes.Protoss_Reaver.ordinal();
 	}
-	
+
 	public boolean isHighTemplar() {
 		return getID() == UnitTypes.Protoss_High_Templar.ordinal();
 	}
-	
+
 	public boolean isDarkTemplar() {
 		return getID() == UnitTypes.Protoss_Dark_Templar.ordinal();
 	}
-	
+
 	public boolean isMissileTurret() {
 		return getID() == UnitTypes.Terran_Missile_Turret.ordinal();
 	}
-	
+
 	public boolean isObserver() {
 		return getID() == UnitTypes.Protoss_Observer.ordinal();
+	}
+	
+	public boolean isScienceVessel() {
+		return getID() == UnitTypes.Terran_Science_Vessel.ordinal();
 	}
 
 	public boolean isCarrier() {
@@ -570,8 +581,33 @@ public class UnitType {
 		return getID() == UnitTypes.Terran_Vulture_Spider_Mine.ordinal();
 	}
 	
+	public boolean isMedic() {
+		return getID() == UnitTypes.Terran_Medic.ordinal();
+	}
+
 	public WeaponType getGroundWeapon() {
 		return WeaponType.getWeaponByID(groundWeaponID);
 	}
+
+	public boolean canGroundAttack() {
+		return isAttackCapable()
+				&& getGroundWeaponID() != WeaponTypes.None.ordinal();
+	}
+
+	public int getGroundAttackUnnormalized() {
+		return UnitDamages.getGroundAttackUnnormalized(this);
+	}
+
+	public double getGroundAttackNormalized() {
+		return UnitDamages.getGroundAttackNormalized(this);
+	}
+
+	// public boolean isDefensiveBuilding() {
+	// if (!isBuilding()) {
+	// return false;
+	// }
+	//
+	// return isPhotonCannon() || isSunkenColony() || isBunker();
+	// }
 
 }

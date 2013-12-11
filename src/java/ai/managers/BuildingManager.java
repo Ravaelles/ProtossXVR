@@ -39,18 +39,12 @@ public class BuildingManager {
 		// }
 		// }
 		// // }
-
-		// // Shield Battery
-		// if (buildingType.getID() ==
-		// ProtossShieldBattery.getBuildingType().ordinal()) {
-		// ProtossShieldBattery.act(building);
-		// }
 	}
 
 	private static void checkIfShouldCancelConstruction(Unit building,
 			UnitType buildingType) {
-		if (building.isUnderAttack() && (building.isConstructing()
-				|| building.isBeingConstructed())) {
+		if (building.isUnderAttack() && (!building.isCompleted())) {
+			System.out.println("BUILDING ATTACKED");
 			boolean shouldCancelConstruction = false;
 
 			// If this is normal building and it's severely damaged.

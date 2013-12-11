@@ -9,14 +9,18 @@ import jnibwapi.types.UnitCommandType.UnitCommandTypes;
 import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
 import jnibwapi.util.BWColor;
+import ai.handling.army.StrengthEvaluator;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.map.MapExploration;
+import ai.handling.map.MapPoint;
 import ai.handling.other.NukeHandling;
 import ai.handling.units.UnitCounter;
 import ai.managers.ArmyCreationManager;
 import ai.managers.StrategyManager;
 import ai.managers.UnitManager;
 import ai.protoss.ProtossNexus;
+import ai.protoss.ProtossPhotonCannon;
+import ai.protoss.ProtossPylon;
 
 public class Debug {
 
@@ -32,16 +36,20 @@ public class Debug {
 		int oldMainMessageRowCounter = mainMessageRowCounter;
 		mainMessageRowCounter = 0;
 
-//		MapPoint assimilator = Constructing.findTileForAssimilator();
-//		if (assimilator != null) {
-//			xvr.getBwapi().drawBox(assimilator.getX(), assimilator.getY(),
-//					3 * 32, 2 * 32, BWColor.TEAL, false, false);
-//		}
+		// MapPoint assimilator = Constructing.findTileForAssimilator();
+		// if (assimilator != null) {
+		// xvr.getBwapi().drawBox(assimilator.getX(), assimilator.getY(),
+		// 3 * 32, 2 * 32, BWColor.TEAL, false, false);
+		// }
 
 		if (FULL_DEBUG) {
 			paintNextBuildingsPosition(xvr);
 		}
 		paintUnitsDetails(xvr);
+
+		if (FULL_DEBUG) {
+			paintValuesOverUnits(xvr);
+		}
 
 		// // Draw regions
 		// for (Region region : xvr.getBwapi().getMap().getRegions()) {
@@ -57,6 +65,20 @@ public class Debug {
 		// .getChokePoints().size()), false);
 		// }
 
+//		// Draw next building place
+//		MapPoint buildTile = ProtossPylon.findTileNearPylonForNewBuilding();
+//		if (buildTile != null) {
+//			xvr.getBwapi().drawCircle(buildTile.getX() - 64,
+//					buildTile.getX() - 48, 50, BWColor.TEAL, false, false);
+//		}
+
+		// xvr.getBwapi()
+		// .drawText(
+		// region.getCenterX(),
+		// region.getCenterY(),
+		// String.format("Region [%d]", region
+		// .getChokePoints().size()), false);
+
 		// Draw choke points
 		paintChokePoints(xvr);
 
@@ -68,6 +90,25 @@ public class Debug {
 
 		// ========
 		mainMessageRowCounter = oldMainMessageRowCounter;
+	}
+
+	private static void paintValuesOverUnits(XVR xvr) {
+		JNIBWAPI bwapi = xvr.getBwapi();
+		String text;
+		double strength;
+		for (Unit unit : bwapi.getMyUnits()) {
+			strength = StrengthEvaluator.calculateStrengthRatioFor(unit);
+
+			if (strength != -1) {
+				strength -= 1; // make +/- values display
+				if (strength < 99998) {
+					text = (strength > 0 ? "+" : "")
+							+ String.format("%.1f", strength);
+					bwapi.drawText(unit.getX() - 7, unit.getY() + 30, text,
+							false);
+				}
+			}
+		}
 	}
 
 	private static void paintAttackLocation(XVR xvr) {
@@ -98,6 +139,47 @@ public class Debug {
 	}
 
 	private static void paintNextBuildingsPosition(XVR xvr) {
+		MapPoint building;
+		
+		// Paint next NEXUS position
+		building = ProtossNexus.getTileForNextBase(false);
+		if (building != null) {
+			xvr.getBwapi().drawBox(building.getX(), building.getY(),
+					building.getX() + 4 * 32, building.getY() + 4 * 32, BWColor.TEAL,
+					false, false);
+			xvr.getBwapi().drawText(building.getX() + 10,
+					building.getY() + 30, "Nexus", false);
+		}
+		
+		// Paint next CANNON position
+		building = ProtossPhotonCannon.findTileForCannon();
+		if (building != null) {
+			xvr.getBwapi().drawBox(building.getX(), building.getY(),
+					building.getX() + 2 * 32, building.getY() + 2 * 32, BWColor.TEAL,
+					false, false);
+			xvr.getBwapi().drawText(building.getX() + 10,
+					building.getY() + 30, "Cannon", false);
+		}
+		
+		// Paint next PYLON position
+		building = ProtossPylon.findTileForPylon();
+		if (building != null) {
+			xvr.getBwapi().drawBox(building.getX(), building.getY(),
+					building.getX() + 2 * 32, building.getY() + 2 * 32, BWColor.TEAL,
+					false, false);
+			xvr.getBwapi().drawText(building.getX() + 10,
+					building.getY() + 30, "Pylon", false);
+		}
+		
+		// Paint GATEWAY position
+		building = ProtossPylon.findTileNearPylonForNewBuilding(UnitTypes.Protoss_Gateway);
+		if (building != null) {
+			xvr.getBwapi().drawBox(building.getX(), building.getY(),
+					building.getX() + 2 * 32, building.getY() + 2 * 32, BWColor.TEAL,
+					false, false);
+			xvr.getBwapi().drawText(building.getX() + 10,
+					building.getY() + 30, "Gateway", false);
+		}
 
 		// // Paint next PHOTON CANNON position
 		// Point building = ProtossPhotonCannon.findTileForCannon();
@@ -274,47 +356,54 @@ public class Debug {
 					xvr,
 					"Nexus: "
 							+ UnitCounter
-									.getNumberOfUnits(UnitTypes.Protoss_Nexus));
-			// if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Assimilator) >
+									.getNumberOfUnitsCompleted(UnitTypes.Protoss_Nexus));
+			// if
+			// (UnitCounter.getNumberOfUnitsCompleted(UnitTypes.Protoss_Assimilator)
+			// >
 			// 0)
 			// paintMainMessage(
 			// xvr,
 			// "Assimilators: "
 			// + UnitCounter
-			// .getNumberOfUnits(UnitTypes.Protoss_Assimilator));
-			// if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Pylon) > 0)
+			// .getNumberOfUnitsCompleted(UnitTypes.Protoss_Assimilator));
+			// if
+			// (UnitCounter.getNumberOfUnitsCompleted(UnitTypes.Protoss_Pylon) >
+			// 0)
 			// paintMainMessage(
 			// xvr,
 			// "Pylons: "
 			// + UnitCounter
-			// .getNumberOfUnits(UnitTypes.Protoss_Pylon));
-			if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Gateway) > 0)
+			// .getNumberOfUnitsCompleted(UnitTypes.Protoss_Pylon));
+			if (UnitCounter
+					.getNumberOfUnitsCompleted(UnitTypes.Protoss_Gateway) > 0)
 				paintMainMessage(
 						xvr,
 						"Gateway: "
 								+ UnitCounter
-										.getNumberOfUnits(UnitTypes.Protoss_Gateway));
+										.getNumberOfUnitsCompleted(UnitTypes.Protoss_Gateway));
 			// if
-			// (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Cybernetics_Core)
+			// (UnitCounter.getNumberOfUnitsCompleted(UnitTypes.Protoss_Cybernetics_Core)
 			// > 0)
 			// paintMainMessage(
 			// xvr,
 			// "Cybernetics: "
 			// + UnitCounter
-			// .getNumberOfUnits(UnitTypes.Protoss_Cybernetics_Core));
-			if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) > 0)
+			// .getNumberOfUnitsCompleted(UnitTypes.Protoss_Cybernetics_Core));
+			if (UnitCounter
+					.getNumberOfUnitsCompleted(UnitTypes.Protoss_Photon_Cannon) > 0)
 				paintMainMessage(
 						xvr,
 						"Cannons: "
 								+ UnitCounter
-										.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon));
+										.getNumberOfUnitsCompleted(UnitTypes.Protoss_Photon_Cannon));
 
 			paintMainMessage(xvr, "--------------------");
 
 			paintMainMessage(
 					xvr,
 					"Probes: ("
-							+ UnitCounter.getNumberOfUnits(UnitManager.WORKER)
+							+ UnitCounter
+									.getNumberOfUnitsCompleted(UnitManager.WORKER)
 							+ " / "
 							+ ProtossNexus.getOptimalMineralGatherersAtBase(xvr
 									.getFirstBase()) + ")");
@@ -325,36 +414,40 @@ public class Debug {
 							+ ProtossNexus.getNumberofGasGatherersForBase(xvr
 									.getFirstBase()) + ")");
 
-			if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Zealot) > 0)
+			if (UnitCounter.getNumberOfUnitsCompleted(UnitTypes.Protoss_Zealot) > 0)
 				paintMainMessage(
 						xvr,
 						"Zealots: "
 								+ UnitCounter
-										.getNumberOfUnits(UnitTypes.Protoss_Zealot));
-			if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dragoon) > 0)
+										.getNumberOfUnitsCompleted(UnitTypes.Protoss_Zealot));
+			if (UnitCounter
+					.getNumberOfUnitsCompleted(UnitTypes.Protoss_Dragoon) > 0)
 				paintMainMessage(
 						xvr,
 						"Dragoons: "
 								+ UnitCounter
-										.getNumberOfUnits(UnitTypes.Protoss_Dragoon));
-			if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dark_Templar) > 0)
+										.getNumberOfUnitsCompleted(UnitTypes.Protoss_Dragoon));
+			if (UnitCounter
+					.getNumberOfUnitsCompleted(UnitTypes.Protoss_Dark_Templar) > 0)
 				paintMainMessage(
 						xvr,
 						"D. Templars: "
 								+ UnitCounter
-										.getNumberOfUnits(UnitTypes.Protoss_Dark_Templar));
-			if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_High_Templar) > 0)
+										.getNumberOfUnitsCompleted(UnitTypes.Protoss_Dark_Templar));
+			if (UnitCounter
+					.getNumberOfUnitsCompleted(UnitTypes.Protoss_High_Templar) > 0)
 				paintMainMessage(
 						xvr,
 						"H. Templars: "
 								+ UnitCounter
-										.getNumberOfUnits(UnitTypes.Protoss_High_Templar));
-			if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Observer) > 0)
+										.getNumberOfUnitsCompleted(UnitTypes.Protoss_High_Templar));
+			if (UnitCounter
+					.getNumberOfUnitsCompleted(UnitTypes.Protoss_Observer) > 0)
 				paintMainMessage(
 						xvr,
 						"Observers: "
 								+ UnitCounter
-										.getNumberOfUnits(UnitTypes.Protoss_Observer));
+										.getNumberOfUnitsCompleted(UnitTypes.Protoss_Observer));
 
 			paintMainMessage(xvr, "--------------------");
 
@@ -397,8 +490,13 @@ public class Debug {
 				string, true);
 	}
 
+	public static void message(XVR xvr, String txt, boolean displayCounter) {
+		xvr.getBwapi().printText(
+				(displayCounter ? ("(" + messageCounter++ + ".) ") : "") + txt);
+	}
+
 	public static void message(XVR xvr, String txt) {
-		xvr.getBwapi().printText("(" + messageCounter++ + ".) " + txt);
+		message(xvr, txt, true);
 	}
 
 	public static void messageBuild(XVR xvr, UnitTypes type) {

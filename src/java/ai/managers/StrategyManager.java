@@ -17,7 +17,8 @@ public class StrategyManager {
 
 	private static XVR xvr = XVR.getInstance();
 
-	private static final int MINIMUM_INITIAL_ARMY_TO_PUSH = 25;
+	private static final int MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME = 3;
+	private static final int MINIMUM_NON_INITIAL_ARMY_TO_PUSH = 3;
 	private static final int MINIMUM_THRESHOLD_ARMY_TO_PUSH = 41;
 	private static final int MINIMUM_ARMY_PSI_USED_THRESHOLD = 75;
 
@@ -62,31 +63,51 @@ public class StrategyManager {
 	private static Unit _attackTargetUnit;
 
 	private static int retreatsCounter = 0;
+	private static boolean pushedInitially = false;
 
 	// ====================================================
 
 	private static boolean decideIfWeAreReadyToAttack(boolean forceMinimum) {
 		int battleUnits = UnitCounter.getNumberOfBattleUnits();
-
-		// If there's more than threshold of psi used, attack. Always. 
-		if (xvr.getSuppliesUsed() >= 
-				(ProtossNexus.MAX_WORKERS + MINIMUM_ARMY_PSI_USED_THRESHOLD)) {
+		
+		if (battleUnits >= MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME && !pushedInitially) {
+			pushedInitially = true;
 			return true;
 		}
-		
+
+		// If there's more than threshold of psi used, attack. Always.
+		if (xvr.getSuppliesUsed() >= (ProtossNexus.MAX_WORKERS + MINIMUM_ARMY_PSI_USED_THRESHOLD)) {
+			return true;
+		}
+
 		// If there's more than threshold value of battle units
 		if (battleUnits > MINIMUM_THRESHOLD_ARMY_TO_PUSH) {
 			return true;
 		}
 
-		int minimumArmyToPush = MINIMUM_INITIAL_ARMY_TO_PUSH + 5 * retreatsCounter;
+		int minimumArmyToPush;
+		if (!pushedInitially) {
+			minimumArmyToPush = MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME;
+			pushedInitially = true;
+			return true;
+		} else {
+			minimumArmyToPush = MINIMUM_NON_INITIAL_ARMY_TO_PUSH + 5
+					* retreatsCounter;
+		}
 		boolean weAreReadyToAttack = (battleUnits >= (forceMinimum ? minimumArmyToPush
-				: MINIMUM_INITIAL_ARMY_TO_PUSH));
+				: minimumArmyToPush));
 
-		if ((MapExploration.getNumberOfKnownEnemyBases() > 0 && (battleUnits >= (1.5 * MINIMUM_INITIAL_ARMY_TO_PUSH)
-				* MapExploration.getNumberOfKnownEnemyBases()))) {
+		if (minimumArmyToPush == MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME
+				|| battleUnits >= (1.5 * minimumArmyToPush)
+						* Math.max(1,
+								MapExploration.getNumberOfKnownEnemyBases())) {
 			weAreReadyToAttack = true;
 		}
+		// if ((MapExploration.getNumberOfKnownEnemyBases() > 0 && (battleUnits
+		// >= (1.5 * MINIMUM_NON_INITIAL_ARMY_TO_PUSH)
+		// * MapExploration.getNumberOfKnownEnemyBases()))) {
+		// weAreReadyToAttack = true;
+		// }
 
 		// // Check if enemy isn't attacking our base; if so, then go back.
 		// if (weAreReadyToAttack) {
@@ -309,10 +330,10 @@ public class StrategyManager {
 
 	private static void changeNextTargetTo(Unit attackTarget) {
 		if (attackTarget == null) {
-			Debug.message(xvr, "ATTACK TARGET UNKNOWN");
+			Debug.message(xvr, "ERROR! ATTACK TARGET UNKNOWN!");
 			return;
 		}
-		Debug.message(xvr, "ATTACK TARGET = "
+		Debug.message(xvr, "Next to attack: "
 				+ attackTarget.getType().getName());
 
 		_attackTargetUnit = attackTarget;

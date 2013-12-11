@@ -82,12 +82,7 @@ public class UnitCounter {
 	}
 
 	public static boolean weHaveBuildingFinished(UnitTypes unitType) {
-		if (getNumberOfUnits(unitType) > 0
-				&& XVR.getInstance().getUnitsOfType(unitType).get(0)
-						.isCompleted()) {
-			return true;
-		}
-		return false;
+		return getNumberOfUnitsCompleted(unitType) > 0;
 	}
 
 	public static int getNumberOfInfantryUnits() {
@@ -105,6 +100,11 @@ public class UnitCounter {
 		return getNumberOfUnits(UnitTypes.Protoss_Observer)
 				+ getNumberOfUnits(UnitTypes.Protoss_Arbiter)
 				+ getNumberOfUnits(UnitTypes.Protoss_Carrier);
+	}
+
+	
+	public static int getNumberOfPylons() {
+		return getNumberOfUnits(UnitTypes.Protoss_Pylon);
 	}
 
 }
