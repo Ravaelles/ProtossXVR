@@ -946,7 +946,7 @@ public class Unit extends MapPoint implements Comparable<Unit> {
 		return getType().canGroundAttack();
 	}
 
-	public boolean isDefensiveBuilding() {
+	public boolean isDefensiveGroundBuilding() {
 //		UnitType type = getType();
 //		 return type.isPhotonCannon() || type.isSunkenColony() || type.isBunker();
 		UnitType type = getType();

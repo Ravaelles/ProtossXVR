@@ -11,8 +11,8 @@ import ai.handling.map.MapPoint;
 
 public class TargetHandling {
 
-	public static final int MAX_DIST = 50;
-	
+	public static final int MAX_DIST = 350;
+
 	private static XVR xvr = XVR.getInstance();
 
 	public static Unit getImportantEnemyUnitTargetIfPossibleFor(MapPoint point,
@@ -167,7 +167,7 @@ public class TargetHandling {
 				UnitTypes.Terran_Siege_Tank_Siege_Mode,
 				UnitTypes.Terran_Siege_Tank_Tank_Mode,
 				UnitTypes.Zerg_Ultralisk, UnitTypes.Zerg_Guardian,
-				UnitTypes.Zerg_Lurker));
+				UnitTypes.Zerg_Lurker, UnitTypes.Protoss_Observer));
 	}
 
 }

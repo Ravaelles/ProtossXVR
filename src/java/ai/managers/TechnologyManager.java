@@ -29,26 +29,49 @@ public class TechnologyManager {
 		UpgradeTypes upgrade;
 		TechTypes technology;
 
+		int zealots = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Zealot);
+		int dragoons = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dragoon);
+		int infantry = zealots + dragoons;
+
 		// ======================================================
 		// TOP PRIORITY
 		// Technologies that are crucial and we don't need to have second base
 		// in order to upgrade them
-		
-		// Leg enhancement
-		upgrade = UpgradeTypes.Singularity_Charge;
-		if (isUpgradePossible(upgrade)) {
-			tryToUpgrade(ProtossCyberneticsCore.getOneNotBusy(), upgrade);
+
+		// Protoss shield
+		upgrade = UpgradeTypes.Protoss_Plasma_Shields;
+		if ((infantry >= 8 || xvr.canAfford(300, 300))
+				&& isUpgradePossible(upgrade)) {
+			tryToUpgrade(ProtossForge.getOneNotBusy(), upgrade);
 		}
 
 		// Leg enhancement
 		upgrade = UpgradeTypes.Leg_Enhancements;
-		if (isUpgradePossible(upgrade)) {
+		if (zealots >= 5 && isUpgradePossible(upgrade)) {
 			tryToUpgrade(ProtossCitadelOfAdun.getOneNotBusy(), upgrade);
 		}
 
+		// Singularity charge
+		upgrade = UpgradeTypes.Singularity_Charge;
+		if (dragoons >= 2 && isUpgradePossible(upgrade)) {
+			tryToUpgrade(ProtossCyberneticsCore.getOneNotBusy(), upgrade);
+		}
+
+		// Protoss ground weapon
+		upgrade = UpgradeTypes.Protoss_Ground_Weapons;
+		if (zealots >= 4 && xvr.canAfford(150 * getTechLevelOf(upgrade), 150)
+				&& isUpgradePossible(upgrade)) {
+			tryToUpgrade(ProtossForge.getOneNotBusy(), upgrade);
+		}
+
+		int gasInfantry = UnitCounter
+				.getNumberOfUnits(UnitTypes.Protoss_Dragoon)
+				+ UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dark_Templar);
+
 		// Observer speed
 		upgrade = UpgradeTypes.Gravitic_Boosters;
-		if (xvr.canAfford(400)
+		if (gasInfantry >= 9
+				&& xvr.canAfford(400)
 				&& isUpgradePossible(upgrade)
 				&& UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Observer) >= 2) {
 			tryToUpgrade(ProtossObservatory.getOneNotBusy(), upgrade);
@@ -56,8 +79,9 @@ public class TechnologyManager {
 
 		// Psionic Storm
 		technology = PSIONIC_STORM;
-		if (UnitCounter
-				.weHaveBuildingFinished(UnitTypes.Protoss_Templar_Archives)
+		if (gasInfantry >= 10
+				&& UnitCounter
+						.weHaveBuildingFinished(UnitTypes.Protoss_Templar_Archives)
 				&& xvr.canAfford(200) && isResearchPossible(technology)) {
 			// if (xvr.canAfford(200)
 			// && isTechPossible(technology)
@@ -65,63 +89,53 @@ public class TechnologyManager {
 			// {
 			tryToResearch(ProtossTemplarArchives.getOneNotBusy(), technology);
 		}
-		
-//		// Hallucination
-//		technology = HALLUCINATION;
-//		if (UnitCounter
-//				.weHaveBuildingFinished(UnitTypes.Protoss_Templar_Archives)
-//				&& xvr.canAfford(200) && isResearchPossible(technology)) {
-//			// if (xvr.canAfford(200)
-//			// && isTechPossible(technology)
-//			// && UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Observer) >= 2)
-//			// {
-//			tryToResearch(ProtossTemplarArchives.getOneNotBusy(), technology);
-//		}
+
+		// // Hallucination
+		// technology = HALLUCINATION;
+		// if (UnitCounter
+		// .weHaveBuildingFinished(UnitTypes.Protoss_Templar_Archives)
+		// && xvr.canAfford(200) && isResearchPossible(technology)) {
+		// // if (xvr.canAfford(200)
+		// // && isTechPossible(technology)
+		// // && UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Observer) >= 2)
+		// // {
+		// tryToResearch(ProtossTemplarArchives.getOneNotBusy(), technology);
+		// }
 
 		// ======================================================
 		// LOWER PRIORITY
 		// To research technologies below we must have second base built.
-		if (UnitCounter.getNumberOfUnits(UnitManager.BASE) <= 1) {
+		if (UnitCounter.getNumberOfUnits(UnitManager.BASE) <= 1
+				|| gasInfantry < 8) {
 			return;
 		}
 
 		// Observer range
 		upgrade = UpgradeTypes.Sensor_Array;
-		if (xvr.canAfford(500) && isUpgradePossible(upgrade)) {
+		if (infantry >= 15 && xvr.canAfford(500) && isUpgradePossible(upgrade)) {
 			tryToUpgrade(ProtossObservatory.getOneNotBusy(), upgrade);
-		}
-		
-		// Scarab damage
-		upgrade = UpgradeTypes.Scarab_Damage;
-		if (UnitCounter.weHaveBuilding(ProtossRoboticsSupportBay
-				.getBuildingType()) && isUpgradePossible(upgrade)) {
-			tryToUpgrade(ProtossRoboticsSupportBay.getOneNotBusy(), upgrade);
-		}
-
-		// Protoss ground weapon
-		upgrade = UpgradeTypes.Protoss_Ground_Weapons;
-		if (xvr.canAfford(600 * getTechLevelOf(upgrade), 300)
-				&& isUpgradePossible(upgrade)) {
-			tryToUpgrade(ProtossForge.getOneNotBusy(), upgrade);
-		}
-		
-		// Protoss shield
-		upgrade = UpgradeTypes.Protoss_Plasma_Shields;
-		if (isUpgradePossible(upgrade)) {
-			tryToUpgrade(ProtossForge.getOneNotBusy(), upgrade);
 		}
 
 		// Protoss ground armor
 		upgrade = UpgradeTypes.Protoss_Ground_Armor;
-		if (xvr.canAfford(600 * getTechLevelOf(upgrade), 300)
+		if (zealots >= 5 && xvr.canAfford(150 * getTechLevelOf(upgrade), 150)
 				&& isUpgradePossible(upgrade)) {
 			tryToUpgrade(ProtossForge.getOneNotBusy(), upgrade);
 		}
-		
+
+		// Scarab damage
+		upgrade = UpgradeTypes.Scarab_Damage;
+		if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Reaver) >= 2
+				&& UnitCounter.weHaveBuilding(ProtossRoboticsSupportBay
+						.getBuildingType()) && isUpgradePossible(upgrade)) {
+			tryToUpgrade(ProtossRoboticsSupportBay.getOneNotBusy(), upgrade);
+		}
+
 		// Protoss stasis field
 		technology = STASIS_FIELD;
-		if (UnitCounter
-				.weHaveBuildingFinished(UnitTypes.Protoss_Arbiter_Tribunal)
+		if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Arbiter) >= 1
+				&& UnitCounter
+						.weHaveBuildingFinished(UnitTypes.Protoss_Arbiter_Tribunal)
 				&& xvr.canAfford(200) && isResearchPossible(technology)) {
 			tryToResearch(ProtossArbiterTribunal.getOneNotBusy(), technology);
 		}
@@ -167,7 +181,7 @@ public class TechnologyManager {
 
 	private static void tryToResearch(Unit building, TechTypes technology) {
 		if (building != null) {
-//			Debug.message(xvr, "Researching " + technology.toString());
+			// Debug.message(xvr, "Researching " + technology.toString());
 			xvr.getBwapi().research(building.getID(), technology.ordinal());
 			// if (!building.isBuildingNotBusy()) {
 			// knownTechs.put(upgrade, true);

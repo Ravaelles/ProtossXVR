@@ -26,7 +26,7 @@ public class ProtossGateway {
 	private static int darkTemplarBuildRatio = 50;
 	// private static int highTemplarBuildRatio = 19;
 
-	private static final int MINIMAL_HIGH_TEMPLARS = 5;
+	private static final int MINIMAL_HIGH_TEMPLARS = 2;
 	// private static final int MAX_ZEALOTS = 5;
 
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Gateway;
@@ -34,7 +34,7 @@ public class ProtossGateway {
 
 	public static boolean shouldBuild() {
 		if (UnitCounter.weHavePylonFinished()) {
-			int barracks = UnitCounter.getNumberOfUnits(buildingType);
+			int gateways = UnitCounter.getNumberOfUnits(buildingType);
 			int bases = UnitCounter.getNumberOfUnitsCompleted(UnitManager.BASE);
 
 			// ### VERSION ### Cannons defence
@@ -65,7 +65,7 @@ public class ProtossGateway {
 			int cannons = UnitCounter
 					.getNumberOfUnitsCompleted(UnitTypes.Protoss_Photon_Cannon);
 			if ((cannons >= ProtossPhotonCannon.MAX_CANNON_STACK || xvr
-					.canAfford(300)) && barracks <= 2 && xvr.canAfford(140)) {
+					.canAfford(300)) && gateways <= 2 && xvr.canAfford(155)) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
@@ -75,13 +75,23 @@ public class ProtossGateway {
 			// ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			// return true;
 			// }
-			
+
+			if (gateways >= 5) {
+				if (!UnitCounter
+						.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core)
+						|| !UnitCounter
+								.weHaveBuilding(UnitTypes.Protoss_Citadel_of_Adun)) {
+					ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
+					return false;
+				}
+			}
+
 			if (bases <= 1) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 				return false;
 			}
 
-			if (barracks >= 3 && xvr.canAfford(140)) {
+			if (gateways >= 3 && xvr.canAfford(140)) {
 				if (isMajorityOfGatewaysTrainingUnits()) {
 					ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 					return true;
@@ -89,20 +99,20 @@ public class ProtossGateway {
 			}
 
 			// 3 barracks or more
-			if (barracks >= 3 && (barracks <= 5 || xvr.canAfford(520))) {
+			if (gateways >= 3 && (gateways <= 5 || xvr.canAfford(520))) {
 				if (isMajorityOfGatewaysTrainingUnits()) {
 					ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 					return true;
 				}
 			}
-			if (barracks >= 2
+			if (gateways >= 2
 					&& bases >= 2
 					&& UnitCounter
 							.weHaveBuilding(UnitTypes.Protoss_Observatory)
 					&& UnitCounter
 							.weHaveBuilding(UnitTypes.Protoss_Citadel_of_Adun)) {
 				int HQs = UnitCounter.getNumberOfUnits(UnitManager.BASE);
-				if ((double) barracks / HQs <= 2 && xvr.canAfford(560)) {
+				if ((double) gateways / HQs <= 2 && xvr.canAfford(560)) {
 					if (isMajorityOfGatewaysTrainingUnits()) {
 						ShouldBuildCache.cacheShouldBuildInfo(buildingType,
 								true);
@@ -141,7 +151,10 @@ public class ProtossGateway {
 	}
 
 	public static void enemyIsProtoss() {
-		// dragoonBuildRatio *= 2.5;
+	}
+
+	public static void enemyIsTerran() {
+		darkTemplarBuildRatio /= 7;
 	}
 
 	public static void buildIfNecessary() {
@@ -162,7 +175,7 @@ public class ProtossGateway {
 		}
 
 		boolean shouldAlwaysBuild = xvr.canAfford(100)
-				&& UnitCounter.getNumberOfBattleUnits() <= 15;
+				&& UnitCounter.getNumberOfBattleUnits() <= MIN_UNITS_FOR_DIFF_BUILDING;
 		if (shouldAlwaysBuild || buildingQueueDetails == null
 				|| freeMinerals >= 100) {
 			if (barracks.getTrainingQueueSize() == 0) {
@@ -197,9 +210,9 @@ public class ProtossGateway {
 				.weHaveBuildingFinished(UnitTypes.Protoss_Templar_Archives)
 				&& (freeMinerals >= 125 && (freeGas - forceFreeGas + darkTemplarGasBonus) >= 100);
 		boolean highTemplarAllowed = darkTemplarAllowed
-				&& (freeMinerals >= 50 && (freeGas - forceFreeGas) >= 100);
+				&& (freeMinerals >= 50 && (freeGas - forceFreeGas) >= 200);
 
-		UnitTypes typeToBuild = null;
+		UnitTypes typeToBuild = ZEALOT;
 
 		// Calculate ratio
 		double totalRatio = zealotBuildRatio
@@ -216,7 +229,8 @@ public class ProtossGateway {
 
 			// Build some HIGH Templars if there'are none.
 			if (highTemplarAllowed
-					&& (darkTemplars >= 2 && highTemplars < 2 || freeGas > 1000)) {
+					&& ((darkTemplars >= 5 || darkTemplarBuildRatio < 10)
+							&& highTemplars < 2 || freeGas > 1000)) {
 				return HIGH_TEMPLAR;
 			}
 

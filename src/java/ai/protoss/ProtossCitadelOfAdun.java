@@ -25,9 +25,8 @@ public class ProtossCitadelOfAdun {
 				&& UnitCounter
 						.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core)
 				&& UnitCounter.getNumberOfUnits(ProtossGateway
-						.getBuildingType()) >= 2
-				&& !Constructing.weAreBuilding(buildingType)
-				&& xvr.canAfford(150, 100)) {
+						.getBuildingType()) >= 3
+				&& !Constructing.weAreBuilding(buildingType)) {
 			if (UnitCounter.getNumberOfBattleUnits() >= 2) {
 				return true;
 			}

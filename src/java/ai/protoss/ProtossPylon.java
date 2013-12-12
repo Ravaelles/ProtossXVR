@@ -1,11 +1,9 @@
 package ai.protoss;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 
 import jnibwapi.model.ChokePoint;
-import jnibwapi.model.Region;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
@@ -43,9 +41,18 @@ public class ProtossPylon {
 		int free = xvr.getSuppliesFree();
 		int total = xvr.getSuppliesTotal();
 		int pylons = UnitCounter.getNumberOfUnits(buildingType);
+		int workers = UnitCounter.getNumberOfUnits(UnitManager.WORKER);
+		int forges = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Forge);
 
-		if (pylons == 1) {
-			MapExploration.removeChokePointsNearFirstBase();
+		if (pylons == 0 && (workers >= 7 || xvr.canAfford(80))) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			return true;
+		}
+		
+		if (pylons == 1 && ((forges == 1 && xvr.canAfford(54))
+				|| (forges == 0 && xvr.canAfford(194)))) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			return true;
 		}
 
 		if (total == 200) {
@@ -67,21 +74,33 @@ public class ProtossPylon {
 		// return false;
 		// }
 
-		if (total < 130 && Constructing.weAreBuilding(buildingType)) {
-			ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
-			return false;
+		if (total < 80 && Constructing.weAreBuilding(buildingType)) {
+			if (!(total >= 10 && total <= 20 && free == 0)) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
+				return false;
+			}
 		}
 
 		// !Constructing.weAreBuilding(buildingType)
 		// &&
-		boolean shouldBuild = ((total <= 9 && free <= 3 && pylons == 0)
-				|| (total >= 10 && total <= 23 && free <= 4 && pylons <= 1 && !Constructing
-						.weAreBuilding(buildingType))
-				|| (total > 23 && total <= 45 && free <= 7)
+		boolean shouldBuild = ((pylons == 0 && total <= 9 && free <= 3)
+				|| (total >= 10 && total <= 17 && free <= 4 && pylons <= 1)
+				|| (total >= 18 && total <= 25 && free <= 5)
+				|| (total > 25 && total <= 45 && free <= 8)
 				|| (total > 45 && free <= 10) || (total > 90 && total < 200 && free <= 20));
 
 		ShouldBuildCache.cacheShouldBuildInfo(buildingType, shouldBuild);
 		return shouldBuild;
+	}
+	
+	public static double calculateExistingPylonsStrength() {
+		double result = 0;
+
+		for (Unit pylon : xvr.getUnitsOfType(buildingType)) {
+			result += (double) (pylon.getShields() + pylon.getHitPoints()) / 600;
+		}
+
+		return result;
 	}
 
 	public static MapPoint findTileNearPylonForNewBuilding(UnitTypes typeToBuild) {
@@ -308,15 +327,24 @@ public class ProtossPylon {
 							&& xvr.getUnitsOfGivenTypeInRadius(buildingType,
 									PYLON_FROM_PYLON_MIN_DISTANCE - 1, x, y,
 									true).isEmpty()) {
-						ChokePoint choke = MapExploration
-								.getNearestChokePointFor(x, y);
+						// 
+//						&& Constructing.isBuildTileFullyBuildableFor(
+//								builder.getID(), i, j,
+//								buildingType.ordinal()))
+						MapPointInstance point = new MapPointInstance(x, y);
+						if (!Constructing.isTooNearMineralAndBase(point)) {
+							ChokePoint choke = MapExploration
+									.getNearestChokePointFor(x, y);
 
-						// Damn, try NOT to build in the middle of narrow choke
-						// point.
-						if (choke.getRadius() < 6 * 32
-								&& xvr.getDistanceBetween(x, y,
-										choke.getCenterX(), choke.getCenterY()) > 5) {
-							return new MapPointInstance(x, y);
+							// Damn, try NOT to build in the middle of narrow
+							// choke
+							// point.
+							if (choke.getRadius() < 192
+									|| xvr.getDistanceBetween(x, y,
+											choke.getCenterX(),
+											choke.getCenterY()) > 5) {
+								return point;
+							}
 						}
 					}
 				}
@@ -358,6 +386,7 @@ public class ProtossPylon {
 		if (choke == null) {
 			return null;
 		}
+
 		// MapPointInstance location = new MapPointInstance(
 		// (base.getX() + 2 * choke.getX()) / 3,
 		// (base.getY() + 2 * choke.getY()) / 3);

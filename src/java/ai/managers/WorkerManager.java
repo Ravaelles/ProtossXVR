@@ -1,6 +1,7 @@
 package ai.managers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 import jnibwapi.model.Unit;
@@ -10,6 +11,7 @@ import ai.handling.army.StrengthEvaluator;
 import ai.handling.map.MapExploration;
 import ai.handling.map.MapPoint;
 import ai.handling.units.UnitActions;
+import ai.handling.units.UnitCounter;
 import ai.protoss.ProtossNexus;
 import ai.utils.RUtilities;
 
@@ -20,7 +22,7 @@ public class WorkerManager {
 	public static void act() {
 		int counter = 0;
 		for (Unit worker : xvr.getUnitsOfType(UnitManager.WORKER)) {
-			if (counter != 7) {
+			if (counter != 6) {
 				WorkerManager.act(worker);
 			} else {
 				MapExploration.explore(worker);
@@ -41,12 +43,13 @@ public class WorkerManager {
 
 		// If this worker is attacking, and he's far from base, make him go
 		// back.
+		int distToMainBase = xvr.getDistanceSimple(unit, xvr.getFirstBase());
 		if (unit.isAttacking()
-				&& xvr.getDistanceSimple(unit, xvr.getFirstBase()) >= 7
-				|| (!unit.isGatheringMinerals() && !unit.isGatheringGas()
-						&& !unit.isIdle() && StrengthEvaluator
-							.isStrengthRatioCriticalFor(unit))) {
+				&& distToMainBase >= 7
+				|| (unit.isConstructing() && unit.getShields() < 20 && StrengthEvaluator
+						.isStrengthRatioCriticalFor(unit))) {
 			UnitActions.moveTo(unit, xvr.getFirstBase());
+			return;
 		}
 
 		// Act with worker that is under attack
@@ -56,7 +59,8 @@ public class WorkerManager {
 			Unit nearestEnemy = xvr.getUnitNearestFromList(unit, xvr.getBwapi()
 					.getEnemyUnits());
 			if (nearestEnemy != null && nearestEnemy.getType().isWorker()) {
-				if (xvr.getDistanceSimple(unit, xvr.getFirstBase()) < 15) {
+				if (xvr.getDistanceSimple(unit, xvr.getFirstBase()) < 8
+						&& !unit.isConstructing()) {
 					UnitActions.attackEnemyUnit(unit, nearestEnemy);
 					return;
 				}
@@ -64,7 +68,6 @@ public class WorkerManager {
 
 			// ================================
 			// Don't attack, do something else
-
 			MapPoint goTo = null;
 
 			// Try to go to the nearest bunker
@@ -89,7 +92,8 @@ public class WorkerManager {
 		}
 
 		// Act with idle worker
-		if (unit.isIdle()) {
+		if (unit.isIdle() && !unit.isGatheringGas()
+				&& !unit.isGatheringMinerals()) {
 
 			// Find the nearest base for this SCV
 			Unit nearestBase = ProtossNexus.getNearestBaseForUnit(unit);
@@ -97,6 +101,7 @@ public class WorkerManager {
 			// If base exists try to gather resources
 			if (nearestBase != null) {
 				gatherResources(unit, nearestBase);
+				return;
 			}
 		}
 
@@ -104,6 +109,7 @@ public class WorkerManager {
 		// building, yeah it happens this shit.
 		else if (unit.isConstructing() && !unit.isMoving()) {
 			UnitActions.moveTo(unit, ProtossNexus.getNearestBaseForUnit(unit));
+			return;
 		}
 
 		// // If unit is building something check if there's no duplicate
@@ -117,19 +123,25 @@ public class WorkerManager {
 		boolean existsAssimilatorNearBase = ProtossNexus
 				.isExistingCompletedAssimilatorNearBase(nearestBase);
 
+		// if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Assimilator) > 0)
+		// {
+		// System.out.println("ASSIM " + nearestBase.toStringLocation() + ": "
+		// + existsAssimilatorNearBase + " "
+		// + ProtossNexus.getNumberofGasGatherersForBase(nearestBase));
+		// }
 		if (existsAssimilatorNearBase
-				&& ProtossNexus.getNumberofGasGatherersForBase(nearestBase) <= 4) {
+				&& ProtossNexus.getNumberofGasGatherersForBase(nearestBase) < ProtossNexus.WORKERS_PER_GEYSER) {
 			gatherGas(worker, nearestBase);
 		} else {
 			gatherMinerals(worker, nearestBase);
 		}
 	}
 
-	private static void gatherGas(Unit worker, Unit nearestBase) {
-		Unit refinery = xvr.getUnitOfTypeNearestTo(
-				UnitTypes.Protoss_Assimilator, nearestBase);
-		if (refinery != null) {
-			xvr.getBwapi().rightClick(worker.getID(), refinery.getID());
+	private static void gatherGas(Unit worker, Unit base) {
+		Unit onGeyser = xvr.getUnitOfTypeNearestTo(
+				UnitTypes.Protoss_Assimilator, base);
+		if (onGeyser != null) {
+			xvr.getBwapi().rightClick(worker.getID(), onGeyser.getID());
 		}
 	}
 
@@ -144,16 +156,46 @@ public class WorkerManager {
 
 	public static void forceGatherMinerals(Unit gathererToAssign, Unit mineral) {
 		if (gathererToAssign.isCarryingMinerals()) {
-			Unit nearestBase = ProtossNexus
+			Unit nearBase = ProtossNexus
 					.getNearestBaseForUnit(gathererToAssign);
 			xvr.getBwapi().rightClick(gathererToAssign.getID(),
-					nearestBase.getID());
+					nearBase.getID());
+			return;
+		} else if (gathererToAssign.isCarryingGas()) {
+			Unit nearBase = ProtossNexus
+					.getNearestBaseForUnit(gathererToAssign);
+			xvr.getBwapi().rightClick(gathererToAssign.getID(),
+					nearBase.getID());
 			return;
 		}
 
 		if (mineral != null) {
 			xvr.getBwapi()
 					.rightClick(gathererToAssign.getID(), mineral.getID());
+		}
+	}
+
+	public static void forceGatherGas(Unit gathererToAssign, Unit nearestBase) {
+		Unit onGeyser = ProtossNexus
+				.getExistingCompletedAssimilatorNearBase(nearestBase);
+
+		if (gathererToAssign.isCarryingMinerals()) {
+			Unit nearBase = ProtossNexus
+					.getNearestBaseForUnit(gathererToAssign);
+			xvr.getBwapi().rightClick(gathererToAssign.getID(),
+					nearBase.getID());
+			return;
+		} else if (gathererToAssign.isCarryingGas()) {
+			Unit nearBase = ProtossNexus
+					.getNearestBaseForUnit(gathererToAssign);
+			xvr.getBwapi().rightClick(gathererToAssign.getID(),
+					nearBase.getID());
+			return;
+		}
+
+		if (onGeyser != null) {
+			xvr.getBwapi().rightClick(gathererToAssign.getID(),
+					onGeyser.getID());
 		}
 	}
 
@@ -164,14 +206,16 @@ public class WorkerManager {
 		ArrayList<Unit> minerals = ProtossNexus
 				.getMineralsNearBase(nearestBase);
 		if (minerals.isEmpty()) {
-			minerals = xvr.getUnitsOfGivenTypeInRadius(
-					UnitTypes.Resource_Mineral_Field, 50, nearestBase, false);
+			// minerals = xvr.getMineralsUnits();
+			minerals = xvr.getUnitsInRadius(nearestBase,
+					23 + UnitCounter.getNumberOfUnits(UnitManager.BASE) * 18,
+					xvr.getMineralsUnits());
 		}
 
 		// Get workers
 		ArrayList<Unit> workers = ProtossNexus.getWorkersNearBase(nearestBase);
 
-		// Build mapping of number of SCVs to mineral unit
+		// Build mapping of number of worker to mineral
 		HashMap<Unit, Integer> workersAtMineral = new HashMap<Unit, Integer>();
 		for (Unit worker : workers) {
 			// System.out.println();
@@ -207,6 +251,7 @@ public class WorkerManager {
 		}
 
 		// Get the nearest mineral which has minimumGatherersAssigned
+		Collections.shuffle(minerals);
 		for (Unit mineral : minerals) {
 			if (!workersAtMineral.containsKey(mineral)
 					|| workersAtMineral.get(mineral) <= minimumGatherersAssigned) {

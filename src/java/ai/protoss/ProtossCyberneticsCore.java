@@ -6,6 +6,7 @@ import ai.core.XVR;
 import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.units.UnitCounter;
+import ai.managers.UnitManager;
 
 public class ProtossCyberneticsCore {
 
@@ -24,11 +25,12 @@ public class ProtossCyberneticsCore {
 		if (!Constructing.weAreBuilding(buildingType)
 				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Forge)
 				&& !UnitCounter.weHaveBuilding(buildingType)
-				&& (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Photon_Cannon) || xvr
-						.canAfford(320)) && xvr.canAfford(150)) {
+				&& (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Assimilator) || xvr
+						.canAfford(320)) && xvr.canAfford(132)) {
 			if ((UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Gateway) >= 3 || xvr
 					.canAfford(320))
-					&& UnitCounter.getNumberOfBattleUnits() >= ProtossGateway.MIN_UNITS_FOR_DIFF_BUILDING) {
+					&& (UnitCounter.getNumberOfBattleUnits() >= ProtossGateway.MIN_UNITS_FOR_DIFF_BUILDING || UnitCounter
+							.getNumberOfUnits(UnitManager.BASE) > 1)) {
 				return true;
 			}
 		}

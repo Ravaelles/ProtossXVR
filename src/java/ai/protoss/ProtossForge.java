@@ -5,6 +5,7 @@ import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
 import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
+import ai.handling.map.MapExploration;
 import ai.handling.units.UnitCounter;
 
 public class ProtossForge {
@@ -22,14 +23,18 @@ public class ProtossForge {
 
 	public static boolean shouldBuild() {
 		int forges = UnitCounter.getNumberOfUnits(buildingType);
-//		int gateways = UnitCounter.getNumberOfUnits(ProtossGateway
-//				.getBuildingType());
-//		int gatewaysFinished = UnitCounter
-//				.getNumberOfUnitsCompleted(ProtossGateway.getBuildingType());
+		// int pylons = UnitCounter.getNumberOfPylonsCompleted();
+		// int gateways = UnitCounter.getNumberOfUnits(ProtossGateway
+		// .getBuildingType());
+		// int gatewaysFinished = UnitCounter
+		// .getNumberOfUnitsCompleted(ProtossGateway.getBuildingType());
 
 		// Version for expansion with cannons
-		if (forges == 0 && xvr.canAfford(134) //UnitCounter.weHavePylonFinished()
+		if (forges == 0
+				&& (ProtossPylon.calculateExistingPylonsStrength() >= 0.86 || xvr
+						.canAfford(132))
 				&& !Constructing.weAreBuilding(buildingType)) {
+			MapExploration.removeChokePointsNearFirstBase();
 			// if (UnitCounter.getNumberOfBattleUnits() >= 15) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
@@ -50,8 +55,10 @@ public class ProtossForge {
 				&& UnitCounter.getNumberOfUnits(ProtossGateway
 						.getBuildingType()) >= 3 && xvr.canAfford(650)
 				&& !Constructing.weAreBuilding(buildingType)) {
-			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
-			return true;
+			if (UnitCounter.getNumberOfBattleUnits() >= 15) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+				return true;
+			}
 		}
 
 		if (forges == 2 && xvr.canAfford(1300)

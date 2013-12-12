@@ -42,10 +42,14 @@ public class MapExploration {
 		return explorer;
 	}
 
+	private static boolean _exploredSecondBase = false;
+
 	public static void explore(Unit explorer) {
 		if (explorer.isConstructing()) {
 			return;
 		}
+
+		MapExploration.explorer = explorer;
 
 		// Define nearest enemy
 		Unit nearestEnemy = xvr.getUnitNearestFromList(explorer.getX(),
@@ -88,8 +92,14 @@ public class MapExploration {
 			BaseLocation goTo = null;
 			boolean initial = false;
 
+			if (!_exploredSecondBase) {
+				MapPoint secondBase = ProtossNexus.getSecondBaseLocation();
+				UnitActions.moveTo(explorer, secondBase);
+				_exploredSecondBase = true;
+			}
+
 			// If no base has been discovered try to
-			if (baseLocationsDiscovered.isEmpty()) {
+			else if (baseLocationsDiscovered.isEmpty()) {
 				initial = true;
 				goTo = getMostDistantBaseLocation(xvr.getFirstBase());
 				if (goTo != null) {
@@ -205,10 +215,10 @@ public class MapExploration {
 			return new ArrayList<ChokePoint>();
 		}
 
-		for (ChokePoint object : chokePointsProcessed) {
-			double distance = xvr.getDistanceBetween(point,
-					object.getCenterX(), object.getCenterY()) / 32;
-			chokes.put(object, distance);
+		for (ChokePoint choke : chokePointsProcessed) {
+			double distance = xvr.getDistanceBetween(point, choke.getCenterX(),
+					choke.getCenterY()) - choke.getRadius() / 32;
+			chokes.put(choke, distance);
 		}
 
 		ArrayList<ChokePoint> result = new ArrayList<ChokePoint>();

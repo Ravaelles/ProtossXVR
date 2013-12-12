@@ -19,7 +19,11 @@ public class ProtossRoboticsSupportBay {
 	}
 
 	public static boolean shouldBuild() {
-		if (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Robotics_Facility)
+		int dragoons = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dragoon);
+
+		if (dragoons >= 3
+				&& UnitCounter
+						.weHaveBuilding(UnitTypes.Protoss_Robotics_Facility)
 				&& !UnitCounter.weHaveBuilding(buildingType)
 				&& !Constructing.weAreBuilding(buildingType)
 				&& xvr.canAfford(150, 100)) {
@@ -44,5 +48,5 @@ public class ProtossRoboticsSupportBay {
 	public static UnitTypes getBuildingType() {
 		return buildingType;
 	}
-	
+
 }

@@ -44,24 +44,39 @@ public class UnitManager {
 
 		// Act with non workers
 		for (Unit unit : xvr.getUnitsNonWorker()) {
+			UnitType type = unit.getType();
+			if (type.equals(UnitManager.WORKER)) {
+				continue;
+			}
 
 			// ===============
 			// Act according to strategy, attack strategic targets, go healing,
 			// place properly (Strategy phase)
 			act(unit);
 
-			UnitType type = unit.getType();
-			if (type.isReaver() || type.isHighTemplar() || type.isObserver()
-					|| type.isDarkTemplar()) {
+			if (type.isReaver() || type.isHighTemplar() || type.isObserver()) {
 
 				// Wounded units should avoid being killed if possible
 				handleWoundedUnitBehaviourIfNecessary(unit);
 				continue;
 			}
 
+			// Don't interrupt shooting dragoons
+			if (type.isDragoon() && unit.isStartingAttack()) {
+				continue;
+			}
+
 			// ===============
 			// Attack close targets (Tactics phase)
 			actTryAttackingCloseEnemyUnits(unit);
+
+			// Don't interrupt dark templars in killing spree
+			if (type.isDarkTemplar()) {
+				continue;
+			}
+
+			// Run from lurkers etc
+			avoidHiddenUnitsIfNecessary(unit);
 
 			// ==================================
 			// Anti-HERO-One-fights-the-army code, avoid being overwhelmed
@@ -109,6 +124,13 @@ public class UnitManager {
 		// Observer
 		else if (unitType.getID() == UnitTypes.Protoss_Observer.ordinal()) {
 			ProtossObserver.act(unit);
+			return;
+		}
+
+		// Dark Templar
+		else if (unit.getTypeID() == UnitTypes.Protoss_Dark_Templar.ordinal()) {
+			ProtossDarkTemplar.act(unit);
+			return;
 		}
 
 		// ======================================
@@ -134,12 +156,6 @@ public class UnitManager {
 				}
 			}
 
-			// If unit is still idle, try to do something
-			// actWhenUnitIsStillIdle(unit);
-
-			// ==================================
-			avoidHiddenUnitsIfNecessary(unit);
-
 			// Increase unit counter, so we can know which unit in order it was.
 			_unitCounter++;
 		}
@@ -151,12 +167,6 @@ public class UnitManager {
 		// Reaver
 		if (unitType.getID() == UnitTypes.Protoss_Reaver.ordinal()) {
 			ProtossReaver.act(unit);
-		}
-
-		// Dark Templar
-		else if (unit.getTypeID() == UnitTypes.Protoss_Dark_Templar.ordinal()) {
-			ProtossDarkTemplar.act(unit);
-			return;
 		}
 
 		// High Templar
@@ -173,28 +183,70 @@ public class UnitManager {
 	}
 
 	private static void handleAntiStuckCode(Unit unit) {
+		boolean shouldFightBack = false;
 
 		// If unit is stuck, attack.
-		if (unit.isStuck() && unit.isUnderAttack()) {
-			actTryAttackingCloseEnemyUnits(unit);
-		}
-
-		else if (unit.getGroundWeaponCooldown() == 0 && unit.isUnderAttack()
-				&& xvr.getNearestEnemyInRadius(unit, 1) != null) {
-			if (!StrengthEvaluator.isStrengthRatioCriticalFor(unit)) {
+		if (unit.isStuck() || unit.isUnderAttack()) {
+			shouldFightBack = xvr.getNearestEnemyInRadius(unit, 1) != null
+					&& xvr.getUnitsInRadius(unit, 2, xvr.getUnitsNonWorker())
+							.size() >= 3;
+			if (shouldFightBack) {
 				actTryAttackingCloseEnemyUnits(unit);
 			}
 		}
+
+		else if (unit.getGroundWeaponCooldown() == 0 && unit.isUnderAttack()) {
+			if (shouldFightBack) {
+				actTryAttackingCloseEnemyUnits(unit);
+			}
+
+			// && xvr.getNearestEnemyInRadius(unit, 1) != null
+			// if (!StrengthEvaluator.isStrengthRatioCriticalFor(unit)) {
+//			actTryAttackingCloseEnemyUnits(unit);
+			// }
+		}
+
+		// // If unit is stuck, attack.
+		// if (unit.isStuck() || unit.isUnderAttack()) {
+		// actTryAttackingCloseEnemyUnits(unit);
+		// }
+		//
+		// else if (unit.getGroundWeaponCooldown() == 0 && unit.isUnderAttack())
+		// {
+		//
+		// // && xvr.getNearestEnemyInRadius(unit, 1) != null
+		// // if (!StrengthEvaluator.isStrengthRatioCriticalFor(unit)) {
+		// actTryAttackingCloseEnemyUnits(unit);
+		// // }
+		// }
 	}
 
 	public static void applyStrengthEvaluatorToAllUnits() {
 		for (Unit unit : xvr.getUnitsNonBuilding()) {
 			UnitType type = unit.getType();
-			if (type.isReaver() || type.isHighTemplar() || type.isObserver()
-					|| type.isDarkTemplar()) {
+			if (type.equals(UnitManager.WORKER)) {
 				continue;
 			}
+
+			// Don't interrupt shooting dragoons
+			if (type.isDragoon() && unit.isStartingAttack()) {
+				continue;
+			}
+
+			// Don't interrupt dark templars in killing spree
+			if (type.isDarkTemplar()) {
+				continue;
+			}
+
+			// Some units have special orders
+			if (type.isReaver() || type.isHighTemplar() || type.isObserver()) {
+				continue;
+			}
+
+			// ============================
 			decideSkirmishIfToFightOrRetreat(unit);
+
+			handleAntiStuckCode(unit);
 		}
 	}
 
@@ -270,7 +322,7 @@ public class UnitManager {
 	private static void avoidHiddenUnitsIfNecessary(Unit unit) {
 		Unit hiddenEnemyUnitNearby = MapExploration
 				.getHiddenEnemyUnitNearbyTo(unit);
-		if (hiddenEnemyUnitNearby != null) {
+		if (hiddenEnemyUnitNearby != null && unit.isDetected()) {
 			UnitActions.moveAwayFromUnitIfPossible(unit, hiddenEnemyUnitNearby,
 					5);
 		}

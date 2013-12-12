@@ -59,7 +59,7 @@ public class ProtossHighTemplar {
 
 			// Try to find top priority target.
 			ArrayList<Unit> topPriorityTargets = TargetHandling
-					.getTopPriorityTargetsNear(highTemplar, 11);
+					.getTopPriorityTargetsNear(highTemplar, 13);
 			if (!topPriorityTargets.isEmpty()) {
 				for (Unit possibleTarget : topPriorityTargets) {
 					if (!possibleTarget.isUnderStorm()
@@ -73,9 +73,14 @@ public class ProtossHighTemplar {
 			if (unitToStrike == null) {
 
 				// Find any target
-				ArrayList<Unit> enemies = xvr.getUnitsInRadius(highTemplar, 11,
+				ArrayList<Unit> enemies = xvr.getUnitsInRadius(highTemplar, 13,
 						xvr.getEnemyArmyUnits());
 				for (Unit possibleTarget : enemies) {
+					if (xvr.countUnitsInRadius(possibleTarget, 3,
+							xvr.getBwapi().getEnemyUnits()) >= 4) {
+						unitToStrike = possibleTarget;
+						break;
+					}
 
 					// If target enemy isn't under other spells...
 					if (!possibleTarget.isUnderStorm()

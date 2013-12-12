@@ -84,6 +84,7 @@ public class XVRClient implements BWAPIEventListener {
 		// ENEMY -> Terran
 		else if (enemy.getRaceID() == 1) {
 			XVR.setENEMY_RACE("Terran");
+			ProtossGateway.enemyIsTerran();
 		}
 		// ENEMY -> Zerg
 		else if (enemy.getRaceID() == 0) {
@@ -141,9 +142,9 @@ public class XVRClient implements BWAPIEventListener {
 	}
 
 	public void playerLeft(int playerID) {
-		Debug.message(xvr, "###########################", false);
+		Debug.message(xvr, "########################", false);
 		Debug.message(xvr, "## Sayonara, gringo! ^_^ ##", false);
-		Debug.message(xvr, "###########################", false);
+		Debug.message(xvr, "########################", false);
 	}
 
 	public void unitCreate(int unitID) {
@@ -295,9 +296,9 @@ public class XVRClient implements BWAPIEventListener {
 	}
 
 	public void playerDropped(int playerID) {
-		Debug.message(xvr, "###########################", false);
+		Debug.message(xvr, "########################", false);
 		Debug.message(xvr, "## Sayonara, gringo! ^_^ ##", false);
-		Debug.message(xvr, "###########################", false);
+		Debug.message(xvr, "########################", false);
 	}
 
 }

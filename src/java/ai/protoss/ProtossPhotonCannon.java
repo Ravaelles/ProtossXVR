@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import jnibwapi.model.ChokePoint;
 import jnibwapi.model.Unit;
+import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
 import ai.handling.constructing.Constructing;
@@ -20,22 +21,27 @@ public class ProtossPhotonCannon {
 	private static XVR xvr = XVR.getInstance();
 
 	private static final double MAX_DIST_FROM_CHOKE_POINT_MODIFIER = 1.8;
-	public static final int MAX_CANNON_STACK = 4;
+	public static final int MAX_CANNON_STACK = 3;
 
 	private static MapPoint _placeToReinforceWithCannon = null;
 
 	public static boolean shouldBuild() {
-		if (UnitCounter.weHaveBuildingFinished(UnitTypes.Protoss_Forge)) {
+		if (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Forge)) {
 			int cannons = UnitCounter.getNumberOfUnits(buildingType);
-			int bases = UnitCounter.getNumberOfUnits(UnitManager.BASE);
-			int pylons = UnitCounter.getNumberOfUnitsCompleted(UnitTypes.Protoss_Pylon);
+			// int bases = UnitCounter.getNumberOfUnits(UnitManager.BASE);
+			int pylons = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Pylon);
 			// int battleUnits = UnitCounter.getNumberOfBattleUnits();
 
 			if (pylons == 1) {
-				return false;
+				if (!xvr.canAfford(300)) {
+					return false;
+				}
 			}
-			
-			if (pylons >= 2 && calculateExistingCannonsStrength() < MAX_CANNON_STACK) {
+
+			if (cannons <= MAX_CANNON_STACK
+					&& ProtossPylon.calculateExistingPylonsStrength() >= 1.35
+					&& calculateExistingCannonsStrength() < MAX_CANNON_STACK) {
+//				System.out.println("FIRST CASE");
 				return true;
 			}
 
@@ -43,20 +49,21 @@ public class ProtossPhotonCannon {
 			// return false;
 			// }
 
-			if (cannons >= 4 * bases) {
-				return xvr.canAfford(900) && cannons <= 7 * bases;
-			}
+			// if (cannons >= 4 * bases) {
+			// return xvr.canAfford(1200) && cannons <= 7 * bases;
+			// }
 
 			// Select one place to reinforce
 			for (MapPoint base : getPlacesToReinforce()) {
 				if (UnitCounter.getNumberOfUnits(UnitManager.BASE) == 1) {
 					if (shouldBuildFor((MapPoint) base)) {
+//						System.out.println("#SECOND");
 						return true;
 					}
 				}
 			}
 
-			// If main base isn't protected att all, build some cannons
+			// If main base isn't protected at all, build some cannons
 			// if (RUtilities.rand(0, 10) == 0) {
 			// int cannonsNearMainBase = xvr.countUnitsOfGivenTypeInRadius(
 			// UnitTypes.Protoss_Photon_Cannon, 10,
@@ -83,9 +90,17 @@ public class ProtossPhotonCannon {
 
 	private static double calculateExistingCannonsStrength() {
 		double result = 0;
+		UnitType type = UnitType
+				.getUnitTypeByID(UnitTypes.Protoss_Photon_Cannon.ordinal());
+		int maxHitPoints = type.getMaxShields() + type.getMaxHitPoints();
 
 		for (Unit cannon : xvr.getUnitsOfType(buildingType)) {
-			result += (double) (cannon.getShields() + cannon.getHitPoints()) / 200;
+			double cannonTotalHP = (double) (cannon.getShields() + cannon
+					.getHitPoints()) / maxHitPoints;
+			if (!cannon.isCompleted()) {
+				cannonTotalHP = Math.sqrt(cannonTotalHP);
+			}
+			result += cannonTotalHP;
 		}
 
 		return result;
@@ -139,7 +154,7 @@ public class ProtossPhotonCannon {
 
 	private static ArrayList<MapPoint> getPlacesToReinforce() {
 		ArrayList<MapPoint> placesToReinforce = new ArrayList<>();
-
+		
 		// Second base should be one huge defensive bunker.
 		placesToReinforce.add(ProtossNexus.getSecondBaseLocation());
 
@@ -194,7 +209,7 @@ public class ProtossPhotonCannon {
 			radius = 8;
 		}
 
-		int searchInDistance = (int) (1.1 * MAX_DIST_FROM_CHOKE_POINT_MODIFIER * radius);
+		int searchInDistance = (int) (1.5 * MAX_DIST_FROM_CHOKE_POINT_MODIFIER * radius);
 		if (searchInDistance < 9) {
 			searchInDistance = 9;
 		}
@@ -205,9 +220,9 @@ public class ProtossPhotonCannon {
 		double result = 0;
 		double maxCannonHP = 200;
 		for (Unit cannon : cannonsNearby) {
-//			if (!cannon.isCompleted()) {
-//				result -= 1;
-//			}
+			// if (!cannon.isCompleted()) {
+			// result -= 1;
+			// }
 			result += (cannon.getHitPoints() + cannon.getShields())
 					/ maxCannonHP;
 		}
@@ -227,7 +242,7 @@ public class ProtossPhotonCannon {
 
 		// ================================
 		// Define maximum distance from a choke point for a cannon
-		int minimumDistance = 5;
+		int minimumDistance = 1;
 		int numberOfCannonsNearby = calculateCannonsNearby(mapPoint);
 		if (mapPoint instanceof ChokePoint) {
 			ChokePoint choke = (ChokePoint) mapPoint;
@@ -248,6 +263,7 @@ public class ProtossPhotonCannon {
 	}
 
 	public static MapPoint findTileForCannon() {
+
 		// return findProperBuildTile(_chokePointToReinforce, true);
 		if (_placeToReinforceWithCannon == null) {
 			_placeToReinforceWithCannon = MapExploration
@@ -263,24 +279,24 @@ public class ProtossPhotonCannon {
 
 		// ===================
 		// If main base isn't protected at all, build some cannons
-//		if (UnitCounter.getNumberOfUnits(buildingType) <= 1) {
-//			Unit firstBase = xvr.getFirstBase();
-//			int cannonsNearMainBase = xvr.countUnitsOfGivenTypeInRadius(
-//					UnitTypes.Protoss_Photon_Cannon, 12, firstBase, true);
-//			if (cannonsNearMainBase < 1) {
-//
-//				MapPoint point = MapPointInstance.getTwoThirdPointBetween(
-//						firstBase,
-//						MapExploration.getImportantChokePointNear(firstBase));
-//
-//				tileForCannon = Constructing
-//						.getLegitTileToBuildNear(xvr.getRandomWorker(),
-//								buildingType, point, 0, 10, true);
-//				if (tileForCannon != null) {
-//					return tileForCannon;
-//				}
-//			}
-//		}
+		// if (UnitCounter.getNumberOfUnits(buildingType) <= 1) {
+		// Unit firstBase = xvr.getFirstBase();
+		// int cannonsNearMainBase = xvr.countUnitsOfGivenTypeInRadius(
+		// UnitTypes.Protoss_Photon_Cannon, 12, firstBase, true);
+		// if (cannonsNearMainBase < 1) {
+		//
+		// MapPoint point = MapPointInstance.getTwoThirdPointBetween(
+		// firstBase,
+		// MapExploration.getImportantChokePointNear(firstBase));
+		//
+		// tileForCannon = Constructing
+		// .getLegitTileToBuildNear(xvr.getRandomWorker(),
+		// buildingType, point, 0, 10, true);
+		// if (tileForCannon != null) {
+		// return tileForCannon;
+		// }
+		// }
+		// }
 
 		// ===================
 		// If we're here it can mean we should build cannons at position of the

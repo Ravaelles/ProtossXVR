@@ -527,6 +527,10 @@ public class UnitType {
 		return getID() == UnitTypes.Protoss_Photon_Cannon.ordinal();
 	}
 
+	public boolean isDragoon() {
+		return getID() == UnitTypes.Protoss_Dragoon.ordinal();
+	}
+	
 	public boolean isSunkenColony() {
 		return getID() == UnitTypes.Zerg_Sunken_Colony.ordinal();
 	}

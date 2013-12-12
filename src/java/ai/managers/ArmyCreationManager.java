@@ -3,11 +3,11 @@ package ai.managers;
 import java.util.ArrayList;
 
 import jnibwapi.model.Unit;
-import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.XVR;
 import ai.handling.units.UnitCounter;
 import ai.protoss.ProtossGateway;
 import ai.protoss.ProtossNexus;
+import ai.protoss.ProtossPhotonCannon;
 import ai.protoss.ProtossRoboticsFacility;
 import ai.protoss.ProtossStargate;
 
@@ -46,46 +46,22 @@ public class ArmyCreationManager {
 	}
 
 	public static boolean weShouldBuildBattleUnits() {
-		// if (Constructing.shouldBuildAnyBuilding() != null) {
-		// return false;
-		// }
-		//
-		// int numberOfSoldiers = UnitCounter.getNumberOfBattleUnits();
-		//
-		// if (numberOfSoldiers <= 7) {
-		// return true;
-		// }
-		// else if (
-		// !UnitCounter.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core)
-		// || ProtossAssimilator.shouldBuild()) {
-		// return false;
-		// }
-		// // else if (numberOfSoldiers <= 7
-		// // && !UnitCounter.weHaveBuilding(UnitTypes.Protoss_Bunker)
-		// // ) {
-		// // return false;
-		// // }
-
 		int battleUnits = UnitCounter.getNumberOfBattleUnits();
 		
-		if (ProtossNexus.shouldBuild() || xvr.canAfford(525)) {
+		if (battleUnits <= 6) {
+			return true;
+		}
+		if (!xvr.canAfford(125)) {
+			return false;
+		}
+		if (ProtossNexus.shouldBuild() && !xvr.canAfford(525)) {
+			return false;
+		}
+		if (ProtossPhotonCannon.shouldBuild() && !xvr.canAfford(250)) {
 			return false;
 		}
 		
-		// If enemy is Protoss, force more units
-//		if (xvr.getENEMY().isProtoss()) {
-//			if (battleUnits <= 9) {
-//				return true;
-//			}
-//		}
-		if (battleUnits <= 20) {
-			return true;
-		}
-		
-		return xvr.canAfford(700)
-				|| (!ProtossNexus.shouldBuild() || xvr.canAfford(525) || battleUnits < 10)
-				&& (UnitCounter
-						.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core) || battleUnits < 15);
+		return true;
 	}
 
 }

@@ -35,14 +35,14 @@ public class ProtossStargate {
 				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Observatory)
 				&& UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Observer) > 0
 				&& !UnitCounter.weHaveBuilding(buildingType)
-				&& xvr.canAfford(150, 150)
+				&& xvr.canAfford(400, 250)
 				&& !Constructing.weAreBuilding(buildingType)) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
 		}
 
 		if (UnitCounter.getNumberOfUnits(buildingType) == 1
-				&& xvr.canAfford(800, 300)) {
+				&& xvr.canAfford(800, 500)) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
 		}

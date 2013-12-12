@@ -102,9 +102,12 @@ public class UnitCounter {
 				+ getNumberOfUnits(UnitTypes.Protoss_Carrier);
 	}
 
-	
 	public static int getNumberOfPylons() {
 		return getNumberOfUnits(UnitTypes.Protoss_Pylon);
+	}
+	
+	public static int getNumberOfPylonsCompleted() {
+		return getNumberOfUnitsCompleted(UnitTypes.Protoss_Pylon);
 	}
 
 }

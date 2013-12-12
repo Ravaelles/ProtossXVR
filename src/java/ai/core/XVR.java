@@ -105,12 +105,12 @@ public class XVR {
 
 				UnitManager.act();
 			}
-			
+
 			// Triple the frequency of "anti-hero" code
-			if (getTime() % 22 == 7 || getTime() % 22 == 14 ) {
+			if (getTime() % 22 == 7 || getTime() % 22 == 14) {
 				UnitManager.applyStrengthEvaluatorToAllUnits();
 			}
-			
+
 			// Avoid being under psionic storm, disruptive web etc.
 			if (getTime() % 8 == 0) {
 				UnitManager.avoidSeriousSpellEffectsIfNecessary();
@@ -127,7 +127,7 @@ public class XVR {
 			}
 
 			// Handle constructing new buildings
-			if (getTime() % 10 == 0) {
+			if (getTime() % 9 == 0) {
 				ConstructingManager.act();
 			}
 
@@ -177,6 +177,10 @@ public class XVR {
 
 	public int getTime() {
 		return time;
+	}
+	
+	public int getTimeSecond() {
+		return time / 30;
 	}
 
 	public int getTimeDifferenceBetweenNowAnd(int oldTime) {
@@ -249,7 +253,7 @@ public class XVR {
 		for (Unit unit : getUnitsNonWorker()) {
 			UnitType type = unit.getType();
 			if (unit.isCompleted()
-					&& (!type.isBuilding() || unit.isDefensiveBuilding())) {
+					&& (!type.isBuilding() || unit.isDefensiveGroundBuilding())) {
 				objectsOfThisType.add(unit);
 			}
 		}
@@ -264,7 +268,7 @@ public class XVR {
 			UnitType type = unit.getType();
 			if ((!type.isBuilding() && !unit.isWorker() && !unit.getType()
 					.isLarvaOrEgg())
-					|| (type.isBuilding() && unit.isDefensiveBuilding())) {
+					|| (type.isBuilding() && unit.isDefensiveGroundBuilding())) {
 				objectsOfThisType.add(unit);
 			}
 		}
@@ -334,8 +338,13 @@ public class XVR {
 	public ArrayList<Unit> getMineralsUnits() {
 		ArrayList<Unit> objectsOfThisType = new ArrayList<Unit>();
 
+		int m1 = UnitTypes.Resource_Mineral_Field.ordinal();
+		int m2 = UnitTypes.Resource_Mineral_Field_Type_2.ordinal();
+		int m3 = UnitTypes.Resource_Mineral_Field_Type_3.ordinal();
+
 		for (Unit unit : bwapi.getNeutralUnits()) {
-			if (unit.getTypeID() == UnitTypes.Resource_Mineral_Field.ordinal()) {
+			if (unit.getTypeID() == m1 || unit.getTypeID() == m2
+					|| unit.getTypeID() == m3) {
 				objectsOfThisType.add(unit);
 			}
 		}
@@ -456,7 +465,8 @@ public class XVR {
 		return resultList;
 	}
 
-	public int countUnitsInRadius(MapPoint point, int tileRadius, boolean onlyMyUnits) {
+	public int countUnitsInRadius(MapPoint point, int tileRadius,
+			boolean onlyMyUnits) {
 		return countUnitsInRadius(point.getX(), point.getY(), tileRadius,
 				onlyMyUnits);
 	}
@@ -497,9 +507,8 @@ public class XVR {
 
 	public int countMineralsInRadiusOf(int tileRadius, int x, int y) {
 		int result = 0;
-		for (Unit unit : bwapi.getNeutralUnits()) {
-			if (UnitTypes.Resource_Mineral_Field.ordinal() == unit.getTypeID()
-					&& getDistanceBetween(unit, x, y) <= tileRadius) {
+		for (Unit unit : getMineralsUnits()) {
+			if (getDistanceBetween(unit, x, y) <= tileRadius) {
 				result++;
 			}
 		}
@@ -820,8 +829,7 @@ public class XVR {
 	}
 
 	public Unit getNearestEnemyInRadius(MapPoint point, int tileRadius) {
-		Unit enemy = getUnitNearestFromList(point,
-				getEnemyUnitsVisible());
+		Unit enemy = getUnitNearestFromList(point, getEnemyUnitsVisible());
 		if (enemy == null || getDistanceBetween(enemy, point) > tileRadius) {
 			return null;
 		}
@@ -836,7 +844,6 @@ public class XVR {
 		ENEMY = eNEMY;
 	}
 
-	
 	public ArrayList<Unit> getUnitsNonBuilding() {
 		ArrayList<Unit> objectsOfThisType = new ArrayList<Unit>();
 

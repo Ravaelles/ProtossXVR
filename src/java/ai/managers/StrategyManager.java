@@ -11,14 +11,13 @@ import ai.handling.army.ArmyPlacing;
 import ai.handling.army.TargetHandling;
 import ai.handling.map.MapExploration;
 import ai.handling.units.UnitCounter;
-import ai.protoss.ProtossNexus;
 
 public class StrategyManager {
 
 	private static XVR xvr = XVR.getInstance();
 
-	private static final int MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME = 3;
-	private static final int MINIMUM_NON_INITIAL_ARMY_TO_PUSH = 3;
+	private static final int MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME = 5;
+	private static final int MINIMUM_NON_INITIAL_ARMY_TO_PUSH = 25;
 	private static final int MINIMUM_THRESHOLD_ARMY_TO_PUSH = 41;
 	private static final int MINIMUM_ARMY_PSI_USED_THRESHOLD = 75;
 
@@ -69,40 +68,44 @@ public class StrategyManager {
 
 	private static boolean decideIfWeAreReadyToAttack(boolean forceMinimum) {
 		int battleUnits = UnitCounter.getNumberOfBattleUnits();
+
+		return true;
+
+//		if (battleUnits >= MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME
+//				&& !pushedInitially) {
+//			pushedInitially = true;
+//			return true;
+//		}
+//
+//		// If there's more than threshold of psi used, attack. Always.
+//		if (xvr.getSuppliesUsed() >= (ProtossNexus.MAX_WORKERS + MINIMUM_ARMY_PSI_USED_THRESHOLD)) {
+//			return true;
+//		}
+//
+//		// If there's more than threshold value of battle units
+//		if (battleUnits > MINIMUM_THRESHOLD_ARMY_TO_PUSH) {
+//			return true;
+//		}
+//
+//		int minimumArmyToPush;
+//		if (!pushedInitially) {
+//			minimumArmyToPush = MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME;
+//			pushedInitially = true;
+//			return true;
+//		} else {
+//			minimumArmyToPush = MINIMUM_NON_INITIAL_ARMY_TO_PUSH + 5
+//					* retreatsCounter;
+//		}
+//		boolean weAreReadyToAttack = (battleUnits >= (forceMinimum ? minimumArmyToPush
+//				: minimumArmyToPush));
+//
+//		if (minimumArmyToPush == MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME
+//				|| battleUnits >= (1.5 * minimumArmyToPush)
+//						* Math.max(1,
+//								MapExploration.getNumberOfKnownEnemyBases())) {
+//			weAreReadyToAttack = true;
+//		}
 		
-		if (battleUnits >= MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME && !pushedInitially) {
-			pushedInitially = true;
-			return true;
-		}
-
-		// If there's more than threshold of psi used, attack. Always.
-		if (xvr.getSuppliesUsed() >= (ProtossNexus.MAX_WORKERS + MINIMUM_ARMY_PSI_USED_THRESHOLD)) {
-			return true;
-		}
-
-		// If there's more than threshold value of battle units
-		if (battleUnits > MINIMUM_THRESHOLD_ARMY_TO_PUSH) {
-			return true;
-		}
-
-		int minimumArmyToPush;
-		if (!pushedInitially) {
-			minimumArmyToPush = MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME;
-			pushedInitially = true;
-			return true;
-		} else {
-			minimumArmyToPush = MINIMUM_NON_INITIAL_ARMY_TO_PUSH + 5
-					* retreatsCounter;
-		}
-		boolean weAreReadyToAttack = (battleUnits >= (forceMinimum ? minimumArmyToPush
-				: minimumArmyToPush));
-
-		if (minimumArmyToPush == MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME
-				|| battleUnits >= (1.5 * minimumArmyToPush)
-						* Math.max(1,
-								MapExploration.getNumberOfKnownEnemyBases())) {
-			weAreReadyToAttack = true;
-		}
 		// if ((MapExploration.getNumberOfKnownEnemyBases() > 0 && (battleUnits
 		// >= (1.5 * MINIMUM_NON_INITIAL_ARMY_TO_PUSH)
 		// * MapExploration.getNumberOfKnownEnemyBases()))) {
@@ -125,7 +128,7 @@ public class StrategyManager {
 		// }
 		// }
 
-		return weAreReadyToAttack;
+//		return weAreReadyToAttack;
 	}
 
 	/**
@@ -242,6 +245,9 @@ public class StrategyManager {
 		// If not target found attack the nearest building
 		if (!TargetHandling.isProperTarget(target)) {
 			Unit base = xvr.getFirstBase();
+			if (base == null) {
+				return;
+			}
 			target = xvr.getUnitNearestFromList(base.getX(), base.getY(),
 					enemyBuildings);
 		}

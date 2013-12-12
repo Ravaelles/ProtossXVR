@@ -19,8 +19,6 @@ import ai.managers.ArmyCreationManager;
 import ai.managers.StrategyManager;
 import ai.managers.UnitManager;
 import ai.protoss.ProtossNexus;
-import ai.protoss.ProtossPhotonCannon;
-import ai.protoss.ProtossPylon;
 
 public class Debug {
 
@@ -65,12 +63,12 @@ public class Debug {
 		// .getChokePoints().size()), false);
 		// }
 
-//		// Draw next building place
-//		MapPoint buildTile = ProtossPylon.findTileNearPylonForNewBuilding();
-//		if (buildTile != null) {
-//			xvr.getBwapi().drawCircle(buildTile.getX() - 64,
-//					buildTile.getX() - 48, 50, BWColor.TEAL, false, false);
-//		}
+		// // Draw next building place
+		// MapPoint buildTile = ProtossPylon.findTileNearPylonForNewBuilding();
+		// if (buildTile != null) {
+		// xvr.getBwapi().drawCircle(buildTile.getX() - 64,
+		// buildTile.getX() - 48, 50, BWColor.TEAL, false, false);
+		// }
 
 		// xvr.getBwapi()
 		// .drawText(
@@ -140,76 +138,47 @@ public class Debug {
 
 	private static void paintNextBuildingsPosition(XVR xvr) {
 		MapPoint building;
-		
+
 		// Paint next NEXUS position
 		building = ProtossNexus.getTileForNextBase(false);
 		if (building != null) {
 			xvr.getBwapi().drawBox(building.getX(), building.getY(),
-					building.getX() + 4 * 32, building.getY() + 4 * 32, BWColor.TEAL,
-					false, false);
-			xvr.getBwapi().drawText(building.getX() + 10,
-					building.getY() + 30, "Nexus", false);
-		}
-		
-		// Paint next CANNON position
-		building = ProtossPhotonCannon.findTileForCannon();
-		if (building != null) {
-			xvr.getBwapi().drawBox(building.getX(), building.getY(),
-					building.getX() + 2 * 32, building.getY() + 2 * 32, BWColor.TEAL,
-					false, false);
-			xvr.getBwapi().drawText(building.getX() + 10,
-					building.getY() + 30, "Cannon", false);
-		}
-		
-		// Paint next PYLON position
-		building = ProtossPylon.findTileForPylon();
-		if (building != null) {
-			xvr.getBwapi().drawBox(building.getX(), building.getY(),
-					building.getX() + 2 * 32, building.getY() + 2 * 32, BWColor.TEAL,
-					false, false);
-			xvr.getBwapi().drawText(building.getX() + 10,
-					building.getY() + 30, "Pylon", false);
-		}
-		
-		// Paint GATEWAY position
-		building = ProtossPylon.findTileNearPylonForNewBuilding(UnitTypes.Protoss_Gateway);
-		if (building != null) {
-			xvr.getBwapi().drawBox(building.getX(), building.getY(),
-					building.getX() + 2 * 32, building.getY() + 2 * 32, BWColor.TEAL,
-					false, false);
-			xvr.getBwapi().drawText(building.getX() + 10,
-					building.getY() + 30, "Gateway", false);
+					building.getX() + 4 * 32, building.getY() + 4 * 32,
+					BWColor.TEAL, false, false);
+			xvr.getBwapi().drawText(building.getX() + 10, building.getY() + 30,
+					"Nexus", false);
 		}
 
-		// // Paint next PHOTON CANNON position
-		// Point building = ProtossPhotonCannon.findTileForCannon();
-		// if (building != null) {
-		// xvr.getBwapi().drawBox(building.x * 32, building.y * 32,
-		// (building.x + 2) * 32, (building.y + 2) * 32,
-		// BWColor.PURPLE, false, false);
-		// xvr.getBwapi().drawText(building.x * 32 + 10, building.y * 32 + 30,
-		// "Cannon", false);
-		// }
-		//
-		// // Paint next PYLON position
-		// building = ProtossPylon.findTileForPylon();
-		// if (building != null) {
-		// xvr.getBwapi().drawBox(building.x * 32, building.y * 32,
-		// (building.x + 2) * 32, (building.y + 2) * 32,
-		// BWColor.PURPLE, false, false);
-		// xvr.getBwapi().drawText(building.x * 32 + 10, building.y * 32 + 30,
-		// "Pylon", false);
-		// }
-		//
-		// // Paint next building position, next to some pylon
-		// building = ProtossPylon.findTileNearPylonForNewBuilding();
-		// if (building != null) {
-		// xvr.getBwapi().drawBox(building.x * 32, building.y * 32,
-		// (building.x + 3) * 32, (building.y + 2) * 32,
-		// BWColor.PURPLE, false, false);
-		// xvr.getBwapi().drawText(building.x * 32 + 10, building.y * 32 + 30,
-		// "Building", false);
-		// }
+//		// Paint next CANNON position
+//		building = ProtossPhotonCannon.findTileForCannon();
+//		if (building != null) {
+//			xvr.getBwapi().drawBox(building.getX(), building.getY(),
+//					building.getX() + 2 * 32, building.getY() + 2 * 32,
+//					BWColor.TEAL, false, false);
+//			xvr.getBwapi().drawText(building.getX() + 10, building.getY() + 30,
+//					"Cannon", false);
+//		}
+//
+//		// Paint next PYLON position
+//		building = ProtossPylon.findTileForPylon();
+//		if (building != null) {
+//			xvr.getBwapi().drawBox(building.getX(), building.getY(),
+//					building.getX() + 2 * 32, building.getY() + 2 * 32,
+//					BWColor.TEAL, false, false);
+//			xvr.getBwapi().drawText(building.getX() + 10, building.getY() + 30,
+//					"Pylon", false);
+//		}
+//
+//		// Paint GATEWAY position
+//		building = ProtossPylon
+//				.findTileNearPylonForNewBuilding(UnitTypes.Protoss_Gateway);
+//		if (building != null) {
+//			xvr.getBwapi().drawBox(building.getX(), building.getY(),
+//					building.getX() + 2 * 32, building.getY() + 2 * 32,
+//					BWColor.TEAL, false, false);
+//			xvr.getBwapi().drawText(building.getX() + 10, building.getY() + 30,
+//					"Gateway", false);
+//		}
 	}
 
 	private static void paintChokePoints(XVR xvr) {
@@ -305,6 +274,14 @@ public class Debug {
 					bwapi.drawCircle(u.getX(), u.getY(), 9, BWColor.TEAL,
 							false, false);
 				}
+//				} else if (u.isIdle()) {
+//					bwapi.drawCircle(u.getX(), u.getY(), 12, BWColor.WHITE,
+//							false, false);
+//					bwapi.drawCircle(u.getX(), u.getY(), 11, BWColor.WHITE,
+//							false, false);
+//					bwapi.drawCircle(u.getX(), u.getY(), 10, BWColor.WHITE,
+//							false, false);
+//				}
 			}
 
 			if (u.isConstructing()) {
@@ -340,6 +317,8 @@ public class Debug {
 			return;
 		}
 
+		int time = xvr.getTime();
+		paintMainMessage(xvr, "Time: " + (time / 30) + "s"); //   (" + time + ")"
 		paintMainMessage(xvr, "Killed: " + enemyDeaths);
 		paintMainMessage(xvr, "Lost: " + ourDeaths);
 		if (StrategyManager.getTargetUnit() != null) {

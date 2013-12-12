@@ -26,6 +26,14 @@ public class ProtossAssimilator {
 				return true;
 			}
 		}
+
+		if (UnitCounter.getNumberOfUnits(buildingType) < UnitCounter
+				.getNumberOfUnitsCompleted(UnitManager.BASE)
+				&& xvr.canAfford(750)) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			return true;
+		}
+
 		ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 		return false;
 	}
