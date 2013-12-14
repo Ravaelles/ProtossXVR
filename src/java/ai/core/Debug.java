@@ -330,7 +330,7 @@ public class Debug {
 
 		if (FULL_DEBUG) {
 			paintMainMessage(xvr, "--------------------");
-			paintMainMessage(xvr, "Enemy: " + xvr.getENEMY_RACE());
+			paintMainMessage(xvr, "Enemy: " + xvr.getEnemyRace());
 			paintMainMessage(
 					xvr,
 					"Nexus: "

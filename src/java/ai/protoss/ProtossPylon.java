@@ -13,6 +13,7 @@ import ai.handling.map.MapExploration;
 import ai.handling.map.MapPoint;
 import ai.handling.map.MapPointInstance;
 import ai.handling.units.UnitCounter;
+import ai.managers.BotStrategyManager;
 import ai.managers.UnitManager;
 import ai.utils.RUtilities;
 
@@ -44,15 +45,29 @@ public class ProtossPylon {
 		int workers = UnitCounter.getNumberOfUnits(UnitManager.WORKER);
 		int forges = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Forge);
 
-		if (pylons == 0 && (workers >= 7 || xvr.canAfford(80))) {
-			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
-			return true;
+		// ### VERSION ### Expansion with cannons
+		if (BotStrategyManager.isExpandWithCannons()) {
+			if (pylons == 0 && (workers >= 7 || xvr.canAfford(84))) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+				return true;
+			}
 		}
-		
-		if (pylons == 1 && ((forges == 1 && xvr.canAfford(54))
-				|| (forges == 0 && xvr.canAfford(194)))) {
-			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
-			return true;
+
+		if (BotStrategyManager.isExpandWithCannons()) {
+			if (pylons == 1
+					&& ((forges == 1 && xvr.canAfford(54)) || (forges == 0 && xvr
+							.canAfford(194)))) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+				return true;
+			}
+		}
+		else {
+			if (pylons == 1
+					&& ((forges == 1 && xvr.canAfford(54)) || (forges == 0 && xvr
+							.canAfford(216)))) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+				return true;
+			}
 		}
 
 		if (total == 200) {
@@ -73,6 +88,11 @@ public class ProtossPylon {
 		// ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 		// return false;
 		// }
+		
+		if (ProtossPylon.findTileNearPylonForNewBuilding(UnitTypes.Protoss_Gateway) == null) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			return true;
+		}
 
 		if (total < 80 && Constructing.weAreBuilding(buildingType)) {
 			if (!(total >= 10 && total <= 20 && free == 0)) {
@@ -92,7 +112,7 @@ public class ProtossPylon {
 		ShouldBuildCache.cacheShouldBuildInfo(buildingType, shouldBuild);
 		return shouldBuild;
 	}
-	
+
 	public static double calculateExistingPylonsStrength() {
 		double result = 0;
 
@@ -155,13 +175,33 @@ public class ProtossPylon {
 	public static MapPoint findTileForPylon() {
 		Unit builder = Constructing.getRandomWorker();
 
-		if (UnitCounter.getNumberOfUnits(buildingType) == 1) {
-			return findTileForFirstPylonAtBase(builder,
-					ProtossNexus.getSecondBaseLocation());
-		}
+//		// ### VERSION ### Expansion with cannons
+//		if (BotStrategyManager.isExpandWithCannons()) {
+//			if (UnitCounter.getNumberOfUnits(buildingType) == 1) {
+//				return findTileForFirstPylonAtBase(builder,
+//						ProtossNexus.getSecondBaseLocation());
+//			}
+//		}
 
-		// It's not the first pylon
+//		// It's not the first pylon
+//		if (UnitCounter.weHavePylonFinished()) {
+//			if (UnitCounter.getNumberOfPylons() == 1 && XVR.isEnemyProtoss()) {
+//				MapPoint tile = findTileForFirstPylonAtBase(builder,
+//						ProtossNexus.getSecondBaseLocation());
+//				if (tile != null) {
+//					return tile;
+//				}
+//			}
+//			return findTileForNextPylon(builder);
+//		}
 		if (UnitCounter.weHavePylonFinished()) {
+			if (UnitCounter.getNumberOfPylons() == 1) {
+				MapPoint tile = findTileForFirstPylonAtBase(builder,
+						ProtossNexus.getSecondBaseLocation());
+				if (tile != null) {
+					return tile;
+				}
+			}
 			return findTileForNextPylon(builder);
 		}
 
@@ -327,10 +367,10 @@ public class ProtossPylon {
 							&& xvr.getUnitsOfGivenTypeInRadius(buildingType,
 									PYLON_FROM_PYLON_MIN_DISTANCE - 1, x, y,
 									true).isEmpty()) {
-						// 
-//						&& Constructing.isBuildTileFullyBuildableFor(
-//								builder.getID(), i, j,
-//								buildingType.ordinal()))
+						//
+						// && Constructing.isBuildTileFullyBuildableFor(
+						// builder.getID(), i, j,
+						// buildingType.ordinal()))
 						MapPointInstance point = new MapPointInstance(x, y);
 						if (!Constructing.isTooNearMineralAndBase(point)) {
 							ChokePoint choke = MapExploration
@@ -407,8 +447,8 @@ public class ProtossPylon {
 		// Find point being in the middle of way base<->nearest choke point.
 		ChokePoint choke = MapExploration.getNearestChokePointFor(base);
 		MapPointInstance location = new MapPointInstance(
-				(base.getX() + choke.getCenterX()) / 2,
-				(base.getY() + choke.getCenterY()) / 2);
+				(2 * base.getX() + choke.getCenterX()) / 3,
+				(2 * base.getY() + choke.getCenterY()) / 3);
 		// System.out.println();
 		// System.out.println(choke.toStringLocation());
 		// System.out.println(location.toStringLocation());

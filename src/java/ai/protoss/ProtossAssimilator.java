@@ -5,6 +5,7 @@ import ai.core.XVR;
 import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.units.UnitCounter;
+import ai.managers.BotStrategyManager;
 import ai.managers.UnitManager;
 
 public class ProtossAssimilator {
@@ -14,10 +15,28 @@ public class ProtossAssimilator {
 	private static final UnitTypes buildingType = UnitTypes.Protoss_Assimilator;
 
 	public static boolean shouldBuild() {
+		int minGateways = BotStrategyManager.isExpandWithCannons() ? 3 : 4;
+
+		if (UnitCounter.getNumberOfUnitsCompleted(UnitTypes.Protoss_Forge) == 0
+				&& UnitCounter
+						.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) == 0) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			return false;
+		}
+
+		if (!Constructing.weAreBuilding(buildingType)
+				&& UnitCounter.getNumberOfUnits(buildingType) < UnitCounter
+						.getNumberOfUnitsCompleted(UnitManager.BASE)
+				&& (UnitCounter
+						.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core) || ProtossGateway.LIMIT_ZEALOTS)) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			return true;
+		}
+
 		if (!Constructing.weAreBuilding(buildingType)
 				&& (UnitCounter
 						.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core)
-						|| UnitCounter.getNumberOfUnits(UnitManager.GATEWAY) >= 3 || xvr
+						|| UnitCounter.getNumberOfUnits(UnitManager.GATEWAY) >= minGateways || xvr
 							.canAfford(700))
 				&& UnitCounter.getNumberOfUnits(buildingType) < UnitCounter
 						.getNumberOfUnitsCompleted(UnitManager.BASE)) {

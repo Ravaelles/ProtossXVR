@@ -4,6 +4,7 @@ import ai.core.XVR;
 import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.units.UnitCounter;
+import ai.managers.BotStrategyManager;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
 
@@ -27,8 +28,17 @@ public class ProtossCitadelOfAdun {
 				&& UnitCounter.getNumberOfUnits(ProtossGateway
 						.getBuildingType()) >= 3
 				&& !Constructing.weAreBuilding(buildingType)) {
-			if (UnitCounter.getNumberOfBattleUnits() >= 2) {
-				return true;
+			if (BotStrategyManager.isExpandWithCannons()) {
+				if (UnitCounter.getNumberOfBattleUnits() >= 2) {
+					ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+					return true;
+				}
+			} else {
+				if (UnitCounter.getNumberOfBattleUnits() >= ProtossGateway.MIN_UNITS_FOR_DIFF_BUILDING
+						|| xvr.getTimeSecond() > 800) {
+					ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+					return true;
+				}
 			}
 		}
 		return false;

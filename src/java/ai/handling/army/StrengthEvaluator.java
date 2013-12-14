@@ -9,6 +9,8 @@ import jnibwapi.types.UnitType;
 import ai.core.Debug;
 import ai.core.XVR;
 import ai.handling.map.MapExploration;
+import ai.managers.BotStrategyManager;
+import ai.managers.StrategyManager;
 import ai.protoss.ProtossGateway;
 
 public class StrengthEvaluator {
@@ -19,10 +21,13 @@ public class StrengthEvaluator {
 	private static final double CRITICAL_RATIO_THRESHOLD = 0.7;
 	private static final double ENEMY_RANGE_WEAPON_STRENGTH_BONUS = 1.9;
 	private static final int RANGE_BONUS_IF_ENEMY_DEF_BUILDING_NEAR = 6;
+	private static final int DEFENSIVE_BUILDING_ATTACK_BONUS = 24;
+	private static final int IF_CANNONS_WAIT_FOR_N_UNITS = 7;
 
 	private static boolean changePlanToBuildAntiAirUnits = false;
 
 	private static int _rangeBonus = 0;
+	private static ArrayList<Unit> _ourUnits;
 
 	/**
 	 * Calculates ground advantage for given unit, based on nearby enemies and
@@ -33,6 +38,13 @@ public class StrengthEvaluator {
 	public static double calculateStrengthRatioFor(Unit unit) {
 		_rangeBonus = 0;
 
+		// If there's at least one building like cannon, sunken colony, bunker,
+		// then increase range of units search and look again for enemy units.
+		if (xvr.getEnemyDefensiveGroundBuildingNear(unit.getX(), unit.getY(),
+				BATTLE_RADIUS_ENEMIES + RANGE_BONUS_IF_ENEMY_DEF_BUILDING_NEAR) != null) {
+			_rangeBonus += RANGE_BONUS_IF_ENEMY_DEF_BUILDING_NEAR;
+		}
+
 		// Define enemy units nearby and our units nearby
 		ArrayList<Unit> enemyUnits = getEnemiesNear(unit);
 
@@ -42,14 +54,8 @@ public class StrengthEvaluator {
 			return -1;
 		}
 
-		// If there's at least one building like cannon, sunken colony, bunker,
-		// then increase range of units search and look again for enemy units.
-		if (isOneOfUnitsDefensiveBuilding(enemyUnits)) {
-			_rangeBonus += RANGE_BONUS_IF_ENEMY_DEF_BUILDING_NEAR;
-			enemyUnits = getEnemiesNear(unit);
-		}
-
 		ArrayList<Unit> ourUnits = getOurUnitsNear(unit);
+		_ourUnits = ourUnits;
 
 		// ==================================
 		// Calculate hit points and ground attack values of units nearby
@@ -101,26 +107,83 @@ public class StrengthEvaluator {
 	private static double calculateTotalAttackOf(ArrayList<Unit> units,
 			boolean forEnemy) {
 		int total = 0;
+		int seconds = xvr.getTimeSecond();
+		int defensiveBuildings = 0;
+		int vultures = 0;
 		// int dragoons = 0;
 		for (Unit unit : units) {
 			double attackValue = unit.getGroundAttackNormalized();
 			UnitType type = unit.getType();
+			if (type.isWorker()) {
+				continue;
+			}
+
 			if (type.getGroundWeapon().getMaxRange() > 100) {
 				attackValue *= ENEMY_RANGE_WEAPON_STRENGTH_BONUS;
 			}
 			if (forEnemy) {
 				total += attackValue;
+
+				if (unit.getType().isVulture()) {
+					vultures++;
+				}
+
+				// Handle defensive buildings
 				if (unit.isDefensiveGroundBuilding()) {
-					total += 24;
-					if (type.isBunker()) {
-//						total += 32; // That's too optmistics, people repair them!
-						total += 50;
+					total += DEFENSIVE_BUILDING_ATTACK_BONUS;
+					if (unit.isCompleted()) {
+						defensiveBuildings++;
+
+						if (type.isBunker()) {
+							if (seconds >= 550) {
+								total += 40;
+							}
+						} else {
+							total -= DEFENSIVE_BUILDING_ATTACK_BONUS;
+						}
 					}
+					if (!ProtossGateway.LIMIT_ZEALOTS && !type.isBunker()
+							&& seconds < 550) {
+						total -= DEFENSIVE_BUILDING_ATTACK_BONUS;
+						total -= attackValue * 0.7;
+					} else {
+						total -= DEFENSIVE_BUILDING_ATTACK_BONUS;
+						total -= attackValue;
+					}
+				}
+
+				// Carriers
+				if (unit.getType().isInterceptor()) {
+					total -= attackValue * 0.75;
 				}
 			} else {
 				total += attackValue;
 			}
 		}
+
+		if (defensiveBuildings >= 2 && _ourUnits.size() < 7) {
+			BotStrategyManager
+					.waitUntilMinBattleUnits(IF_CANNONS_WAIT_FOR_N_UNITS);
+			total = 99999;
+		}
+		if (defensiveBuildings > 0 && defensiveBuildings <= 7
+				&& _ourUnits.size() >= 7) {
+			if (!ProtossGateway.LIMIT_ZEALOTS) {
+				total /= 2;
+			} else {
+				total = 0;
+			}
+		}
+
+		if ((vultures >= 3 || defensiveBuildings >= 3)
+				&& !ProtossGateway.LIMIT_ZEALOTS) {
+			BotStrategyManager
+					.waitUntilMinBattleUnits(IF_CANNONS_WAIT_FOR_N_UNITS);
+			StrategyManager.forcePeace();
+			ProtossGateway.LIMIT_ZEALOTS = true;
+			Debug.message(xvr, "Dont build zealots mode enabled");
+		}
+
 		return total;
 	}
 
@@ -155,8 +218,7 @@ public class StrengthEvaluator {
 			Unit unit = (Unit) iterator.next();
 			if (unit.getShields() < 5) {
 				iterator.remove();
-			}
-			if (unit.isDefensiveGroundBuilding()) {
+			} else if (unit.isDefensiveGroundBuilding()) {
 				if (xvr.getDistanceBetween(unit, ourUnit) >= 3) {
 					iterator.remove();
 				}

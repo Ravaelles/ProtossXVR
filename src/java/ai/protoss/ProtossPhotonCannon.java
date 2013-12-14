@@ -13,6 +13,7 @@ import ai.handling.map.MapExploration;
 import ai.handling.map.MapPoint;
 import ai.handling.map.MapPointInstance;
 import ai.handling.units.UnitCounter;
+import ai.managers.BotStrategyManager;
 import ai.managers.UnitManager;
 
 public class ProtossPhotonCannon {
@@ -21,12 +22,14 @@ public class ProtossPhotonCannon {
 	private static XVR xvr = XVR.getInstance();
 
 	private static final double MAX_DIST_FROM_CHOKE_POINT_MODIFIER = 1.8;
-	public static final int MAX_CANNON_STACK = 3;
+	public static final int MAX_CANNON_STACK = 4;
 
 	private static MapPoint _placeToReinforceWithCannon = null;
 
 	public static boolean shouldBuild() {
 		if (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Forge)) {
+			int maxCannonStack = calculateMaxCannonStack();
+
 			int cannons = UnitCounter.getNumberOfUnits(buildingType);
 			// int bases = UnitCounter.getNumberOfUnits(UnitManager.BASE);
 			int pylons = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Pylon);
@@ -38,10 +41,10 @@ public class ProtossPhotonCannon {
 				}
 			}
 
-			if (cannons <= MAX_CANNON_STACK
+			if (cannons <= maxCannonStack
 					&& ProtossPylon.calculateExistingPylonsStrength() >= 1.35
-					&& calculateExistingCannonsStrength() < MAX_CANNON_STACK) {
-//				System.out.println("FIRST CASE");
+					&& calculateExistingCannonsStrength() < maxCannonStack) {
+//				 System.out.println("FIRST CASE");
 				return true;
 			}
 
@@ -57,7 +60,7 @@ public class ProtossPhotonCannon {
 			for (MapPoint base : getPlacesToReinforce()) {
 				if (UnitCounter.getNumberOfUnits(UnitManager.BASE) == 1) {
 					if (shouldBuildFor((MapPoint) base)) {
-//						System.out.println("#SECOND");
+//						 System.out.println("#SECOND");
 						return true;
 					}
 				}
@@ -154,7 +157,7 @@ public class ProtossPhotonCannon {
 
 	private static ArrayList<MapPoint> getPlacesToReinforce() {
 		ArrayList<MapPoint> placesToReinforce = new ArrayList<>();
-		
+
 		// Second base should be one huge defensive bunker.
 		placesToReinforce.add(ProtossNexus.getSecondBaseLocation());
 
@@ -175,6 +178,9 @@ public class ProtossPhotonCannon {
 
 	private static boolean shouldBuildFor(ChokePoint chokePoint) {
 		// return findTileForCannon() != null;
+		if (chokePoint.isDisabled()) {
+			return false;
+		}
 
 		int numberOfCannonsNearby = calculateCannonsNearby(chokePoint);
 
@@ -187,7 +193,7 @@ public class ProtossPhotonCannon {
 		}
 
 		// If there isn't too many cannons defending this choke point
-		if (numberOfCannonsNearby < MAX_CANNON_STACK + bonus) {
+		if (numberOfCannonsNearby < calculateMaxCannonStack() + bonus) {
 			return true;
 		}
 
@@ -196,6 +202,11 @@ public class ProtossPhotonCannon {
 			// System.out.println("TOO MANY CANNONS NEARBY");
 			return false;
 		}
+	}
+
+	public static int calculateMaxCannonStack() {
+		return BotStrategyManager.isExpandWithCannons() ? MAX_CANNON_STACK
+				: (UnitCounter.getNumberOfBattleUnits() >= 8 ? 1 : MAX_CANNON_STACK);
 	}
 
 	private static int calculateCannonsNearby(MapPoint mapPoint) {

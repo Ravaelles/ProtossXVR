@@ -7,6 +7,7 @@ import jnibwapi.BWAPIEventListener;
 import jnibwapi.JNIBWAPI;
 import jnibwapi.model.Player;
 import jnibwapi.model.Unit;
+import jnibwapi.types.RaceType.RaceTypes;
 import jnibwapi.types.UnitDamages;
 import jnibwapi.types.UnitType;
 import ai.handling.map.MapExploration;
@@ -77,18 +78,16 @@ public class XVRClient implements BWAPIEventListener {
 		// ========================================
 
 		// Enemy -> Protoss
-		if (enemy.getRaceID() == 2) {
-			XVR.setENEMY_RACE("Protoss");
-			ProtossGateway.enemyIsProtoss();
+		if (enemy.getRaceID() == RaceTypes.Protoss.ordinal()) {
+			XVR.setEnemyRace("Protoss");
 		}
 		// ENEMY -> Terran
-		else if (enemy.getRaceID() == 1) {
-			XVR.setENEMY_RACE("Terran");
-			ProtossGateway.enemyIsTerran();
+		else if (enemy.getRaceID() == RaceTypes.Terran.ordinal()) {
+			XVR.setEnemyRace("Terran");
 		}
 		// ENEMY -> Zerg
-		else if (enemy.getRaceID() == 0) {
-			XVR.setENEMY_RACE("Zerg");
+		else if (enemy.getRaceID() == RaceTypes.Protoss.ordinal()) {
+			XVR.setEnemyRace("Zerg");
 		}
 
 		// ==========
@@ -96,7 +95,7 @@ public class XVRClient implements BWAPIEventListener {
 		ProtossNexus.initialMineralGathering();
 		
 		// =========
-		
+		// Nice initial message
 		Debug.message(xvr, "#########################", false);
 		Debug.message(xvr, "## They see mee warping ###", false);
 		Debug.message(xvr, "###### They hating ########", false);
@@ -128,8 +127,8 @@ public class XVRClient implements BWAPIEventListener {
 	}
 
 	public void receiveText(String text) {
-		Debug.message(xvr, "sorry, can't talk right now");
-		Debug.message(xvr, "i have to click very fast, u kno");
+		xvr.getBwapi().sendText("sorry, cant talk right now");
+		xvr.getBwapi().sendText("have to click very fast, u kno");
 	}
 
 	public void nukeDetect(int x, int y) {
@@ -142,9 +141,9 @@ public class XVRClient implements BWAPIEventListener {
 	}
 
 	public void playerLeft(int playerID) {
-		Debug.message(xvr, "########################", false);
-		Debug.message(xvr, "## Sayonara, gringo! ^_^ ##", false);
-		Debug.message(xvr, "########################", false);
+		xvr.getBwapi().sendText("########################");
+		xvr.getBwapi().sendText("## Sayonara, gringo! ^_^ ##");
+		xvr.getBwapi().sendText("########################");
 	}
 
 	public void unitCreate(int unitID) {
@@ -296,9 +295,9 @@ public class XVRClient implements BWAPIEventListener {
 	}
 
 	public void playerDropped(int playerID) {
-		Debug.message(xvr, "########################", false);
-		Debug.message(xvr, "## Sayonara, gringo! ^_^ ##", false);
-		Debug.message(xvr, "########################", false);
+		xvr.getBwapi().sendText("########################");
+		xvr.getBwapi().sendText("## Sayonara, gringo! ^_^ ##");
+		xvr.getBwapi().sendText("########################");
 	}
 
 }

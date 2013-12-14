@@ -35,11 +35,12 @@ public class TargetHandling {
 
 			if (unit.isExists()
 					&& unit.getHitPoints() > 0
-					&& (type.isTerranMine() || type.isLurker()
-							|| type.isObserver() || type.isScienceVessel()
-							|| type.isTank() || type.isReaver()
-							|| type.isHighTemplar() || (type.isDarkTemplar() && unit
-							.isDetected()))
+					&& (type.isFleetBeacon() || type.isTerranMine()
+							|| (unit.isRepairing() && type.isSCV())
+							|| type.isLurker() || type.isObserver()
+							|| type.isScienceVessel() || type.isTank()
+							|| type.isReaver() || type.isHighTemplar() || (type
+							.isDarkTemplar() && unit.isDetected()))
 					&& xvr.getDistanceBetween(unit, point) <= MAX_DIST) {
 				if (isProperTarget(unit)) {
 					return unit;
@@ -63,8 +64,9 @@ public class TargetHandling {
 			Collection<Unit> enemyBuildings) {
 		for (Unit unit : enemyBuildings) {
 			UnitType type = unit.getType();
-			if (type.isBunker() || type.isPhotonCannon() || type.isObserver()
-					|| type.isScienceVessel() || type.isSunkenColony()) {
+			if (type.isBunker() || type.isCarrier() || type.isPhotonCannon()
+					|| type.isObserver() || type.isScienceVessel()
+					|| type.isSunkenColony()) {
 				if (isProperTarget(unit)) {
 					return unit;
 				}
@@ -165,9 +167,10 @@ public class TargetHandling {
 		return xvr.getUnitsInRadius(near, tileRadius, xvr.getEnemyUnitsOfType(
 				UnitTypes.Protoss_Carrier, UnitTypes.Terran_Battlecruiser,
 				UnitTypes.Terran_Siege_Tank_Siege_Mode,
-				UnitTypes.Terran_Siege_Tank_Tank_Mode,
-				UnitTypes.Zerg_Ultralisk, UnitTypes.Zerg_Guardian,
-				UnitTypes.Zerg_Lurker, UnitTypes.Protoss_Observer));
+				UnitTypes.Terran_Bunker, UnitTypes.Terran_Siege_Tank_Tank_Mode,
+				UnitTypes.Zerg_Guardian, UnitTypes.Zerg_Lurker,
+				UnitTypes.Zerg_Sunken_Colony, UnitTypes.Zerg_Ultralisk,
+				UnitTypes.Protoss_Observer));
 	}
 
 }

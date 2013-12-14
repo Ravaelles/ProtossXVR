@@ -7,6 +7,7 @@ import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.map.MapExploration;
 import ai.handling.units.UnitCounter;
+import ai.managers.BotStrategyManager;
 
 public class ProtossForge {
 
@@ -24,44 +25,48 @@ public class ProtossForge {
 	public static boolean shouldBuild() {
 		int forges = UnitCounter.getNumberOfUnits(buildingType);
 		// int pylons = UnitCounter.getNumberOfPylonsCompleted();
-		// int gateways = UnitCounter.getNumberOfUnits(ProtossGateway
-		// .getBuildingType());
-		// int gatewaysFinished = UnitCounter
-		// .getNumberOfUnitsCompleted(ProtossGateway.getBuildingType());
+		int gateways = UnitCounter.getNumberOfUnits(ProtossGateway
+				.getBuildingType());
+//		int gatewaysFinished = UnitCounter
+//				.getNumberOfUnitsCompleted(ProtossGateway.getBuildingType());
 
 		// Version for expansion with cannons
-		if (forges == 0
-				&& (ProtossPylon.calculateExistingPylonsStrength() >= 0.86 || xvr
-						.canAfford(132))
-				&& !Constructing.weAreBuilding(buildingType)) {
-			MapExploration.removeChokePointsNearFirstBase();
-			// if (UnitCounter.getNumberOfBattleUnits() >= 15) {
-			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
-			return true;
-			// }
+		if (BotStrategyManager.isExpandWithCannons()) {
+			if (forges == 0
+					&& (ProtossPylon.calculateExistingPylonsStrength() >= 0.86 || xvr
+							.canAfford(132))
+					&& !Constructing.weAreBuilding(buildingType)) {
+				MapExploration.disableChokePointsNearFirstBase();
+				// if (UnitCounter.getNumberOfBattleUnits() >= 15) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+				return true;
+				// }
+			}
 		}
 
 		// Version for expansion with gateways
-		// if (forges == 0 && (gateways >= 3 || gatewaysFinished >= 2)
-		// && !Constructing.weAreBuilding(buildingType)) {
-		// // if (UnitCounter.getNumberOfBattleUnits() >=
-		// // ProtossGateway.MIN_UNITS_FOR_DIFF_BUILDING - 8) {
-		// ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
-		// return true;
-		// // }
-		// }
+		if (BotStrategyManager.isExpandWithGateways()) {
+			if (forges == 0 && gateways >= 3
+					&& !Constructing.weAreBuilding(buildingType)) {
+				// if (UnitCounter.getNumberOfBattleUnits() >=
+				// ProtossGateway.MIN_UNITS_FOR_DIFF_BUILDING - 8) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+				return true;
+				// }
+			}
+		}
 
 		if (forges == 1
 				&& UnitCounter.getNumberOfUnits(ProtossGateway
-						.getBuildingType()) >= 3 && xvr.canAfford(650)
+						.getBuildingType()) >= 4 && xvr.canAfford(650)
 				&& !Constructing.weAreBuilding(buildingType)) {
-			if (UnitCounter.getNumberOfBattleUnits() >= 15) {
+			if (UnitCounter.getNumberOfBattleUnits() >= 18) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
 		}
 
-		if (forges == 2 && xvr.canAfford(1300)
+		if (forges == 2 && xvr.canAfford(900)
 				&& !Constructing.weAreBuilding(buildingType)) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;

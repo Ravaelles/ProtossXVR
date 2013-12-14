@@ -471,37 +471,37 @@ public class Constructing {
 		// We define that at least three directions (N,S,E,W) must be free from
 		// other buildings
 		int freeTiles = 0;
-		if (map.isBuildable(center.getTx() + wHalf + 1, center.getTy())) {
+		if (map.isLowResWalkable(center.getTx() + wHalf + 1, center.getTy())) {
+			freeTiles += 2;
+		}
+		if (map.isLowResWalkable(center.getTx(), center.getTy() + wHalf + 1)) {
+			freeTiles += 2;
+		}
+		if (map.isLowResWalkable(center.getTx() - wHalf - 2, center.getTy())) {
+			freeTiles += 2;
+		}
+		if (map.isLowResWalkable(center.getTx(), center.getTy() - wHalf - 2)) {
+			freeTiles += 2;
+		}
+
+		if (map.isLowResWalkable(center.getTx() + wHalf + 1, center.getTy()
+				+ wHalf + 1)) {
 			freeTiles++;
 		}
-		if (map.isBuildable(center.getTx(), center.getTy() + wHalf + 1)) {
+		if (map.isLowResWalkable(center.getTx() - wHalf - 1, center.getTy()
+				+ wHalf + 1)) {
 			freeTiles++;
 		}
-		if (map.isBuildable(center.getTx() - wHalf - 1, center.getTy())) {
+		if (map.isLowResWalkable(center.getTx() - wHalf - 1, center.getTy()
+				+ wHalf + 1)) {
 			freeTiles++;
 		}
-		if (map.isBuildable(center.getTx(), center.getTy() - wHalf - 1)) {
+		if (map.isLowResWalkable(center.getTx() - wHalf - 1, center.getTy()
+				- wHalf - 1)) {
 			freeTiles++;
 		}
 
-		if (map.isBuildable(center.getTx() + wHalf + 1, center.getTy() + wHalf
-				+ 1)) {
-			freeTiles++;
-		}
-		if (map.isBuildable(center.getTx() - wHalf - 1, center.getTy() + wHalf
-				+ 1)) {
-			freeTiles++;
-		}
-		if (map.isBuildable(center.getTx() - wHalf - 1, center.getTy() + wHalf
-				+ 1)) {
-			freeTiles++;
-		}
-		if (map.isBuildable(center.getTx() - wHalf - 1, center.getTy() - wHalf
-				- 1)) {
-			freeTiles++;
-		}
-
-		return freeTiles >= 5;
+		return freeTiles >= 12;
 	}
 
 	public static boolean isTooNearMineralAndBase(MapPoint point) {

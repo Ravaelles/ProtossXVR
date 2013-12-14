@@ -15,11 +15,13 @@ import ai.handling.map.MapPoint;
 import ai.handling.map.MapPointInstance;
 import ai.handling.units.UnitCounter;
 import ai.managers.ArmyCreationManager;
+import ai.managers.BotStrategyManager;
 import ai.managers.ConstructingManager;
 import ai.managers.StrategyManager;
 import ai.managers.TechnologyManager;
 import ai.managers.UnitManager;
 import ai.managers.WorkerManager;
+import ai.protoss.ProtossGateway;
 import ai.protoss.ProtossNexus;
 import ai.utils.RUtilities;
 
@@ -43,6 +45,10 @@ public class XVR {
 	private static String ENEMY_RACE = "Undefined";
 	public static Player SELF;
 	public static int SELF_ID;
+
+	protected static boolean enemyTerran = false;
+	protected static boolean enemyZerg = false;
+	protected static boolean enemyProtoss = false;
 
 	private static XVR lastInstance;
 	private XVRClient client;
@@ -157,7 +163,21 @@ public class XVR {
 		// }
 	}
 
-	// ==================================================g=======
+	// =========================================================
+
+	public static boolean isEnemyTerran() {
+		return enemyTerran;
+	}
+
+	public static boolean isEnemyZerg() {
+		return enemyZerg;
+	}
+
+	public static boolean isEnemyProtoss() {
+		return enemyProtoss;
+	}
+
+	// =========================================================
 	// Getters
 
 	public static XVR getInstance() {
@@ -178,7 +198,7 @@ public class XVR {
 	public int getTime() {
 		return time;
 	}
-	
+
 	public int getTimeSecond() {
 		return time / 30;
 	}
@@ -321,6 +341,9 @@ public class XVR {
 	}
 
 	public double getDistanceBetween(Unit u1, Unit u2) {
+		if (u2 == null) {
+			return 0;
+		}
 		return getDistanceBetween(u1, u2.getX(), u2.getY());
 	}
 
@@ -599,9 +622,12 @@ public class XVR {
 
 		// Iterate through enemy units and check if they're types match
 		ArrayList<Unit> armyUnits = new ArrayList<Unit>();
-		for (Unit enemy : MapExploration.getEnemyUnitsDiscovered()) {
-			if (typesList.contains(enemy.getType())) {
-				armyUnits.add(enemy);
+		for (UnitTypes type : types) {
+			for (Unit enemy : getBwapi().getEnemyUnits()) {
+				// for (Unit enemy : MapExploration.getEnemyUnitsDiscovered()) {
+				if (type.getID() == enemy.getType().getID()) {
+					armyUnits.add(enemy);
+				}
 			}
 		}
 		return armyUnits;
@@ -661,12 +687,46 @@ public class XVR {
 		return resultList;
 	}
 
-	public static String getENEMY_RACE() {
+	public static String getEnemyRace() {
 		return ENEMY_RACE;
 	}
 
-	public static void setENEMY_RACE(String eNEMY_RACE) {
-		ENEMY_RACE = eNEMY_RACE;
+	public static void setEnemyRace(String enemyRaceString) {
+		ENEMY_RACE = enemyRaceString;
+		String enemyBotName = ENEMY.getName().toLowerCase();
+
+		// System.out.println("BOT: " + ENEMY.getName());
+
+//		if (MapExploration.getNumberOfStartLocations(lastInstance.getBwapi()
+//				.getMap().getStartLocations()) - 1 > 1) {
+//			BotStrategyManager.setExpandWithCannons(true);
+//		}
+
+		// ============
+		// Protoss
+		if ("Protoss".equals(ENEMY_RACE)) {
+			enemyProtoss = true;
+			ProtossGateway.enemyIsProtoss();
+
+			// boolean shouldExpandWithCannons =
+			// enemyBotName.contains("alberta");
+			boolean shouldExpandWithCannons = true;
+			BotStrategyManager.setExpandWithCannons(shouldExpandWithCannons);
+		}
+
+		// ============
+		// Zerg
+		else if ("Zerg".equals(ENEMY_RACE)) {
+			enemyZerg = true;
+			ProtossGateway.enemyIsZerg();
+		}
+
+		// ============
+		// Terran
+		else if ("Terran".equals(ENEMY_RACE)) {
+			enemyTerran = true;
+			ProtossGateway.enemyIsTerran();
+		}
 	}
 
 	public Unit getRandomWorker() {
@@ -744,7 +804,11 @@ public class XVR {
 		return false;
 	}
 
-	public Unit getEnemyDefensiveGroundBuildingNear(int x, int y) {
+	public Unit getEnemyDefensiveGroundBuildingNear(MapPoint point) {
+		return getEnemyDefensiveGroundBuildingNear(point.getX(), point.getY());
+	}
+
+	public Unit getEnemyDefensiveGroundBuildingNear(int x, int y, int tileRadius) {
 		ArrayList<Unit> enemiesNearby = getUnitsInRadius(new MapPointInstance(
 				x, y), WHAT_IS_NEAR_DISTANCE, getEnemyBuildings());
 		for (Unit enemy : enemiesNearby) {
@@ -754,6 +818,10 @@ public class XVR {
 			}
 		}
 		return null;
+	}
+
+	public Unit getEnemyDefensiveGroundBuildingNear(int x, int y) {
+		return getEnemyDefensiveGroundBuildingNear(x, y, WHAT_IS_NEAR_DISTANCE);
 	}
 
 	public Unit getEnemyDefensiveAirBuildingNear(int x, int y) {
@@ -856,8 +924,29 @@ public class XVR {
 		return objectsOfThisType;
 	}
 
-	// public boolean getNearestEnemy(MapPoint point) {
-	//
-	// }
+	public Unit getEnemyWorkerInRadius(int tileRadius, Unit explorer) {
+		for (Unit enemy : getBwapi().getEnemyUnits()) {
+			if (enemy.getType().isWorker()) {
+				if (getDistanceBetween(explorer, enemy) <= tileRadius) {
+					return enemy;
+				}
+			}
+		}
+		return null;
+	}
+
+	public Collection<Unit> getEnemyWorkersInRadius(int tileRadius,
+			Unit explorer) {
+		ArrayList<Unit> result = new ArrayList<>();
+
+		for (Unit enemy : getBwapi().getEnemyUnits()) {
+			if (enemy.getType().isWorker()) {
+				if (getDistanceBetween(explorer, enemy) <= tileRadius) {
+					result.add(enemy);
+				}
+			}
+		}
+		return result;
+	}
 
 }

@@ -8,6 +8,7 @@ import ai.core.XVR;
 import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.units.UnitCounter;
+import ai.managers.BotStrategyManager;
 import ai.managers.UnitManager;
 
 public class ProtossGateway {
@@ -20,6 +21,8 @@ public class ProtossGateway {
 	private static boolean isPlanAntiAirActive = false;
 
 	public static int MIN_UNITS_FOR_DIFF_BUILDING = 20;
+
+	public static boolean LIMIT_ZEALOTS = false;
 
 	private static int zealotBuildRatio = 20;
 	private static int dragoonBuildRatio = 50;
@@ -36,53 +39,38 @@ public class ProtossGateway {
 		if (UnitCounter.weHavePylonFinished()) {
 			int gateways = UnitCounter.getNumberOfUnits(buildingType);
 			int bases = UnitCounter.getNumberOfUnitsCompleted(UnitManager.BASE);
-
-			// ### VERSION ### Cannons defence
-			// int cannons = UnitCounter
-			// .getNumberOfUnitsCompleted(UnitTypes.Protoss_Photon_Cannon);
-			// if (!UnitCounter.weHaveBuilding(UnitTypes.Protoss_Forge)
-			// || (cannons <= 1 && !xvr.canAfford(300))) {
-			// ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
-			// return false;
-			// }
-			//
-			// if (barracks >= 3) {
-			// ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
-			// return false;
-			// }
-			//
-			// // <= 2 barracks
-			// if (barracks <= 2
-			// && cannons >= ProtossPhotonCannon.MAX_CANNON_STACK
-			// && xvr.canAfford(240) || xvr.canAfford(340)) {
-			// if (barracks <= 1 || isMajorityOfGatewaysTrainingUnits()) {
-			// ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
-			// return true;
-			// }
-			// }
+			
+			if (ProtossNexus.shouldBuild() && !xvr.canAfford(500)) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
+				return false;
+			}
 
 			// ### Version ### Expansion with cannons
-			int cannons = UnitCounter
-					.getNumberOfUnitsCompleted(UnitTypes.Protoss_Photon_Cannon);
-			if ((cannons >= ProtossPhotonCannon.MAX_CANNON_STACK || xvr
-					.canAfford(300)) && gateways <= 2 && xvr.canAfford(155)) {
-				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
-				return true;
+			if (BotStrategyManager.isExpandWithCannons()) {
+				int cannons = UnitCounter
+						.getNumberOfUnitsCompleted(UnitTypes.Protoss_Photon_Cannon);
+				if ((cannons >= ProtossPhotonCannon.MAX_CANNON_STACK || xvr
+						.canAfford(300)) && gateways <= 2 && xvr.canAfford(155)) {
+					ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+					return true;
+				}
 			}
 
 			// ### Version ### Expansion with gateways
-			// if (barracks <= 2 && xvr.canAfford(140)) {
-			// ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
-			// return true;
-			// }
-
-			if (gateways >= 5) {
-				if (!UnitCounter
-						.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core)
-						|| !UnitCounter
-								.weHaveBuilding(UnitTypes.Protoss_Citadel_of_Adun)) {
-					ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
-					return false;
+			if (BotStrategyManager.isExpandWithGateways()) {
+				if (gateways <= 3 && (isMajorityOfGatewaysTrainingUnits())
+						&& xvr.canAfford(134)) {
+					ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+					return true;
+				} else {
+					if (!UnitCounter
+							.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core)
+							|| !UnitCounter
+									.weHaveBuilding(UnitTypes.Protoss_Citadel_of_Adun)) {
+						ShouldBuildCache.cacheShouldBuildInfo(buildingType,
+								false);
+						return false;
+					}
 				}
 			}
 
@@ -143,7 +131,7 @@ public class ProtossGateway {
 			}
 		}
 
-		return ((double) busy / all) >= 0.8 || all <= 2;
+		return ((double) busy / all) >= (0.75 + all * 2) || all <= 2;
 	}
 
 	public static ArrayList<Unit> getAllObjects() {
@@ -155,6 +143,9 @@ public class ProtossGateway {
 
 	public static void enemyIsTerran() {
 		darkTemplarBuildRatio /= 7;
+	}
+
+	public static void enemyIsZerg() {
 	}
 
 	public static void buildIfNecessary() {
@@ -240,11 +231,12 @@ public class ProtossGateway {
 			}
 		}
 
+		int dragoons = UnitCounter.getNumberOfUnits(DRAGOON);
+
 		// DRAGOON
 		if (dragoonAllowed) {
-			double dragoonPercent = (double) UnitCounter
-					.getNumberOfUnits(DRAGOON) / totalInfantry;
-			if (dragoonPercent < dragoonBuildRatio / totalRatio) {
+			double dragoonPercent = (double) dragoons / totalInfantry;
+			if (dragoons < 1 || dragoonPercent < dragoonBuildRatio / totalRatio) {
 				return DRAGOON;
 			}
 		}
@@ -257,9 +249,17 @@ public class ProtossGateway {
 
 		// ZEALOT
 		double zealotPercent = zealots / totalInfantry;
-		if (// zealots < MAX_ZEALOTS &&
-		zealotPercent < zealotBuildRatio / totalRatio) {
-			return ZEALOT;
+		if (zealotPercent < zealotBuildRatio / totalRatio || LIMIT_ZEALOTS) {
+			if (LIMIT_ZEALOTS) {
+				if (zealots <= 5
+						|| zealotPercent < (zealotBuildRatio / totalRatio / 2.5)
+						|| xvr.canAfford(810)) {
+					return ZEALOT;
+				}
+				return null;
+			} else {
+				return ZEALOT;
+			}
 		}
 
 		// int medicPercent = UnitCounter

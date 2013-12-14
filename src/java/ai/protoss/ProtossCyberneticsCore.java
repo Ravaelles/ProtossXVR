@@ -22,6 +22,28 @@ public class ProtossCyberneticsCore {
 	}
 
 	public static boolean shouldBuild() {
+		int battleUnits = UnitCounter.getNumberOfBattleUnits();
+
+		if ((ProtossGateway.LIMIT_ZEALOTS || UnitCounter
+				.weHaveBuilding(UnitTypes.Protoss_Assimilator))
+				&& UnitCounter.getNumberOfUnits(buildingType) == 0) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			return true;
+		}
+
+		if (UnitCounter.getNumberOfUnitsCompleted(UnitTypes.Protoss_Forge) == 0
+				&& UnitCounter
+						.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) == 0) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			return false;
+		}
+
+		if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) >= ProtossPhotonCannon
+				.calculateMaxCannonStack() && battleUnits >= 4) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			return false;
+		}
+
 		if (!Constructing.weAreBuilding(buildingType)
 				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Forge)
 				&& !UnitCounter.weHaveBuilding(buildingType)
@@ -29,8 +51,9 @@ public class ProtossCyberneticsCore {
 						.canAfford(320)) && xvr.canAfford(132)) {
 			if ((UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Gateway) >= 3 || xvr
 					.canAfford(320))
-					&& (UnitCounter.getNumberOfBattleUnits() >= ProtossGateway.MIN_UNITS_FOR_DIFF_BUILDING || UnitCounter
+					&& (battleUnits >= ProtossGateway.MIN_UNITS_FOR_DIFF_BUILDING || UnitCounter
 							.getNumberOfUnits(UnitManager.BASE) > 1)) {
+				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
 		}

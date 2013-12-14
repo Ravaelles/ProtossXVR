@@ -3,7 +3,9 @@ package ai.handling.map;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeSet;
@@ -14,10 +16,13 @@ import jnibwapi.model.ChokePoint;
 import jnibwapi.model.Region;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType;
+import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.Debug;
 import ai.core.XVR;
 import ai.handling.units.UnitActions;
 import ai.protoss.ProtossNexus;
+import ai.protoss.ProtossPhotonCannon;
+import ai.protoss.ProtossPylon;
 import ai.utils.RUtilities;
 
 public class MapExploration {
@@ -34,9 +39,9 @@ public class MapExploration {
 	private static HashMap<Integer, Unit> enemyUnitsDiscovered = new HashMap<Integer, Unit>();
 	private static ArrayList<Unit> _hiddenEnemyUnits = new ArrayList<Unit>();
 
-	private static Unit explorer;
-	private static boolean hasExplorerJustAttacked = false;
-	private static boolean _removedChokePointsNearMainBase = false;
+	public static Unit explorer;
+	private static boolean hasExplorerAttacked = false;
+	private static boolean _disabledChokePointsNearMainBase = false;
 
 	public static Unit getExplorer() {
 		return explorer;
@@ -49,19 +54,75 @@ public class MapExploration {
 			return;
 		}
 
-		MapExploration.explorer = explorer;
-
 		// Define nearest enemy
 		Unit nearestEnemy = xvr.getUnitNearestFromList(explorer.getX(),
-				explorer.getY(), xvr.getEnemyUnitsVisible());
+				explorer.getY(), xvr.getBwapi().getEnemyUnits());
 
 		// Act when enemy is nearby
 		if (nearestEnemy != null
-				&& xvr.getDistanceBetween(nearestEnemy, explorer) < 5) {
+				&& xvr.getDistanceBetween(nearestEnemy, explorer) <= 40) {
+
+			// Check if there's a defensive building nearby
+			// xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon,
+			// 4, explorer, getEnemyBuildingsDiscovered());
+			Unit defBuilding = xvr
+					.getEnemyDefensiveGroundBuildingNear(explorer);
+			if (defBuilding == null) {
+				Collection<Unit> buildingsToAttack = xvr
+						.getEnemyUnitsOfType(ProtossPhotonCannon
+								.getBuildingType());
+				if (!buildingsToAttack.isEmpty()) {
+					defBuilding = (Unit) RUtilities
+							.getRandomElement(buildingsToAttack);
+				}
+
+				if (defBuilding == null) {
+					buildingsToAttack = xvr.getEnemyUnitsOfType(ProtossPylon
+							.getBuildingType());
+					if (!buildingsToAttack.isEmpty()) {
+						defBuilding = (Unit) RUtilities
+								.getRandomElement(buildingsToAttack);
+					}
+				}
+			}
+			Collection<Unit> enemyWorkers = xvr.getEnemyWorkersInRadius(5,
+					explorer);
+			if (defBuilding != null) {
+				if (explorer.isUnderAttack()
+						|| ((explorer.getHitPoints() + explorer.getShields()) < 40 && xvr
+								.getDistanceSimple(explorer, nearestEnemy) <= 3)) {
+					if (enemyWorkers.size() == 1) {
+						Unit enemyWorker = xvr.getEnemyWorkerInRadius(1,
+								explorer);
+						nearestEnemy = enemyWorker;
+					}
+
+					if (enemyWorkers.size() >= 2
+							&& xvr.getEnemyUnitsOfType(UnitTypes.Protoss_Forge)
+									.isEmpty() || enemyWorkers.size() >= 1) {
+						UnitActions.moveToMainBase(explorer);
+						return;
+					} else {
+						UnitActions.attackEnemyUnit(explorer, nearestEnemy);
+						return;
+					}
+				} else {
+					hasExplorerAttacked = true;
+					if (enemyWorkers.size() >= 2
+							&& xvr.getEnemyUnitsOfType(UnitTypes.Protoss_Forge)
+									.isEmpty() || enemyWorkers.size() >= 1) {
+						UnitActions.moveToMainBase(explorer);
+						return;
+					} else {
+						UnitActions.attackEnemyUnit(explorer, defBuilding);
+						return;
+					}
+				}
+			}
 
 			// If we're worker and found hidden unit like dark templar, get the
 			// hell out of there.
-			if (explorer.isWorker()) {
+			if (explorer.isWorker() && !nearestEnemy.isWorker()) {
 				// UnitActions.moveAwayFromUnitIfPossible(explorer,
 				// nearestEnemy,
 				// 12);
@@ -69,20 +130,42 @@ public class MapExploration {
 				return;
 			}
 
+			if ((explorer.isUnderAttack() && (explorer.getHitPoints() + explorer
+					.getShields()) < 11)
+					|| ((explorer.getHitPoints() + explorer.getShields()) < 11 && xvr
+							.getDistanceSimple(explorer, nearestEnemy) <= 3)) {
+				UnitActions.moveToMainBase(explorer);
+				return;
+			}
+
 			// If we have trolled the enemy, RUN =]
-			if (hasExplorerJustAttacked) {
+			if (hasExplorerAttacked) {
 				BaseLocation goTo = getMostDistantBaseLocation(xvr
 						.getFirstBase());
-				UnitActions.moveTo(explorer, goTo.getX(), goTo.getY());
+				if (goTo != null
+						&& xvr.getDistanceSimple(explorer, nearestEnemy) > 3) {
+					UnitActions.moveTo(explorer, goTo.getX(), goTo.getY());
+					return;
+				}
 			} else {
-				UnitActions.attackEnemyUnit(explorer, nearestEnemy);
-				hasExplorerJustAttacked = true;
+				if (!nearestEnemy.getType().isWorker()) {
+					UnitActions.attackEnemyUnit(explorer, nearestEnemy);
+					hasExplorerAttacked = true;
+					return;
+				}
+
+				if (explorer.isUnderAttack()
+						|| (explorer.getHitPoints() < 20 && xvr
+								.getDistanceSimple(explorer, nearestEnemy) <= 3)) {
+					UnitActions.moveToMainBase(explorer);
+					return;
+				}
 			}
 		}
 
 		// No enemy is nearby
 		else {
-			hasExplorerJustAttacked = false;
+			hasExplorerAttacked = false;
 
 			// If explorer is on its way, don't interrupt.
 			if ((!explorer.isIdle() && !explorer.isGatheringMinerals() && !explorer
@@ -96,6 +179,7 @@ public class MapExploration {
 				MapPoint secondBase = ProtossNexus.getSecondBaseLocation();
 				UnitActions.moveTo(explorer, secondBase);
 				_exploredSecondBase = true;
+				return;
 			}
 
 			// If no base has been discovered try to
@@ -121,7 +205,7 @@ public class MapExploration {
 
 				// Send unit to scout specified point.
 				if (initial) {
-					UnitActions.attackTo(explorer, goTo.getX(), goTo.getY());
+					UnitActions.moveTo(explorer, goTo.getX(), goTo.getY());
 				} else {
 					UnitActions.moveTo(explorer, goTo.getX(), goTo.getY());
 				}
@@ -151,13 +235,21 @@ public class MapExploration {
 		double mostFarDistance = 2;
 		BaseLocation nearestObject = null;
 
-		for (BaseLocation object : xvr.getBwapi().getMap().getBaseLocations()) {
-			// double distance = xvr.getBwapi().getMap()
-			// .getGroundDistance(unit, object.getX(), object.getY()) / 32;
+		ArrayList<BaseLocation> baseLocations = new ArrayList<>();
+		baseLocations.addAll(xvr.getBwapi().getMap().getBaseLocations());
+		baseLocations.remove(getOurBaseLocation());
+		Collections.shuffle(baseLocations);
+
+		boolean onlyStartLocations = baseLocationsDiscovered.size() < getNumberOfStartLocations(baseLocations);
+
+		for (BaseLocation object : baseLocations) {
+			if (onlyStartLocations && !object.isStartLocation()) {
+				continue;
+			}
+
 			double distance = xvr.getDistanceBetween(unit, object.getX(),
 					object.getY());
 			if (distance > mostFarDistance) {
-				// System.out.println("DIST " + distance);
 				mostFarDistance = distance;
 				nearestObject = object;
 			}
@@ -166,13 +258,41 @@ public class MapExploration {
 		return nearestObject;
 	}
 
+	public static int getNumberOfStartLocations(
+			Collection<BaseLocation> baseLocations) {
+		int result = 0;
+		for (BaseLocation object : baseLocations) {
+			if (object.isStartLocation()) {
+				result++;
+			}
+		}
+		return result;
+	}
+
+	private static BaseLocation getOurBaseLocation() {
+		List<BaseLocation> baseLocations = xvr.getBwapi().getMap()
+				.getBaseLocations();
+		Unit ourBase = xvr.getFirstBase();
+
+		for (BaseLocation object : baseLocations) {
+			if (object.isStartLocation()) {
+				double distance = xvr.getDistanceSimple(ourBase, object);
+				if (distance < 5) {
+					return object;
+				}
+			}
+		}
+
+		return null;
+	}
+
 	private static BaseLocation nonInitialScouting(Unit explorer) {
 		XVR xvr = XVR.getInstance();
 		BaseLocation goTo = null;
 
 		// Filter out visited bases.
 		ArrayList<BaseLocation> possibleBases = new ArrayList<BaseLocation>();
-		possibleBases.addAll(xvr.getBwapi().getMap().getBaseLocations());
+		possibleBases.addAll(xvr.getBwapi().getMap().getStartLocations());
 		possibleBases.removeAll(baseLocationsDiscovered);
 
 		// If there is any unvisited base- go there. If no- go to the random
@@ -663,18 +783,20 @@ public class MapExploration {
 		return chokes;
 	}
 
-	public static void removeChokePointsNearFirstBase() {
-		if (!_removedChokePointsNearMainBase) {
+	public static void disableChokePointsNearFirstBase() {
+		if (!_disabledChokePointsNearMainBase) {
 			Collection<ChokePoint> chokes = MapExploration.getChokePointsNear(
 					ProtossNexus.getSecondBaseLocation(), 20);
 			Region baseRegion = xvr.getBwapi().getMap()
 					.getRegion(xvr.getFirstBase());
 			for (ChokePoint choke : chokes) {
 				if (baseRegion.getChokePoints().contains(choke)) {
-					chokePointsProcessed.remove(choke);
+					// chokePointsProcessed.remove(choke);
+					choke.setDisabled(true);
+					;
 				}
 			}
-			_removedChokePointsNearMainBase = true;
+			_disabledChokePointsNearMainBase = true;
 		}
 	}
 }

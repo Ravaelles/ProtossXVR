@@ -17,12 +17,17 @@ import ai.utils.RUtilities;
 
 public class WorkerManager {
 
+	public static final int EXPLORER_INDEX = 6;
 	private static XVR xvr = XVR.getInstance();
 
 	public static void act() {
 		int counter = 0;
-		for (Unit worker : xvr.getUnitsOfType(UnitManager.WORKER)) {
-			if (counter != 6) {
+		ArrayList<Unit> workers = xvr.getUnitsOfType(UnitManager.WORKER);
+		MapExploration.explorer = workers.size() > EXPLORER_INDEX ?
+				workers.get(EXPLORER_INDEX) : null;
+		
+		for (Unit worker : workers) {
+			if (counter != EXPLORER_INDEX) {
 				WorkerManager.act(worker);
 			} else {
 				MapExploration.explore(worker);
@@ -33,6 +38,9 @@ public class WorkerManager {
 	}
 
 	public static void act(Unit unit) {
+		if (unit.equals(MapExploration.getExplorer())) {
+			return;
+		}
 
 		// If we should destroy this unit
 		// if (unit.isShouldScrapUnit()) {
@@ -58,8 +66,8 @@ public class WorkerManager {
 			// If nearest enemy is worker, attack this bastard!
 			Unit nearestEnemy = xvr.getUnitNearestFromList(unit, xvr.getBwapi()
 					.getEnemyUnits());
-			if (nearestEnemy != null && nearestEnemy.getType().isWorker()) {
-				if (xvr.getDistanceSimple(unit, xvr.getFirstBase()) < 8
+			if (nearestEnemy != null) {
+				if (xvr.getDistanceSimple(unit, xvr.getFirstBase()) <= 6
 						&& !unit.isConstructing()) {
 					UnitActions.attackEnemyUnit(unit, nearestEnemy);
 					return;

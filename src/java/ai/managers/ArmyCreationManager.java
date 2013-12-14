@@ -26,7 +26,7 @@ public class ArmyCreationManager {
 					ProtossRoboticsFacility.act(roboticsFacility);
 				}
 			}
-			
+
 			// GATEWAY
 			ArrayList<Unit> gatewayList = ProtossGateway.getAllObjects();
 			if (!gatewayList.isEmpty()) {
@@ -47,8 +47,9 @@ public class ArmyCreationManager {
 
 	public static boolean weShouldBuildBattleUnits() {
 		int battleUnits = UnitCounter.getNumberOfBattleUnits();
-		
-		if (battleUnits <= 6) {
+
+		if (battleUnits <= 6
+				|| (battleUnits < BotStrategyManager.getMinBattleUnits() + 2)) {
 			return true;
 		}
 		if (!xvr.canAfford(125)) {
@@ -60,7 +61,7 @@ public class ArmyCreationManager {
 		if (ProtossPhotonCannon.shouldBuild() && !xvr.canAfford(250)) {
 			return false;
 		}
-		
+
 		return true;
 	}
 

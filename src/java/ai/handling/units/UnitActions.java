@@ -29,8 +29,8 @@ public class UnitActions {
 
 	public static void moveTo(Unit unit, Unit destination) {
 		if (unit == null || destination == null) {
-//			System.err.println("moveTo # unit: " + unit + " # destination: "
-//					+ destination);
+			// System.err.println("moveTo # unit: " + unit + " # destination: "
+			// + destination);
 			return;
 		}
 		moveTo(unit, destination.getX(), destination.getY());
@@ -178,8 +178,9 @@ public class UnitActions {
 		} else if (unit.isWorker() && unit.isUnderAttack()) {
 			UnitActions.moveTo(unit, xvr.getFirstBase());
 		}
-		
-		if (unit.isAttacking() && !StrengthEvaluator.isStrengthRatioFavorableFor(unit)) {
+
+		if (unit.isAttacking()
+				&& !StrengthEvaluator.isStrengthRatioFavorableFor(unit)) {
 			UnitActions.moveToMainBase(unit);
 		}
 	}
@@ -262,6 +263,19 @@ public class UnitActions {
 		UnitType type = unit.getType();
 		Unit goTo = null;
 
+		if (xvr.getTimeSecond() < 500
+				&& UnitCounter
+						.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) < 2) {
+			return;
+		}
+
+		if (xvr.getTimeSecond() < 300
+				&& xvr.getTimeSecond() < 300
+				&& UnitCounter
+						.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) == 0) {
+			return;
+		}
+
 		int currShields = unit.getShields();
 		int maxShields = type.getMaxShields();
 		int currHP = unit.getHitPoints();
@@ -278,6 +292,24 @@ public class UnitActions {
 
 		// Unit has almost all shields
 		if (currShields >= maxShields / 2) {
+			return;
+		}
+
+		// If there's bunker
+		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Terran_Bunker, 3, unit,
+				false).size() > 0) {
+			return;
+		}
+
+		// If there's bunker
+		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon, 3,
+				unit, false).size() > 0) {
+			return;
+		}
+
+		// If there's bunker
+		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Zerg_Sunken_Colony, 3,
+				unit, false).size() > 0) {
 			return;
 		}
 
@@ -322,7 +354,7 @@ public class UnitActions {
 
 		if (goTo != null) {
 			UnitActions.moveTo(unit, goTo);
-//			UnitActions.attackTo(unit, goTo);
+			// UnitActions.attackTo(unit, goTo);
 		}
 	}
 

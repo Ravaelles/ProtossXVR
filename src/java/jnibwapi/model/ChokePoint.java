@@ -26,6 +26,8 @@ public class ChokePoint extends MapPoint {
 	private int secondSideY;
 	private Region firstRegion;
 	private Region secondRegion;
+	
+	private boolean disabled = false;
 
 	public ChokePoint(int[] data, int index) {
 		ID = firstFreeID++;
@@ -132,4 +134,13 @@ public class ChokePoint extends MapPoint {
 		return true;
 	}
 
+	public boolean isDisabled() {
+		return disabled;
+	}
+
+	public void setDisabled(boolean disabled) {
+		this.disabled = disabled;
+	}
+
+	
 }

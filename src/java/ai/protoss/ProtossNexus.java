@@ -10,10 +10,12 @@ import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.Debug;
 import ai.core.XVR;
+import ai.core.XVRClient;
 import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.map.MapPoint;
 import ai.handling.units.UnitCounter;
+import ai.managers.BotStrategyManager;
 import ai.managers.UnitManager;
 import ai.managers.WorkerManager;
 import ai.utils.RUtilities;
@@ -24,7 +26,7 @@ public class ProtossNexus {
 
 	public static final int MAX_WORKERS = 65;
 
-	private static int MAX_DIST_OF_MINERAL_FROM_BASE = 15;
+	private static int MAX_DIST_OF_MINERAL_FROM_BASE = 12;
 	private static final int ARMY_UNITS_PER_NEW_BASE = 10;
 	private static final int MIN_WORKERS = 15;
 	public static final int WORKERS_PER_GEYSER = 4;
@@ -47,14 +49,28 @@ public class ProtossNexus {
 		int gateways = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Gateway);
 		int battleUnits = UnitCounter.getNumberOfBattleUnits();
 
-		if (battleUnits >= 4 && xvr.canAfford(350) || xvr.canAfford(500)) {
+		if (bases >= 3 && !xvr.canAfford(700)) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
+			return false;
+		}
+
+		if (battleUnits < BotStrategyManager.getMinBattleUnits() + 2) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
+			return false;
+		}
+
+		int quickUnitsThreshold = BotStrategyManager.isExpandWithCannons() ? 4
+				: 13;
+
+		if (battleUnits >= quickUnitsThreshold && xvr.canAfford(350)
+				|| xvr.canAfford(500)) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
 		}
 
 		// FORCE quick expansion if we're rich
 		if (xvr.canAfford(330)) {
-			if (gateways >= 3 && battleUnits >= 10) {
+			if (gateways >= 3 && battleUnits >= 10 && !XVR.isEnemyTerran()) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
@@ -83,7 +99,8 @@ public class ProtossNexus {
 		// base.
 		if (bases == 1) {
 			if (UnitCounter
-					.getNumberOfUnitsCompleted(UnitTypes.Protoss_Gateway) <= 2) {
+					.getNumberOfUnitsCompleted(UnitTypes.Protoss_Gateway) <= 2
+					&& !xvr.canAfford(500)) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 				return false;
 			}
@@ -326,9 +343,9 @@ public class ProtossNexus {
 		Map map = xvr.getBwapi().getMap();
 
 		Unit expansionCenter = xvr.getFirstBase();
-		if (!xvr.getLastBase().equals(xvr.getFirstBase())) {
-			expansionCenter = xvr.getLastBase();
-		}
+		// if (!xvr.getLastBase().equals(xvr.getFirstBase())) {
+		// expansionCenter = xvr.getLastBase();
+		// }
 
 		if (expansionCenter == null) {
 			return null;
@@ -437,17 +454,24 @@ public class ProtossNexus {
 		}
 
 		// Quick FIRST PYLON
-		if (workers >= 8 && workers <= 9 && (pylons == 0 || !weAreBuildingPylon)) {
-			return false;
-
-		}
-		// Quick FIRST CANNON
-		if (pylons == 2) {
-			if (!Constructing.weAreBuilding(UnitTypes.Protoss_Photon_Cannon)
-					&& !xvr.canAfford(200)) {
+		if (BotStrategyManager.isExpandWithCannons()) {
+			if (workers >= 8 && workers <= 9
+					&& (pylons == 0 || !weAreBuildingPylon)) {
 				return false;
-			} else {
-				return xvr.canAfford(184);
+
+			}
+		}
+
+		// Quick FIRST CANNON
+		if (BotStrategyManager.isExpandWithCannons()) {
+			if (pylons == 2) {
+				if (!Constructing
+						.weAreBuilding(UnitTypes.Protoss_Photon_Cannon)
+						&& !xvr.canAfford(200)) {
+					return false;
+				} else {
+					return xvr.canAfford(184);
+				}
 			}
 		}
 
@@ -463,8 +487,10 @@ public class ProtossNexus {
 			return false;
 		}
 
-		if (workers >= MIN_WORKERS && cannons < 2) {
-			return false;
+		if (BotStrategyManager.isExpandWithCannons()) {
+			if (workers >= MIN_WORKERS && cannons < 2) {
+				return false;
+			}
 		}
 
 		// if (UnitCounter.getNumberOfBattleUnits() < 3 * workers) {
@@ -478,8 +504,8 @@ public class ProtossNexus {
 		// If we have only one base and already some workers, promote more
 		// gateways
 		int gateways = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Gateway);
-		if (UnitCounter.getNumberOfUnits(buildingType) == 1 && gateways < 3) {
-			if (existingToOptimalRatio > 0.5 + 0.1 * gateways) {
+		if (UnitCounter.getNumberOfUnits(buildingType) == 1 && gateways <= 3) {
+			if (existingToOptimalRatio > 0.5 + 0.12 * gateways) {
 				return false;
 			}
 		}

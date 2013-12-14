@@ -76,6 +76,15 @@ public class UnitCounter {
 				+ getNumberOfUnits(UnitTypes.Protoss_Carrier)
 				+ getNumberOfUnits(UnitTypes.Protoss_Arbiter);
 	}
+	
+	public static int getNumberOfBattleUnitsCompleted() {
+		return getNumberOfInfantryUnitsCompleted() + 
+				+ getNumberOfUnitsCompleted(UnitTypes.Protoss_Reaver)
+				+ getNumberOfUnitsCompleted(UnitTypes.Protoss_Corsair)
+				+ getNumberOfUnitsCompleted(UnitTypes.Protoss_Scout)
+				+ getNumberOfUnitsCompleted(UnitTypes.Protoss_Carrier)
+				+ getNumberOfUnitsCompleted(UnitTypes.Protoss_Arbiter);
+	}
 
 	public static boolean weHaveBuilding(UnitTypes unitType) {
 		return getNumberOfUnits(unitType) > 0;
@@ -90,6 +99,13 @@ public class UnitCounter {
 				+ getNumberOfUnits(UnitTypes.Protoss_Dragoon)
 				+ getNumberOfUnits(UnitTypes.Protoss_High_Templar)
 				+ getNumberOfUnits(UnitTypes.Protoss_Dark_Templar);
+	}
+	
+	public static int getNumberOfInfantryUnitsCompleted() {
+		return getNumberOfUnitsCompleted(UnitTypes.Protoss_Zealot)
+				+ getNumberOfUnitsCompleted(UnitTypes.Protoss_Dragoon)
+				+ getNumberOfUnitsCompleted(UnitTypes.Protoss_High_Templar)
+				+ getNumberOfUnitsCompleted(UnitTypes.Protoss_Dark_Templar);
 	}
 
 	public static boolean weHavePylonFinished() {

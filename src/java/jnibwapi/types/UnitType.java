@@ -580,9 +580,25 @@ public class UnitType {
 	public boolean isCarrier() {
 		return getID() == UnitTypes.Protoss_Carrier.ordinal();
 	}
+	
+	public boolean isInterceptor() {
+		return getID() == UnitTypes.Protoss_Interceptor.ordinal();
+	}
 
+	public boolean isVulture() {
+		return getID() == UnitTypes.Terran_Vulture.ordinal();
+	}
+	
 	public boolean isTerranMine() {
 		return getID() == UnitTypes.Terran_Vulture_Spider_Mine.ordinal();
+	}
+	
+	public boolean isSCV() {
+		return getID() == UnitTypes.Terran_SCV.ordinal();
+	}
+	
+	public boolean isFleetBeacon() {
+		return getID() == UnitTypes.Protoss_Fleet_Beacon.ordinal();
 	}
 	
 	public boolean isMedic() {
@@ -605,6 +621,7 @@ public class UnitType {
 	public double getGroundAttackNormalized() {
 		return UnitDamages.getGroundAttackNormalized(this);
 	}
+
 
 	// public boolean isDefensiveBuilding() {
 	// if (!isBuilding()) {
