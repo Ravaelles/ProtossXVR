@@ -126,6 +126,7 @@ public class StrengthEvaluator {
 
 				if (unit.getType().isVulture()) {
 					vultures++;
+					total -= attackValue;
 				}
 
 				// Handle defensive buildings

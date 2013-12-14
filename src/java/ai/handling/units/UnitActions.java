@@ -263,7 +263,7 @@ public class UnitActions {
 		UnitType type = unit.getType();
 		Unit goTo = null;
 
-		if (xvr.getTimeSecond() < 500
+		if (xvr.getTimeSecond() < 700
 				&& UnitCounter
 						.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) < 2) {
 			return;

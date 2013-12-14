@@ -47,7 +47,7 @@ public class ProtossPylon {
 
 		// ### VERSION ### Expansion with cannons
 		if (BotStrategyManager.isExpandWithCannons()) {
-			if (pylons == 0 && (workers >= 7 || xvr.canAfford(84))) {
+			if (pylons == 0 && (workers >= 7 || xvr.canAfford(87))) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
