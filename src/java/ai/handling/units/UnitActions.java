@@ -264,8 +264,9 @@ public class UnitActions {
 		Unit goTo = null;
 
 		if (xvr.getTimeSecond() < 700
-				&& UnitCounter
-						.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) < 2) {
+				&& (UnitCounter
+						.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) < 2 || !XVR
+						.isEnemyProtoss())) {
 			return;
 		}
 

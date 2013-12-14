@@ -693,14 +693,14 @@ public class XVR {
 
 	public static void setEnemyRace(String enemyRaceString) {
 		ENEMY_RACE = enemyRaceString;
-		String enemyBotName = ENEMY.getName().toLowerCase();
 
+		// String enemyBotName = ENEMY.getName().toLowerCase();
 		// System.out.println("BOT: " + ENEMY.getName());
 
-//		if (MapExploration.getNumberOfStartLocations(lastInstance.getBwapi()
-//				.getMap().getStartLocations()) - 1 > 1) {
-//			BotStrategyManager.setExpandWithCannons(true);
-//		}
+		// if (MapExploration.getNumberOfStartLocations(lastInstance.getBwapi()
+		// .getMap().getStartLocations()) - 1 > 1) {
+		// BotStrategyManager.setExpandWithCannons(true);
+		// }
 
 		// ============
 		// Protoss

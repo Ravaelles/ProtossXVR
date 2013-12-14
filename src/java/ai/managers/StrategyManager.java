@@ -17,10 +17,10 @@ public class StrategyManager {
 
 	private static XVR xvr = XVR.getInstance();
 
-	private static final int MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME = 5;
-	private static final int MINIMUM_NON_INITIAL_ARMY_TO_PUSH = 25;
-	private static final int MINIMUM_THRESHOLD_ARMY_TO_PUSH = 41;
-	private static final int MINIMUM_ARMY_PSI_USED_THRESHOLD = 75;
+//	private static final int MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME = 5;
+//	private static final int MINIMUM_NON_INITIAL_ARMY_TO_PUSH = 25;
+//	private static final int MINIMUM_THRESHOLD_ARMY_TO_PUSH = 41;
+//	private static final int MINIMUM_ARMY_PSI_USED_THRESHOLD = 75;
 
 	/**
 	 * It means we are NOT ready to attack the enemy, because we suck pretty
@@ -62,8 +62,9 @@ public class StrategyManager {
 	 */
 	private static Unit _attackTargetUnit;
 
+	@SuppressWarnings("unused")
 	private static int retreatsCounter = 0;
-	private static boolean pushedInitially = false;
+//	private static boolean pushedInitially = false;
 
 	// ====================================================
 

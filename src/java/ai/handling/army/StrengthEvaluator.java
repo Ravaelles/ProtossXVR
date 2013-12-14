@@ -1,7 +1,6 @@
 package ai.handling.army;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 
 import jnibwapi.model.Unit;
@@ -95,14 +94,14 @@ public class StrengthEvaluator {
 		return ratio;
 	}
 
-	private static boolean isOneOfUnitsDefensiveBuilding(Collection<Unit> units) {
-		for (Unit unit : units) {
-			if (unit.isDefensiveGroundBuilding()) {
-				return true;
-			}
-		}
-		return false;
-	}
+//	private static boolean isOneOfUnitsDefensiveBuilding(Collection<Unit> units) {
+//		for (Unit unit : units) {
+//			if (unit.isDefensiveGroundBuilding()) {
+//				return true;
+//			}
+//		}
+//		return false;
+//	}
 
 	private static double calculateTotalAttackOf(ArrayList<Unit> units,
 			boolean forEnemy) {
@@ -126,7 +125,10 @@ public class StrengthEvaluator {
 
 				if (unit.getType().isVulture()) {
 					vultures++;
-					total -= attackValue;
+					total -= attackValue * 1.4;
+				}
+				if (unit.getType().isHydralisk()) {
+					total -= attackValue * 0.4;
 				}
 
 				// Handle defensive buildings
@@ -135,8 +137,8 @@ public class StrengthEvaluator {
 					if (unit.isCompleted()) {
 						defensiveBuildings++;
 
-						if (type.isBunker()) {
-							if (seconds >= 550) {
+						if (seconds >= 550) {
+							if (type.isBunker()) {
 								total += 40;
 							}
 						} else {
@@ -162,7 +164,7 @@ public class StrengthEvaluator {
 			}
 		}
 
-		if (defensiveBuildings >= 2 && _ourUnits.size() < 7) {
+		if (defensiveBuildings >= 2 && _ourUnits.size() < 7 && XVR.isEnemyProtoss()) {
 			BotStrategyManager
 					.waitUntilMinBattleUnits(IF_CANNONS_WAIT_FOR_N_UNITS);
 			total = 99999;

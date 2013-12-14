@@ -589,6 +589,10 @@ public class UnitType {
 		return getID() == UnitTypes.Terran_Vulture.ordinal();
 	}
 	
+	public boolean isHydralisk() {
+		return getID() == UnitTypes.Zerg_Hydralisk.ordinal();
+	}
+	
 	public boolean isTerranMine() {
 		return getID() == UnitTypes.Terran_Vulture_Spider_Mine.ordinal();
 	}

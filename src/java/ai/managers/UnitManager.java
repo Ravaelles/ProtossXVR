@@ -190,10 +190,13 @@ public class UnitManager {
 
 		// If unit is stuck, attack.
 		if (unit.isStuck() || unit.isUnderAttack()) {
-			shouldFightBack = xvr.getNearestEnemyInRadius(unit, 1) != null
+			Unit nearestEnemy = xvr.getNearestEnemyInRadius(unit, 1);
+			shouldFightBack = nearestEnemy != null
+					&& nearestEnemy.isDetected()
 					&& xvr.getUnitsInRadius(unit, 2, xvr.getUnitsNonWorker())
-							.size() >= 3;
-			if (shouldFightBack) {
+							.size() >= 2;
+			if (shouldFightBack || unit.isStuck()
+					|| (unit.isUnderAttack() && !unit.isMoving())) {
 				actTryAttackingCloseEnemyUnits(unit);
 			}
 		}
@@ -402,10 +405,11 @@ public class UnitManager {
 		boolean airAttackCapable = unit.canAttackAirUnits();
 
 		// Disallow wounded units to attack distant targets.
-		if (unit.getShields() < 15
-				|| (unit.getShields() < 40 && unit.getHitPoints() < 40)
-				|| (XVR.isEnemyTerran() && xvr.getTimeSecond() < 500)) {
-			return;
+		if (XVR.isEnemyTerran() && xvr.getTimeSecond() > 600) {
+			if ((unit.getShields() < 15 || (unit.getShields() < 40 && unit
+					.getHitPoints() < 40))) {
+				return;
+			}
 		}
 
 		Unit enemyToAttack = null;
@@ -418,8 +422,10 @@ public class UnitManager {
 		Unit enemyWorker = xvr.getEnemyWorkerInRadius(1, unit);
 		if (enemyWorker != null) {
 			importantEnemyUnitNearby = enemyWorker;
-			UnitActions.attackEnemyUnit(unit, enemyToAttack);
-			return;
+			if (xvr.getDistanceBetween(unit, importantEnemyUnitNearby) > 30) {
+				UnitActions.attackEnemyUnit(unit, enemyToAttack);
+				return;
+			}
 		}
 
 		ArrayList<Unit> enemyUnits = xvr.getEnemyUnitsVisible(
@@ -481,7 +487,8 @@ public class UnitManager {
 							enemyWorker = xvr.getEnemyWorkerInRadius(12, unit);
 							if (enemyWorker != null) {
 								importantEnemyUnitNearby = enemyWorker;
-								UnitActions.attackEnemyUnit(unit, enemyToAttack);
+								UnitActions
+										.attackEnemyUnit(unit, enemyToAttack);
 								return;
 							}
 							return;

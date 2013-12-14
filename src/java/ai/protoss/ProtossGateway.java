@@ -236,7 +236,7 @@ public class ProtossGateway {
 		// DRAGOON
 		if (dragoonAllowed) {
 			double dragoonPercent = (double) dragoons / totalInfantry;
-			if (dragoons < 1 || dragoonPercent < dragoonBuildRatio / totalRatio) {
+			if (dragoons <= 2 || dragoonPercent < dragoonBuildRatio / totalRatio) {
 				return DRAGOON;
 			}
 		}

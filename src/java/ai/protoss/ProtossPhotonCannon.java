@@ -262,7 +262,7 @@ public class ProtossPhotonCannon {
 			}
 		}
 		int maximumDistance = minimumDistance
-				+ (15 / Math.max(1, numberOfCannonsNearby));
+				+ (10 / Math.max(1, numberOfCannonsNearby));
 
 		// ================================
 		// Find proper build tile

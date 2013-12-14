@@ -8,9 +8,7 @@ import jnibwapi.model.BaseLocation;
 import jnibwapi.model.Map;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType.UnitTypes;
-import ai.core.Debug;
 import ai.core.XVR;
-import ai.core.XVRClient;
 import ai.handling.constructing.Constructing;
 import ai.handling.constructing.ShouldBuildCache;
 import ai.handling.map.MapPoint;
@@ -70,7 +68,9 @@ public class ProtossNexus {
 
 		// FORCE quick expansion if we're rich
 		if (xvr.canAfford(330)) {
-			if (gateways >= 3 && battleUnits >= 10 && !XVR.isEnemyTerran()) {
+			if (gateways >= 3
+					&& battleUnits >= (BotStrategyManager.isExpandWithCannons() ? 6
+							: 10) && !XVR.isEnemyTerran()) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
@@ -403,9 +403,9 @@ public class ProtossNexus {
 			_cachedNextBaseTile = Constructing.getLegitTileToBuildNear(
 					xvr.getRandomWorker(), buildingType, point, 0, 30, false);
 		} else {
-			if (UnitCounter.getNumberOfUnits(UnitManager.BASE) <= 1) {
-				Debug.message(xvr, "Error! No place for next base!");
-			}
+//			if (UnitCounter.getNumberOfUnits(UnitManager.BASE) <= 1) {
+//				Debug.message(xvr, "Error! No place for next base!");
+//			}
 			_cachedNextBaseTile = null;
 		}
 
