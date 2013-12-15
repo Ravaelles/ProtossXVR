@@ -164,7 +164,9 @@ public class ProtossPhotonCannon {
 		// Add bases from newest, to the oldest (I guess?)
 		ArrayList<Unit> bases = ProtossNexus.getBases();
 		for (int i = bases.size() - 1; i >= 0; i--) {
-			placesToReinforce.add(bases.get(i));
+			Unit base = bases.get(i);
+			ChokePoint chokePoint = MapExploration.getImportantChokePointNear(base);
+			placesToReinforce.add(chokePoint);
 		}
 
 		return placesToReinforce;

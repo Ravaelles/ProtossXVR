@@ -20,6 +20,7 @@ import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.Debug;
 import ai.core.XVR;
 import ai.handling.units.UnitActions;
+import ai.handling.units.UnitCounter;
 import ai.protoss.ProtossNexus;
 import ai.protoss.ProtossPhotonCannon;
 import ai.protoss.ProtossPylon;
@@ -54,13 +55,27 @@ public class MapExploration {
 			return;
 		}
 
+		Collection<Unit> enemyWorkers = xvr.getEnemyWorkersInRadius(5,
+				explorer);
+		boolean someEnemyWorkersNearby = enemyWorkers.size() >= 1;
+
+		if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Nexus) >= 2) {
+			MapPoint tileForNextBase = ProtossNexus.getTileForNextBase(false);
+			if (!xvr.getBwapi().isVisible(tileForNextBase.getTx(),
+					tileForNextBase.getTy())) {
+				UnitActions.moveTo(explorer, tileForNextBase);
+				return;
+			}
+		}
+
 		// Define nearest enemy
 		Unit nearestEnemy = xvr.getUnitNearestFromList(explorer.getX(),
 				explorer.getY(), xvr.getBwapi().getEnemyUnits());
 
 		// Act when enemy is nearby
 		if (nearestEnemy != null
-				&& xvr.getDistanceBetween(nearestEnemy, explorer) <= 40) {
+				&& xvr.getDistanceBetween(nearestEnemy, explorer) <= 40 &&
+				!baseLocationsDiscovered.isEmpty()) {
 
 			// Check if there's a defensive building nearby
 			// xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon,
@@ -85,21 +100,19 @@ public class MapExploration {
 					}
 				}
 			}
-			Collection<Unit> enemyWorkers = xvr.getEnemyWorkersInRadius(5,
-					explorer);
 			if (defBuilding != null) {
 				if (explorer.isUnderAttack()
 						|| ((explorer.getHitPoints() + explorer.getShields()) < 40 && xvr
-								.getDistanceSimple(explorer, nearestEnemy) <= 3)) {
+								.getDistanceSimple(explorer, nearestEnemy) <= 5)) {
 					if (enemyWorkers.size() == 1) {
 						Unit enemyWorker = xvr.getEnemyWorkerInRadius(1,
 								explorer);
 						nearestEnemy = enemyWorker;
 					}
 
-					if (enemyWorkers.size() >= 2
-							&& xvr.getEnemyUnitsOfType(UnitTypes.Protoss_Forge)
-									.isEmpty() || enemyWorkers.size() >= 1) {
+					if (someEnemyWorkersNearby
+							&& (xvr.getEnemyUnitsOfType(UnitTypes.Protoss_Forge)
+									.isEmpty() || enemyWorkers.size() >= 1)) {
 						UnitActions.moveToMainBase(explorer);
 						return;
 					} else {
@@ -108,9 +121,9 @@ public class MapExploration {
 					}
 				} else {
 					hasExplorerAttacked = true;
-					if (enemyWorkers.size() >= 2
-							&& xvr.getEnemyUnitsOfType(UnitTypes.Protoss_Forge)
-									.isEmpty() || enemyWorkers.size() >= 1) {
+					if (someEnemyWorkersNearby
+							&& (xvr.getEnemyUnitsOfType(UnitTypes.Protoss_Forge)
+									.isEmpty() || someEnemyWorkersNearby)) {
 						UnitActions.moveToMainBase(explorer);
 						return;
 					} else {
@@ -126,14 +139,14 @@ public class MapExploration {
 				// UnitActions.moveAwayFromUnitIfPossible(explorer,
 				// nearestEnemy,
 				// 12);
-				UnitActions.moveTo(explorer, xvr.getFirstBase());
+				UnitActions.moveToMainBase(explorer);
 				return;
 			}
 
 			if ((explorer.isUnderAttack() && (explorer.getHitPoints() + explorer
-					.getShields()) < 11)
-					|| ((explorer.getHitPoints() + explorer.getShields()) < 11 && xvr
-							.getDistanceSimple(explorer, nearestEnemy) <= 3)) {
+					.getShields()) < 29)
+					|| ((explorer.getHitPoints() + explorer.getShields()) < 29 && xvr
+							.getDistanceSimple(explorer, nearestEnemy) <= 5)) {
 				UnitActions.moveToMainBase(explorer);
 				return;
 			}
@@ -143,7 +156,7 @@ public class MapExploration {
 				BaseLocation goTo = getMostDistantBaseLocation(xvr
 						.getFirstBase());
 				if (goTo != null
-						&& xvr.getDistanceSimple(explorer, nearestEnemy) > 3) {
+						&& xvr.getDistanceSimple(explorer, nearestEnemy) > 5) {
 					UnitActions.moveTo(explorer, goTo.getX(), goTo.getY());
 					return;
 				}
@@ -155,8 +168,8 @@ public class MapExploration {
 				}
 
 				if (explorer.isUnderAttack()
-						|| (explorer.getHitPoints() < 20 && xvr
-								.getDistanceSimple(explorer, nearestEnemy) <= 3)) {
+						|| ((explorer.getHitPoints() + explorer.getShields()) < 29 && xvr
+								.getDistanceSimple(explorer, nearestEnemy) <= 5)) {
 					UnitActions.moveToMainBase(explorer);
 					return;
 				}

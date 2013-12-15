@@ -11,7 +11,6 @@ import ai.handling.army.StrengthEvaluator;
 import ai.handling.map.MapExploration;
 import ai.handling.map.MapPoint;
 import ai.handling.units.UnitActions;
-import ai.handling.units.UnitCounter;
 import ai.protoss.ProtossNexus;
 import ai.utils.RUtilities;
 
@@ -23,9 +22,9 @@ public class WorkerManager {
 	public static void act() {
 		int counter = 0;
 		ArrayList<Unit> workers = xvr.getUnitsOfType(UnitManager.WORKER);
-		MapExploration.explorer = workers.size() > EXPLORER_INDEX ?
-				workers.get(EXPLORER_INDEX) : null;
-		
+		MapExploration.explorer = workers.size() > EXPLORER_INDEX ? workers
+				.get(EXPLORER_INDEX) : null;
+
 		for (Unit worker : workers) {
 			if (counter != EXPLORER_INDEX) {
 				WorkerManager.act(worker);
@@ -213,12 +212,19 @@ public class WorkerManager {
 		// Get the minerals that are closes to the base.
 		ArrayList<Unit> minerals = ProtossNexus
 				.getMineralsNearBase(nearestBase);
-		if (minerals.isEmpty()) {
-			// minerals = xvr.getMineralsUnits();
-			minerals = xvr.getUnitsInRadius(nearestBase,
-					23 + UnitCounter.getNumberOfUnits(UnitManager.BASE) * 18,
-					xvr.getMineralsUnits());
+		int counter = 0;
+		while (minerals.isEmpty()) {
+			minerals = ProtossNexus.getMineralsNearBase(nearestBase,
+					15 + 10 * counter++);
 		}
+		
+//		if (minerals.isEmpty()) {
+//			// minerals = xvr.getMineralsUnits();
+//			minerals = xvr
+//					.getUnitsInRadius(nearestBase, 17 + (UnitCounter
+//							.getNumberOfUnits(UnitManager.BASE) - 1) * 13, xvr
+//							.getMineralsUnits());
+//		}
 
 		// Get workers
 		ArrayList<Unit> workers = ProtossNexus.getWorkersNearBase(nearestBase);

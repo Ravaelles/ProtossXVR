@@ -94,14 +94,15 @@ public class StrengthEvaluator {
 		return ratio;
 	}
 
-//	private static boolean isOneOfUnitsDefensiveBuilding(Collection<Unit> units) {
-//		for (Unit unit : units) {
-//			if (unit.isDefensiveGroundBuilding()) {
-//				return true;
-//			}
-//		}
-//		return false;
-//	}
+	// private static boolean isOneOfUnitsDefensiveBuilding(Collection<Unit>
+	// units) {
+	// for (Unit unit : units) {
+	// if (unit.isDefensiveGroundBuilding()) {
+	// return true;
+	// }
+	// }
+	// return false;
+	// }
 
 	private static double calculateTotalAttackOf(ArrayList<Unit> units,
 			boolean forEnemy) {
@@ -164,7 +165,8 @@ public class StrengthEvaluator {
 			}
 		}
 
-		if (defensiveBuildings >= 2 && _ourUnits.size() < 7 && XVR.isEnemyProtoss()) {
+		if (defensiveBuildings >= 2 && _ourUnits.size() < 7
+				&& XVR.isEnemyProtoss()) {
 			BotStrategyManager
 					.waitUntilMinBattleUnits(IF_CANNONS_WAIT_FOR_N_UNITS);
 			total = 99999;
@@ -179,7 +181,7 @@ public class StrengthEvaluator {
 		}
 
 		if ((vultures >= 3 || defensiveBuildings >= 3)
-				&& !ProtossGateway.LIMIT_ZEALOTS) {
+				&& !ProtossGateway.LIMIT_ZEALOTS && xvr.getTimeSecond() < 600) {
 			BotStrategyManager
 					.waitUntilMinBattleUnits(IF_CANNONS_WAIT_FOR_N_UNITS);
 			StrategyManager.forcePeace();

@@ -27,8 +27,8 @@ public class ProtossForge {
 		// int pylons = UnitCounter.getNumberOfPylonsCompleted();
 		int gateways = UnitCounter.getNumberOfUnits(ProtossGateway
 				.getBuildingType());
-//		int gatewaysFinished = UnitCounter
-//				.getNumberOfUnitsCompleted(ProtossGateway.getBuildingType());
+		// int gatewaysFinished = UnitCounter
+		// .getNumberOfUnitsCompleted(ProtossGateway.getBuildingType());
 
 		// Version for expansion with cannons
 		if (BotStrategyManager.isExpandWithCannons()) {
@@ -48,11 +48,11 @@ public class ProtossForge {
 		if (BotStrategyManager.isExpandWithGateways()) {
 			if (forges == 0 && gateways >= 3
 					&& !Constructing.weAreBuilding(buildingType)) {
-				// if (UnitCounter.getNumberOfBattleUnits() >=
-				// ProtossGateway.MIN_UNITS_FOR_DIFF_BUILDING - 8) {
-				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
-				return true;
-				// }
+				if (UnitCounter.getNumberOfBattleUnits() >= 5) {
+					// ProtossGateway.MIN_UNITS_FOR_DIFF_BUILDING - 8) {
+					ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+					return true;
+				}
 			}
 		}
 

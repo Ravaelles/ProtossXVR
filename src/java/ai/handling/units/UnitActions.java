@@ -186,7 +186,16 @@ public class UnitActions {
 	}
 
 	public static void moveToMainBase(Unit unit) {
-		moveTo(unit, xvr.getFirstBase());
+		Unit firstBase = xvr.getFirstBase();
+		if (unit.isWorker()) {
+			if (xvr.getDistanceSimple(unit, firstBase) < 8) {
+				moveTo(unit, MapExploration.getRandomChokePoint());
+			} else {
+				moveTo(unit, firstBase);
+			}
+		} else {
+			moveTo(unit, firstBase);
+		}
 	}
 
 	public static boolean runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
@@ -263,7 +272,7 @@ public class UnitActions {
 		UnitType type = unit.getType();
 		Unit goTo = null;
 
-		if (xvr.getTimeSecond() < 700
+		if (xvr.getTimeSecond() < 750
 				&& (UnitCounter
 						.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) < 2 || !XVR
 						.isEnemyProtoss())) {
@@ -296,19 +305,28 @@ public class UnitActions {
 			return;
 		}
 
-		// If there's bunker
+		// =============================
+		// Disallow running from some critical units
+		
+		// If there's BUNKER
 		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Terran_Bunker, 3, unit,
 				false).size() > 0) {
 			return;
 		}
 
-		// If there's bunker
+		// If there's CANNON
 		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon, 3,
 				unit, false).size() > 0) {
 			return;
 		}
 
-		// If there's bunker
+		// If there's enemy ARCHON
+		if (xvr.getUnitsInRadius(unit, 3,
+				xvr.getEnemyUnitsOfType(UnitTypes.Protoss_Archon)).size() > 0) {
+			return;
+		}
+
+		// If there's SUKEN COLONY
 		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Zerg_Sunken_Colony, 3,
 				unit, false).size() > 0) {
 			return;

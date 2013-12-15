@@ -31,6 +31,12 @@ public class ProtossCyberneticsCore {
 			return true;
 		}
 
+		if (UnitCounter.getNumberOfUnitsCompleted(UnitTypes.Protoss_Nexus) == 3
+				&& UnitCounter.getNumberOfUnits(buildingType) == 0) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			return true;
+		}
+
 		if (UnitCounter.getNumberOfUnitsCompleted(UnitTypes.Protoss_Forge) == 0
 				&& UnitCounter
 						.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) == 0) {

@@ -1,6 +1,7 @@
 package ai.managers;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 
 import jnibwapi.model.Unit;
@@ -188,15 +189,22 @@ public class UnitManager {
 	private static void handleAntiStuckCode(Unit unit) {
 		boolean shouldFightBack = false;
 
+		if (unit.getType().isWorker()) {
+			return;
+		}
+
 		// If unit is stuck, attack.
-		if (unit.isStuck() || unit.isUnderAttack()) {
+		if (unit.isStuck() || unit.isUnderAttack() || unit.isMoving()) {
 			Unit nearestEnemy = xvr.getNearestEnemyInRadius(unit, 1);
-			shouldFightBack = nearestEnemy != null
-					&& nearestEnemy.isDetected()
-					&& xvr.getUnitsInRadius(unit, 2, xvr.getUnitsNonWorker())
-							.size() >= 2;
-			if (shouldFightBack || unit.isStuck()
-					|| (unit.isUnderAttack() && !unit.isMoving())) {
+			shouldFightBack = nearestEnemy != null && nearestEnemy.isDetected();
+
+			// && xvr.getUnitsInRadius(unit, 2, xvr.getUnitsNonWorker())
+			// .size() >= 2
+			if (shouldFightBack
+					|| unit.isStuck()
+					|| (unit.isMoving() && xvr.getUnitsInRadius(unit, 1,
+							xvr.getUnitsNonWorker()).size() >= 2)
+					|| unit.getGroundWeaponCooldown() == 0) {
 				actTryAttackingCloseEnemyUnits(unit);
 			}
 		}
@@ -240,12 +248,14 @@ public class UnitManager {
 			}
 
 			// Some units have special orders
-			if (type.isReaver() || type.isHighTemplar() || type.isObserver()) {
+			if (type.isHighTemplar() || type.isObserver()) {
 				continue;
 			}
 
 			// ============================
-			decideSkirmishIfToFightOrRetreat(unit);
+			if (!type.isReaver()) {
+				decideSkirmishIfToFightOrRetreat(unit);
+			}
 
 			handleAntiStuckCode(unit);
 		}
@@ -403,7 +413,36 @@ public class UnitManager {
 
 		boolean groundAttackCapable = unit.canAttackGroundUnits();
 		boolean airAttackCapable = unit.canAttackAirUnits();
+		Unit importantEnemyUnitNearby = null;
+		Unit enemyToAttack = null;
 
+		// Workers Repairing
+		Collection<Unit> enemyWorkers = xvr.getEnemyWorkersInRadius(5, unit);
+		if (enemyWorkers != null) {
+			for (Unit worker : enemyWorkers) {
+				if (worker.isRepairing()) {
+					importantEnemyUnitNearby = worker;
+					break;
+				}
+			}
+
+			if (importantEnemyUnitNearby != null) {
+				UnitActions.attackEnemyUnit(unit, enemyToAttack);
+				return;
+			}
+		}
+
+		// Normal workers
+		Unit enemyWorker = xvr.getEnemyWorkerInRadius(2, unit);
+		if (enemyWorker != null) {
+			importantEnemyUnitNearby = enemyWorker;
+			if (xvr.getDistanceBetween(xvr.getFirstBase(),
+					importantEnemyUnitNearby) > 30 || xvr.getTimeSecond() > 600) {
+				UnitActions.attackEnemyUnit(unit, enemyToAttack);
+				return;
+			}
+		}
+		
 		// Disallow wounded units to attack distant targets.
 		if (XVR.isEnemyTerran() && xvr.getTimeSecond() > 600) {
 			if ((unit.getShields() < 15 || (unit.getShields() < 40 && unit
@@ -412,21 +451,11 @@ public class UnitManager {
 			}
 		}
 
-		Unit enemyToAttack = null;
 
 		// Try selecting top priority units like lurkers, siege tanks.
-		Unit importantEnemyUnitNearby = TargetHandling
+		importantEnemyUnitNearby = TargetHandling
 				.getImportantEnemyUnitTargetIfPossibleFor(unit,
 						groundAttackCapable, airAttackCapable);
-
-		Unit enemyWorker = xvr.getEnemyWorkerInRadius(1, unit);
-		if (enemyWorker != null) {
-			importantEnemyUnitNearby = enemyWorker;
-			if (xvr.getDistanceBetween(unit, importantEnemyUnitNearby) > 30) {
-				UnitActions.attackEnemyUnit(unit, enemyToAttack);
-				return;
-			}
-		}
 
 		ArrayList<Unit> enemyUnits = xvr.getEnemyUnitsVisible(
 				groundAttackCapable, airAttackCapable);
@@ -453,7 +482,7 @@ public class UnitManager {
 				Unit enemyUnit = (Unit) iterator.next();
 				if (enemyUnit.getType().isWorker()
 						&& xvr.getDistanceBetween(enemyToAttack,
-								xvr.getFirstBase()) < 20) {
+								xvr.getFirstBase()) < 25) {
 					iterator.remove();
 				}
 			}

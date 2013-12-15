@@ -145,8 +145,8 @@ public class Debug {
 			xvr.getBwapi().drawBox(building.getX(), building.getY(),
 					building.getX() + 4 * 32, building.getY() + 4 * 32,
 					BWColor.TEAL, false, false);
-			xvr.getBwapi().drawText(building.getX() + 10, building.getY() + 30,
-					"Nexus", false);
+//			xvr.getBwapi().drawText(building.getX() + 10, building.getY() + 30,
+//					"Nexus", false);
 		}
 
 //		// Paint next CANNON position

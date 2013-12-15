@@ -526,6 +526,10 @@ public class UnitType {
 	public boolean isPhotonCannon() {
 		return getID() == UnitTypes.Protoss_Photon_Cannon.ordinal();
 	}
+	
+	public boolean isGateway() {
+		return getID() == UnitTypes.Protoss_Gateway.ordinal();
+	}
 
 	public boolean isDragoon() {
 		return getID() == UnitTypes.Protoss_Dragoon.ordinal();

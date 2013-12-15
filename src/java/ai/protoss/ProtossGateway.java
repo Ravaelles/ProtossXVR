@@ -39,8 +39,9 @@ public class ProtossGateway {
 		if (UnitCounter.weHavePylonFinished()) {
 			int gateways = UnitCounter.getNumberOfUnits(buildingType);
 			int bases = UnitCounter.getNumberOfUnitsCompleted(UnitManager.BASE);
-			
-			if (ProtossNexus.shouldBuild() && !xvr.canAfford(500)) {
+
+			int raceBonus = XVR.isEnemyTerran() ? 1 : 0; 
+			if (ProtossNexus.shouldBuild() && gateways >= (1 + raceBonus + 2 * bases)) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 				return false;
 			}
@@ -236,7 +237,8 @@ public class ProtossGateway {
 		// DRAGOON
 		if (dragoonAllowed) {
 			double dragoonPercent = (double) dragoons / totalInfantry;
-			if (dragoons <= 2 || dragoonPercent < dragoonBuildRatio / totalRatio) {
+			if (dragoons <= 2
+					|| dragoonPercent < dragoonBuildRatio / totalRatio) {
 				return DRAGOON;
 			}
 		}

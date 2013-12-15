@@ -419,7 +419,7 @@ public class Constructing {
 							if (!isTooNearMineralAndBase(place)
 									&& isEnoughPlaceToOtherBuildings(place,
 											type)
-									&& !isOverlappingNextNexus(place)) {
+									&& !isOverlappingNextNexus(place, type)) {
 								ChokePoint choke = MapExploration
 										.getNearestChokePointFor(x, y);
 								if (choke.getRadius() >= 192
@@ -449,8 +449,9 @@ public class Constructing {
 		return null;
 	}
 
-	private static boolean isOverlappingNextNexus(MapPoint place) {
-		if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Pylon) >= 1) {
+	private static boolean isOverlappingNextNexus(MapPoint place, UnitType type) {
+		if (!type.isBase()
+				&& UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Pylon) >= 1) {
 			return xvr.getDistanceSimple(place,
 					ProtossNexus.getTileForNextBase(false)) <= 4;
 		} else {
@@ -548,48 +549,6 @@ public class Constructing {
 		return true;
 	}
 
-	// public static Point getBuildableTileNearestTo(int minimumDist,
-	// int maximumDist, int tileX, int tileY, int builderID,
-	// UnitTypes buildingType) {
-	// boolean canTemperWithIJ = !buildingType.getType().isOnGeyser();
-	//
-	// int currentDist = minimumDist;
-	// while (currentDist <= maximumDist) {
-	// for (int i = tileX - currentDist; i <= tileX + currentDist; i++) {
-	// for (int j = tileY - currentDist; j <= tileY + currentDist; j++) {
-	// if (xvr.getBwapi().canBuildHere(builderID, i, j,
-	// buildingType.ordinal(), false)) {
-	// if (Constructing.isBuildTileFreeFromUnits(builderID, i,
-	// j)) {
-	// return new Point(i, j);
-	// }
-	//
-	// // End of j
-	// if (canTemperWithIJ && j % jStep == 0) {
-	// j++;
-	// }
-	// }
-	//
-	// // End of i
-	// if (canTemperWithIJ && i % iStep == 0) {
-	// i++;
-	// }
-	// }
-	// }
-	//
-	// if (maximumDist < 15) {
-	// currentDist++;
-	// } else {
-	// if (currentDist > 4 && RUtilities.rand(0, 3) == 0) {
-	// currentDist += 2;
-	// } else {
-	// currentDist++;
-	// }
-	// }
-	// }
-	// return null;
-	// }
-
 	public static boolean isBuildTileFreeFromUnits(int builderID, int tileX,
 			int tileY) {
 		JNIBWAPI bwapi = XVR.getInstance().getBwapi();
@@ -649,48 +608,52 @@ public class Constructing {
 		// Try to find proper choke to reinforce
 		ChokePoint choke = MapExploration.getImportantChokePointNear(buildTile);
 
+		// Get point in between choke and base
+		MapPointInstance point = MapPointInstance.getMiddlePointBetween(
+				buildTile, choke);
+
 		// ==============================
 		// Ensure there's pylon nearby
 		ArrayList<Unit> pylons = xvr.getUnitsOfGivenTypeInRadius(
-				UnitTypes.Protoss_Pylon, 8, choke, true);
-		boolean pylonIsOkay = !pylons.isEmpty() && pylons.get(0).isCompleted();
-		if (!pylonIsOkay) {
-			baseInterrupted = true;
-			building = UnitTypes.Protoss_Pylon;
-
-			// Get the base location
-			MapPoint base = ProtossNexus.getTileForNextBase(false);
-
-			// Get point in between choke and base
-			MapPointInstance point = MapPointInstance.getMiddlePointBetween(
-					base, choke);
-
-			// Refind proper place for pylon
-			buildTile = getLegitTileToBuildNear(xvr.getRandomWorker(),
-					building, point, 0, 15, true);
-		}
-
-		// ==============================
-		// Ensure there's at least some cannon nearby
+				UnitTypes.Protoss_Pylon, 10, choke, true);
 		int cannonsNearby = xvr.countUnitsOfGivenTypeInRadius(
-				UnitTypes.Protoss_Photon_Cannon, 13, buildTile, true);
-		if (pylonIsOkay && cannonsNearby < 0) {
-			baseInterrupted = true;
-			building = UnitTypes.Protoss_Photon_Cannon;
+				UnitTypes.Protoss_Photon_Cannon, 13, point, true);
 
-			buildTile = ProtossPhotonCannon.findTileForCannon();
-//			System.out.println("------------- FORCE CANNON FOR BASE");
+		if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Nexus) > 2
+				&& !xvr.canAfford(650)) {
+			boolean pylonIsOkay = !pylons.isEmpty()
+					&& pylons.get(0).isCompleted();
+			if (!pylonIsOkay) {
+				baseInterrupted = true;
+				building = UnitTypes.Protoss_Pylon;
+
+				// Get the base location
+				// MapPoint base = ProtossNexus.getTileForNextBase(false);
+
+				// Refind proper place for pylon
+				buildTile = getLegitTileToBuildNear(xvr.getRandomWorker(),
+						building, point, 0, 15, true);
+			}
+
+			// ==============================
+			// Ensure there's at least some cannon nearby
+			if (pylonIsOkay && cannonsNearby < 0) {
+				baseInterrupted = true;
+				building = UnitTypes.Protoss_Photon_Cannon;
+
+				buildTile = ProtossPhotonCannon.findTileForCannon();
+				// System.out.println("------------- FORCE CANNON FOR BASE");
+			}
 		}
 
 		// ==============================
 		// We can build the base
 		if (!baseInterrupted) {
 			if (!Constructing.canBuildAt(buildTile, UnitManager.BASE)) {
-				// System.out.println("TEST canBuildAt");
+				// System.out.println("TEST cant Build At !");
 				buildTile = ProtossNexus.getTileForNextBase(true);
 			}
-			// System.out.println("BASE READY # pylonsNearby = " +
-			// pylonsNearby
+			// System.out.println("BASE READY # pylonsNearby = " + pylons.size()
 			// + ", cannonsNearby = " + cannonsNearby);
 		}
 
@@ -698,7 +661,11 @@ public class Constructing {
 	}
 
 	private static boolean canBuildAt(MapPoint point, UnitTypes type) {
-		return xvr.getBwapi().canBuildHere(xvr.getRandomWorker().getID(),
+		Unit randomWorker = xvr.getRandomWorker();
+		if (randomWorker == null || point == null) {
+			return false;
+		}
+		return xvr.getBwapi().canBuildHere(randomWorker.getID(),
 				point.getTx(), point.getTy(), type.getID(), false);
 	}
 
@@ -784,7 +751,7 @@ public class Constructing {
 		boolean canProceed = false;
 
 		// Disallow multiple building of all buildings, except cannons.
-		if (building.getType().isPhotonCannon()) {
+		if (building.getType().isPhotonCannon() || building.getType().isGateway()) {
 			int builders = ifWeAreBuildingItCountHowManyWorkersIsBuildingIt(building);
 			canProceed = builders == 0;
 			//
@@ -803,20 +770,6 @@ public class Constructing {
 			// }
 		}
 	}
-
-	// public static void removeDuplicateConstructionsPending(
-	// Unit onlyAllowedBuilder) {
-	// // UnitType buildingType =
-	// // UnitType.getUnitTypeByID(onlyAllowedBuilder.getBuildTypeID());
-	// for (Unit otherBuilder : xvr.getWorkers()) {
-	// if (otherBuilder.isConstructing()
-	// && onlyAllowedBuilder.getBuildTypeID() == otherBuilder
-	// .getBuildTypeID()
-	// && !otherBuilder.equals(onlyAllowedBuilder)) {
-	// xvr.getBwapi().cancelConstruction(otherBuilder.getID());
-	// }
-	// }
-	// }
 
 	public static Unit getRandomWorker() {
 		return xvr.getRandomWorker();

@@ -51,7 +51,14 @@ public class JNIBWAPI {
 	// load the BWAPI client library
 	static {
 		try {
-			System.loadLibrary("client-bridge-" + System.getProperty("os.arch"));
+//			System.loadLibrary("client-bridge-" + System.getProperty("os.arch"));
+			
+			String driverName = "ProtossXVR-driver-" + System.getProperty("os.arch");
+			System.out.println("Application will use this driver: ");
+			System.out.println(driverName);
+			System.out.println();
+			
+			System.loadLibrary(driverName);
 			System.out.println("Loaded client bridge library.");
 		} catch (UnsatisfiedLinkError e) {
 			System.err.println("Native code library failed to load.\n" + e);

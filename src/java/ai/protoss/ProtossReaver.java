@@ -23,7 +23,7 @@ public class ProtossReaver {
 		checkIfBuildScarabs(unit);
 		
 		if (unit.getScarabCount() > 0) {
-			Unit closeEnemy = xvr.getNearestEnemyInRadius(unit, 8);
+			Unit closeEnemy = xvr.getNearestEnemyInRadius(unit, 7);
 			UnitActions.attackTo(unit, closeEnemy);
 		}
 	}

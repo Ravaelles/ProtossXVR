@@ -60,8 +60,7 @@ public class ProtossPylon {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}
-		}
-		else {
+		} else {
 			if (pylons == 1
 					&& ((forges == 1 && xvr.canAfford(54)) || (forges == 0 && xvr
 							.canAfford(216)))) {
@@ -88,8 +87,9 @@ public class ProtossPylon {
 		// ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 		// return false;
 		// }
-		
-		if (ProtossPylon.findTileNearPylonForNewBuilding(UnitTypes.Protoss_Gateway) == null) {
+
+		if (ProtossPylon
+				.findTileNearPylonForNewBuilding(UnitTypes.Protoss_Gateway) == null) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
 		}
@@ -162,8 +162,16 @@ public class ProtossPylon {
 				// - RUtilities.rand(0,
 				// 2 * PYLON_FROM_PYLON_MIN_DISTANCE_RAND);
 
+				int minDistFromPylon = 5;
+//				MapPoint secondBase = ProtossNexus.getSecondBaseLocation();
+//				if (secondBase != null
+//						&& xvr.getDistanceBetween(pylon, secondBase) < 12) {
+//					minDistFromPylon = 0;
+//				}
+
 				MapPoint tile = Constructing.getLegitTileToBuildNear(
-						xvr.getRandomWorker(), typeToBuild, pylon, 0, 15, true);
+						xvr.getRandomWorker(), typeToBuild, pylon,
+						minDistFromPylon, 15, true);
 				if (tile != null) {
 					return tile;
 				}
@@ -175,25 +183,25 @@ public class ProtossPylon {
 	public static MapPoint findTileForPylon() {
 		Unit builder = Constructing.getRandomWorker();
 
-//		// ### VERSION ### Expansion with cannons
-//		if (BotStrategyManager.isExpandWithCannons()) {
-//			if (UnitCounter.getNumberOfUnits(buildingType) == 1) {
-//				return findTileForFirstPylonAtBase(builder,
-//						ProtossNexus.getSecondBaseLocation());
-//			}
-//		}
+		// // ### VERSION ### Expansion with cannons
+		// if (BotStrategyManager.isExpandWithCannons()) {
+		// if (UnitCounter.getNumberOfUnits(buildingType) == 1) {
+		// return findTileForFirstPylonAtBase(builder,
+		// ProtossNexus.getSecondBaseLocation());
+		// }
+		// }
 
-//		// It's not the first pylon
-//		if (UnitCounter.weHavePylonFinished()) {
-//			if (UnitCounter.getNumberOfPylons() == 1 && XVR.isEnemyProtoss()) {
-//				MapPoint tile = findTileForFirstPylonAtBase(builder,
-//						ProtossNexus.getSecondBaseLocation());
-//				if (tile != null) {
-//					return tile;
-//				}
-//			}
-//			return findTileForNextPylon(builder);
-//		}
+		// // It's not the first pylon
+		// if (UnitCounter.weHavePylonFinished()) {
+		// if (UnitCounter.getNumberOfPylons() == 1 && XVR.isEnemyProtoss()) {
+		// MapPoint tile = findTileForFirstPylonAtBase(builder,
+		// ProtossNexus.getSecondBaseLocation());
+		// if (tile != null) {
+		// return tile;
+		// }
+		// }
+		// return findTileForNextPylon(builder);
+		// }
 		if (UnitCounter.weHavePylonFinished()) {
 			if (UnitCounter.getNumberOfPylons() == 1) {
 				MapPoint tile = findTileForFirstPylonAtBase(builder,
@@ -265,7 +273,22 @@ public class ProtossPylon {
 		}
 
 		// or build near random pylon.
-		MapPoint tile = findTileForPylonNearby(getRandomPylon(),
+		Unit pylon = null;
+		if (UnitCounter.getNumberOfPylons() > 5) {
+			pylon = getRandomPylon();
+		} else {
+			ArrayList<Unit> pylonsNearMainBase = xvr
+					.getUnitsOfGivenTypeInRadius(buildingType, 14,
+							xvr.getFirstBase(), true);
+			if (!pylonsNearMainBase.isEmpty()) {
+				pylon = (Unit) RUtilities.getRandomElement(pylonsNearMainBase);
+			}
+			if (pylon == null) {
+				pylon = getRandomPylon();
+			}
+		}
+		
+		MapPoint tile = findTileForPylonNearby(pylon,
 				PYLON_FROM_PYLON_MIN_DISTANCE, PYLON_FROM_PYLON_MAX_DISTANCE);
 		if (tile != null) {
 			return tile;

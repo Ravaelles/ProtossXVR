@@ -1,7 +1,6 @@
 package ai.protoss;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 
 import jnibwapi.model.BaseLocation;
@@ -150,7 +149,7 @@ public class ProtossNexus {
 
 		// We have more than optimal number workers at base
 		else {
-			tooManyWorkersAtBase(base);
+			// tooManyWorkersAtBase(base);
 		}
 	}
 
@@ -200,69 +199,37 @@ public class ProtossNexus {
 		}
 	}
 
-	private static void tooManyWorkersAtBase(Unit base) {
-
-		// If we have workers at base over optimal amount and we have
-		// another
-		// base try sending them to the new base
-		int overLimitWorkers = getNumberOfMineralGatherersForBase(base)
-				- getOptimalMineralGatherersAtBase(base) - 1;
-		if (overLimitWorkers > 0
-				&& UnitCounter.getNumberOfUnitsCompleted(buildingType) > 1) {
-			ArrayList<Unit> gatherers = getMineralWorkersNearBase(base);
-
-			Collection<Unit> mineralsInNeihgborhood = xvr.getUnitsInRadius(
-					base, 25, xvr.getMineralsUnits());
-			if (!mineralsInNeihgborhood.isEmpty()) {
-				int counter = overLimitWorkers;
-				for (Unit worker : gatherers) {
-					if (RUtilities.rand(0, 15) == 0) {
-						if (counter-- < 0) {
-							break;
-						} else {
-							WorkerManager
-									.forceGatherMinerals(
-											worker,
-											(Unit) RUtilities
-													.getRandomElement(mineralsInNeihgborhood));
-						}
-					}
-				}
-			}
-
-			// boolean sendSomewhere = false;
-			// for (Unit otherBase :
-			// xvr.getUnitsOfTypeCompleted(buildingType)) {
-			// if (!base.equals(otherBase)) {
-			// int overLimitWorkersAtOtherBase =
-			// getNumberOfMineralGatherersForBase(otherBase)
-			// - getOptimalMineralGatherersAtBase(otherBase);
-			// if (overLimitWorkers <= overLimitWorkersAtOtherBase) {
-			// continue;
-			// }
-			//
-			// for (int i = 0; i < overLimitWorkers
-			// && i < gatherers.size(); i++) {
-			// // UnitActions.moveTo(gatherers.get(i), otherBase);
-			// WorkerManager.gatherResources(gatherers.get(i),
-			// otherBase);
-			// }
-			// sendSomewhere = true;
-			// break;
-			// }
-			// }
-			//
-			// // If not send anywhere, kill the damned units!!!
-			// if (!sendSomewhere) {
-			// for (int i = 0; i < overLimitWorkers
-			// && i < gatherers.size(); i++) {
-			// // gatherers.get(i).markUnitToScrap();
-			// UnitActions.attackEnemyUnit(gatherers.get(i),
-			// MapExploration.getRandomEnemyBuilding());
-			// }
-			// }
-		}
-	}
+//	private static void tooManyWorkersAtBase(Unit base) {
+//
+//		// If we have workers at base over optimal amount and we have
+//		// another
+//		// base try sending them to the new base
+//		int overLimitWorkers = getNumberOfMineralGatherersForBase(base)
+//				- getOptimalMineralGatherersAtBase(base) - 1;
+//		if (overLimitWorkers > 0
+//				&& UnitCounter.getNumberOfUnitsCompleted(buildingType) > 1) {
+//			ArrayList<Unit> gatherers = getMineralWorkersNearBase(base);
+//
+//			Collection<Unit> mineralsInNeihgborhood = xvr.getUnitsInRadius(
+//					base, 17, xvr.getMineralsUnits());
+//			if (!mineralsInNeihgborhood.isEmpty()) {
+//				int counter = overLimitWorkers;
+//				for (Unit worker : gatherers) {
+//					if (RUtilities.rand(0, 15) == 0) {
+//						if (counter-- < 0) {
+//							break;
+//						} else {
+//							WorkerManager
+//									.forceGatherMinerals(
+//											worker,
+//											(Unit) RUtilities
+//													.getRandomElement(mineralsInNeihgborhood));
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
 
 	private static void haveOverLimitGasWorkers(Unit base, int overLimitWorkers) {
 		ArrayList<Unit> gatherers = getGasWorkersNearBase(base);
@@ -341,7 +308,6 @@ public class ProtossNexus {
 		// ===============================
 
 		Map map = xvr.getBwapi().getMap();
-
 		Unit expansionCenter = xvr.getFirstBase();
 		// if (!xvr.getLastBase().equals(xvr.getFirstBase())) {
 		// expansionCenter = xvr.getLastBase();
@@ -403,9 +369,9 @@ public class ProtossNexus {
 			_cachedNextBaseTile = Constructing.getLegitTileToBuildNear(
 					xvr.getRandomWorker(), buildingType, point, 0, 30, false);
 		} else {
-//			if (UnitCounter.getNumberOfUnits(UnitManager.BASE) <= 1) {
-//				Debug.message(xvr, "Error! No place for next base!");
-//			}
+			// if (UnitCounter.getNumberOfUnits(UnitManager.BASE) <= 1) {
+			// Debug.message(xvr, "Error! No place for next base!");
+			// }
 			_cachedNextBaseTile = null;
 		}
 
@@ -467,7 +433,7 @@ public class ProtossNexus {
 			if (pylons == 2) {
 				if (!Constructing
 						.weAreBuilding(UnitTypes.Protoss_Photon_Cannon)
-						&& !xvr.canAfford(200)) {
+						&& !xvr.canAfford(200) && workers >= 20) {
 					return false;
 				} else {
 					return xvr.canAfford(184);
@@ -603,6 +569,10 @@ public class ProtossNexus {
 	}
 
 	public static ArrayList<Unit> getMineralsNearBase(Unit base) {
+		return getMineralsNearBase(base, MAX_DIST_OF_MINERAL_FROM_BASE);
+	}
+
+	public static ArrayList<Unit> getMineralsNearBase(Unit base, int maxDist) {
 		HashMap<Unit, Double> minerals = new HashMap<Unit, Double>();
 
 		for (Unit mineral : xvr.getMineralsUnits()) {
@@ -613,8 +583,7 @@ public class ProtossNexus {
 				continue;
 			}
 
-			if (distance <= MAX_DIST_OF_MINERAL_FROM_BASE
-					&& mineral.getResources() > 1) {
+			if (distance <= maxDist && mineral.getResources() > 1) {
 				minerals.put(mineral, distance);
 			}
 		}

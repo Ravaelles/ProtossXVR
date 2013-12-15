@@ -15,7 +15,6 @@ import ai.handling.map.MapPoint;
 import ai.handling.map.MapPointInstance;
 import ai.handling.units.UnitCounter;
 import ai.managers.ArmyCreationManager;
-import ai.managers.BotStrategyManager;
 import ai.managers.ConstructingManager;
 import ai.managers.StrategyManager;
 import ai.managers.TechnologyManager;
@@ -710,8 +709,8 @@ public class XVR {
 
 			// boolean shouldExpandWithCannons =
 			// enemyBotName.contains("alberta");
-			boolean shouldExpandWithCannons = true;
-			BotStrategyManager.setExpandWithCannons(shouldExpandWithCannons);
+			// boolean shouldExpandWithCannons = true;
+			// BotStrategyManager.setExpandWithCannons(shouldExpandWithCannons);
 		}
 
 		// ============

@@ -33,7 +33,7 @@ public class ProtossHighTemplar {
 		if (tryWarpingArchon(highTemplar)) {
 			return;
 		}
-		
+
 		// ===================
 		// Check if run from opponents
 		boolean shouldRun = highTemplar.isUnderAttack();
@@ -44,7 +44,7 @@ public class ProtossHighTemplar {
 		if (shouldRun) {
 			UnitActions.moveTo(highTemplar, xvr.getLastBase());
 		}
-		
+
 		// =======================
 		// Above all, use spells
 		if (highTemplar.getEnergy() >= 75) {
@@ -76,8 +76,8 @@ public class ProtossHighTemplar {
 				ArrayList<Unit> enemies = xvr.getUnitsInRadius(highTemplar, 13,
 						xvr.getEnemyArmyUnits());
 				for (Unit possibleTarget : enemies) {
-					if (xvr.countUnitsInRadius(possibleTarget, 3,
-							xvr.getBwapi().getEnemyUnits()) >= 4) {
+					if (xvr.countUnitsInRadius(possibleTarget, 3, xvr
+							.getBwapi().getEnemyUnits()) >= 4) {
 						unitToStrike = possibleTarget;
 						break;
 					}
@@ -87,8 +87,8 @@ public class ProtossHighTemplar {
 							&& !possibleTarget.isStasised()) {
 
 						// ...and if there's at least one other enemy nearby.
-						if (xvr.countUnitsInRadius(possibleTarget, 4,
-								xvr.getBwapi().getEnemyUnits()) >= 2
+						if (xvr.countUnitsInRadius(possibleTarget, 4, xvr
+								.getBwapi().getEnemyUnits()) >= 2
 								|| highTemplar.getEnergy() >= 150) {
 							unitToStrike = possibleTarget;
 							break;
@@ -173,7 +173,9 @@ public class ProtossHighTemplar {
 		otherTemplars.remove(highTemplar);
 
 		for (Unit otherUnit : otherTemplars) {
-			if (otherUnit.getEnergy() < 140) {
+			if (otherUnit.getEnergy() < 140
+					|| !TechnologyManager
+							.isResearched(TechnologyManager.PSIONIC_STORM)) {
 				return otherUnit;
 			}
 		}
