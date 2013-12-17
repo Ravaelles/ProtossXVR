@@ -568,6 +568,10 @@ public class UnitType {
 	public boolean isDarkTemplar() {
 		return getID() == UnitTypes.Protoss_Dark_Templar.ordinal();
 	}
+	
+	public boolean isZergling() {
+		return getID() == UnitTypes.Zerg_Zergling.ordinal();
+	}
 
 	public boolean isMissileTurret() {
 		return getID() == UnitTypes.Terran_Missile_Turret.ordinal();

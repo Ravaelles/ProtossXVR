@@ -126,9 +126,14 @@ public class XVRClient implements BWAPIEventListener {
 	public void sendText(String text) {
 	}
 
+	private static boolean responded = false;
+	
 	public void receiveText(String text) {
-		xvr.getBwapi().sendText("sorry, cant talk right now");
-		xvr.getBwapi().sendText("have to click very fast, u kno");
+		if (!responded) {
+			responded = true;
+			xvr.getBwapi().sendText("sorry, cant talk right now");
+			xvr.getBwapi().sendText("have to click very fast, u kno");
+		}
 	}
 
 	public void nukeDetect(int x, int y) {

@@ -140,7 +140,8 @@ public class XVR {
 			// MapExploration.removeNonExistingEnemyUnits();
 			// }
 		} catch (Exception e) {
-			System.err.println("-----------------------------------------");
+			System.err.println("--------------------------------------");
+			System.err.println("---------- NON CRITICAL ERROR OCCURED: ");
 			e.printStackTrace();
 			// RUtilities.displayException(e, "Error", "An error occured:");
 		}
@@ -336,7 +337,7 @@ public class XVR {
 		if (u1 == null || point == null) {
 			return 0;
 		}
-		return getDistanceBetween(u1, point.getX(), point.getX());
+		return getDistanceBetween(u1.getX(), u1.getY(), point.getX(), point.getX());
 	}
 
 	public double getDistanceBetween(Unit u1, Unit u2) {
@@ -348,7 +349,7 @@ public class XVR {
 
 	public double getDistanceBetween(MapPoint point, int x, int y) {
 		if (point == null) {
-			return 0;
+			return -1;
 		}
 		return getDistanceBetween(point.getX(), point.getY(), x, y);
 	}
@@ -559,6 +560,9 @@ public class XVR {
 	}
 
 	public Unit getUnitNearestFromList(MapPoint location, Collection<Unit> units) {
+		if (location == null) {
+			return null;
+		}
 		return getUnitNearestFromList(location.getX(), location.getY(), units);
 	}
 
@@ -896,7 +900,7 @@ public class XVR {
 	}
 
 	public Unit getNearestEnemyInRadius(MapPoint point, int tileRadius) {
-		Unit enemy = getUnitNearestFromList(point, getEnemyUnitsVisible());
+		Unit enemy = getUnitNearestFromList(point, bwapi.getEnemyUnits());
 		if (enemy == null || getDistanceBetween(enemy, point) > tileRadius) {
 			return null;
 		}

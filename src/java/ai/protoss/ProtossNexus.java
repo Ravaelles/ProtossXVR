@@ -199,37 +199,37 @@ public class ProtossNexus {
 		}
 	}
 
-//	private static void tooManyWorkersAtBase(Unit base) {
-//
-//		// If we have workers at base over optimal amount and we have
-//		// another
-//		// base try sending them to the new base
-//		int overLimitWorkers = getNumberOfMineralGatherersForBase(base)
-//				- getOptimalMineralGatherersAtBase(base) - 1;
-//		if (overLimitWorkers > 0
-//				&& UnitCounter.getNumberOfUnitsCompleted(buildingType) > 1) {
-//			ArrayList<Unit> gatherers = getMineralWorkersNearBase(base);
-//
-//			Collection<Unit> mineralsInNeihgborhood = xvr.getUnitsInRadius(
-//					base, 17, xvr.getMineralsUnits());
-//			if (!mineralsInNeihgborhood.isEmpty()) {
-//				int counter = overLimitWorkers;
-//				for (Unit worker : gatherers) {
-//					if (RUtilities.rand(0, 15) == 0) {
-//						if (counter-- < 0) {
-//							break;
-//						} else {
-//							WorkerManager
-//									.forceGatherMinerals(
-//											worker,
-//											(Unit) RUtilities
-//													.getRandomElement(mineralsInNeihgborhood));
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
+	// private static void tooManyWorkersAtBase(Unit base) {
+	//
+	// // If we have workers at base over optimal amount and we have
+	// // another
+	// // base try sending them to the new base
+	// int overLimitWorkers = getNumberOfMineralGatherersForBase(base)
+	// - getOptimalMineralGatherersAtBase(base) - 1;
+	// if (overLimitWorkers > 0
+	// && UnitCounter.getNumberOfUnitsCompleted(buildingType) > 1) {
+	// ArrayList<Unit> gatherers = getMineralWorkersNearBase(base);
+	//
+	// Collection<Unit> mineralsInNeihgborhood = xvr.getUnitsInRadius(
+	// base, 17, xvr.getMineralsUnits());
+	// if (!mineralsInNeihgborhood.isEmpty()) {
+	// int counter = overLimitWorkers;
+	// for (Unit worker : gatherers) {
+	// if (RUtilities.rand(0, 15) == 0) {
+	// if (counter-- < 0) {
+	// break;
+	// } else {
+	// WorkerManager
+	// .forceGatherMinerals(
+	// worker,
+	// (Unit) RUtilities
+	// .getRandomElement(mineralsInNeihgborhood));
+	// }
+	// }
+	// }
+	// }
+	// }
+	// }
 
 	private static void haveOverLimitGasWorkers(Unit base, int overLimitWorkers) {
 		ArrayList<Unit> gatherers = getGasWorkersNearBase(base);
@@ -339,10 +339,7 @@ public class ProtossNexus {
 
 			// Look for for the closest base and remember it.
 			double distance = map.getGroundDistance(location, expansionCenter) / 32;
-			// System.out.println("TO NEXT BASE " + location.toStringLocation()
-			// + " DIST = " + distance);
 			if (distance < 0) { // -1 means there's no path
-				// System.out.println("NO PATH TO: " + location);
 				continue;
 			}
 
@@ -356,10 +353,6 @@ public class ProtossNexus {
 
 		if (nearestFreeBaseLocation != null) {
 			MapPoint point = nearestFreeBaseLocation;
-
-			// System.out.println("OK, NEAREST IS " + point.toStringLocation()
-			// + " DIST = " + nearestDistance);
-			// System.out.println();
 
 			// MapPoint point = new MapPointInstance(
 			// nearestFreeBaseLocation.getTx(),
@@ -420,13 +413,13 @@ public class ProtossNexus {
 		}
 
 		// Quick FIRST PYLON
-		if (BotStrategyManager.isExpandWithCannons()) {
-			if (workers >= 8 && workers <= 9
-					&& (pylons == 0 || !weAreBuildingPylon)) {
-				return false;
+		// if (BotStrategyManager.isExpandWithCannons()) {
+		if (workers == 8 && (pylons == 0 || !weAreBuildingPylon)
+				&& !xvr.canAfford(150)) {
+			return false;
 
-			}
 		}
+		// }
 
 		// Quick FIRST CANNON
 		if (BotStrategyManager.isExpandWithCannons()) {
@@ -649,14 +642,6 @@ public class ProtossNexus {
 		ArrayList<Unit> inRadius = xvr.getUnitsOfGivenTypeInRadius(
 				ProtossAssimilator.getBuildingtype(), 12, nearestBase, true);
 
-		// if (!inRadius.isEmpty()) {
-		// System.out.println(!inRadius.isEmpty() + " " +
-		// inRadius.get(0).isCompleted());
-		// }
-		// else {
-		// System.out.println(!inRadius.isEmpty());
-		// }
-
 		if (!inRadius.isEmpty() && inRadius.get(0).isCompleted()
 				&& inRadius.get(0).getResources() > 50) {
 			return true;
@@ -668,14 +653,6 @@ public class ProtossNexus {
 	public static Unit getExistingCompletedAssimilatorNearBase(Unit nearestBase) {
 		ArrayList<Unit> inRadius = xvr.getUnitsOfGivenTypeInRadius(
 				ProtossAssimilator.getBuildingtype(), 12, nearestBase, true);
-
-		// if (!inRadius.isEmpty()) {
-		// System.out.println(!inRadius.isEmpty() + " " +
-		// inRadius.get(0).isCompleted());
-		// }
-		// else {
-		// System.out.println(!inRadius.isEmpty());
-		// }
 
 		if (!inRadius.isEmpty() && inRadius.get(0).isCompleted()
 				&& inRadius.get(0).getResources() > 50) {
@@ -697,14 +674,12 @@ public class ProtossNexus {
 		if (_secondBase != null) {
 			return _secondBase;
 		} else {
-			// System.out.println("getSecondBaseLocation first");
 			_secondBase = ProtossNexus.getTileForNextBase(true);
 			return _secondBase;
 		}
 	}
 
 	public static void updateNextBaseToExpand() {
-		// System.out.println("TEST next base");
 		getTileForNextBase(true);
 	}
 

@@ -55,9 +55,15 @@ public class MapExploration {
 			return;
 		}
 
-		Collection<Unit> enemyWorkers = xvr.getEnemyWorkersInRadius(5,
-				explorer);
+		Collection<Unit> enemyWorkers = xvr
+				.getEnemyWorkersInRadius(5, explorer);
 		boolean someEnemyWorkersNearby = enemyWorkers.size() >= 1;
+		boolean isWounded = (explorer.getHitPoints() + explorer.getShields()) < 35;
+		System.out.println((explorer.getHitPoints() + explorer.getShields()));
+
+		if (explorer.isAttacking() && !isWounded) {
+			return;
+		}
 
 		if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Nexus) >= 2) {
 			MapPoint tileForNextBase = ProtossNexus.getTileForNextBase(false);
@@ -74,8 +80,8 @@ public class MapExploration {
 
 		// Act when enemy is nearby
 		if (nearestEnemy != null
-				&& xvr.getDistanceBetween(nearestEnemy, explorer) <= 40 &&
-				!baseLocationsDiscovered.isEmpty()) {
+				&& xvr.getDistanceBetween(nearestEnemy, explorer) <= 40
+				&& !baseLocationsDiscovered.isEmpty()) {
 
 			// Check if there's a defensive building nearby
 			// xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon,
@@ -102,8 +108,8 @@ public class MapExploration {
 			}
 			if (defBuilding != null) {
 				if (explorer.isUnderAttack()
-						|| ((explorer.getHitPoints() + explorer.getShields()) < 40 && xvr
-								.getDistanceSimple(explorer, nearestEnemy) <= 5)) {
+						|| (isWounded && xvr.getDistanceSimple(explorer,
+								nearestEnemy) <= 5)) {
 					if (enemyWorkers.size() == 1) {
 						Unit enemyWorker = xvr.getEnemyWorkerInRadius(1,
 								explorer);
@@ -111,10 +117,13 @@ public class MapExploration {
 					}
 
 					if (someEnemyWorkersNearby
+							&& isWounded
 							&& (xvr.getEnemyUnitsOfType(UnitTypes.Protoss_Forge)
 									.isEmpty() || enemyWorkers.size() >= 1)) {
-						UnitActions.moveToMainBase(explorer);
-						return;
+						if (isWounded) {
+							UnitActions.moveToMainBase(explorer);
+							return;
+						}
 					} else {
 						UnitActions.attackEnemyUnit(explorer, nearestEnemy);
 						return;
@@ -122,10 +131,13 @@ public class MapExploration {
 				} else {
 					hasExplorerAttacked = true;
 					if (someEnemyWorkersNearby
+							&& isWounded
 							&& (xvr.getEnemyUnitsOfType(UnitTypes.Protoss_Forge)
 									.isEmpty() || someEnemyWorkersNearby)) {
-						UnitActions.moveToMainBase(explorer);
-						return;
+						if (isWounded) {
+							UnitActions.moveToMainBase(explorer);
+							return;
+						}
 					} else {
 						UnitActions.attackEnemyUnit(explorer, defBuilding);
 						return;
@@ -135,30 +147,37 @@ public class MapExploration {
 
 			// If we're worker and found hidden unit like dark templar, get the
 			// hell out of there.
-			if (explorer.isWorker() && !nearestEnemy.isWorker()) {
+			if (explorer.isWorker() && !nearestEnemy.isWorker() && isWounded) {
 				// UnitActions.moveAwayFromUnitIfPossible(explorer,
 				// nearestEnemy,
 				// 12);
-				UnitActions.moveToMainBase(explorer);
-				return;
+				if (isWounded) {
+					UnitActions.moveToMainBase(explorer);
+					return;
+				}
 			}
 
-			if ((explorer.isUnderAttack() && (explorer.getHitPoints() + explorer
-					.getShields()) < 29)
-					|| ((explorer.getHitPoints() + explorer.getShields()) < 29 && xvr
-							.getDistanceSimple(explorer, nearestEnemy) <= 5)) {
-				UnitActions.moveToMainBase(explorer);
-				return;
+			if (isWounded
+					&& ((explorer.isUnderAttack() && (explorer.getHitPoints() + explorer
+							.getShields()) < 29) || ((explorer.getHitPoints() + explorer
+							.getShields()) < 29 && xvr.getDistanceSimple(
+							explorer, nearestEnemy) <= 5))) {
+				if (isWounded) {
+					UnitActions.moveToMainBase(explorer);
+					return;
+				}
 			}
 
 			// If we have trolled the enemy, RUN =]
 			if (hasExplorerAttacked) {
-				BaseLocation goTo = getMostDistantBaseLocation(xvr
-						.getFirstBase());
-				if (goTo != null
-						&& xvr.getDistanceSimple(explorer, nearestEnemy) > 5) {
-					UnitActions.moveTo(explorer, goTo.getX(), goTo.getY());
-					return;
+				// BaseLocation goTo = getMostDistantBaseLocation(xvr
+				// .getFirstBase());
+				if (isWounded
+						&& xvr.getDistanceSimple(explorer, nearestEnemy) <= 3) {
+					if (isWounded) {
+						UnitActions.moveToMainBase(explorer);
+						return;
+					}
 				}
 			} else {
 				if (!nearestEnemy.getType().isWorker()) {
@@ -167,18 +186,23 @@ public class MapExploration {
 					return;
 				}
 
-				if (explorer.isUnderAttack()
-						|| ((explorer.getHitPoints() + explorer.getShields()) < 29 && xvr
-								.getDistanceSimple(explorer, nearestEnemy) <= 5)) {
-					UnitActions.moveToMainBase(explorer);
-					return;
-				}
+				// if (explorer.isUnderAttack()
+				// || ((explorer.getHitPoints() + explorer.getShields()) < 29 &&
+				// xvr
+				// .getDistanceSimple(explorer, nearestEnemy) <= 5)) {
+				// UnitActions.moveToMainBase(explorer);
+				// return;
+				// }
 			}
 		}
 
 		// No enemy is nearby
 		else {
 			hasExplorerAttacked = false;
+			
+			if (explorer.isAttacking() && !isWounded) {
+				return;
+			}
 
 			// If explorer is on its way, don't interrupt.
 			if ((!explorer.isIdle() && !explorer.isGatheringMinerals() && !explorer
@@ -215,6 +239,10 @@ public class MapExploration {
 
 				// Add info that we've visited this place.
 				baseLocationsDiscovered.add(goTo);
+
+				if (explorer.isAttacking() && !isWounded) {
+					return;
+				}
 
 				// Send unit to scout specified point.
 				if (initial) {

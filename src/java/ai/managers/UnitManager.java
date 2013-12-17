@@ -84,7 +84,7 @@ public class UnitManager {
 
 			// ==================================
 			// Anti-HERO-One-fights-the-army code, avoid being overwhelmed
-			decideSkirmishIfToFightOrRetreat(unit);
+//			decideSkirmishIfToFightOrRetreat(unit);
 
 			// Wounded units should avoid being killed if possible
 			handleWoundedUnitBehaviourIfNecessary(unit);
@@ -284,6 +284,11 @@ public class UnitManager {
 					UnitTypes.Terran_Siege_Tank_Siege_Mode, 15, unit, false) > 0) {
 				return;
 			}
+			
+			// If there are tanks nearby, DON'T RUN. Rather die first!
+			if (unit.distanceTo(xvr.getFirstBase()) < 17) {
+				return;
+			}
 
 			UnitActions.actWhenLowHitPointsOrShields(unit, false);
 		}
@@ -373,9 +378,20 @@ public class UnitManager {
 			return;
 		}
 
-		// If there's cannon
+		// If there's enemy cannon
 		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon, 3,
 				unit, false).size() > 0) {
+			return;
+		}
+		
+		// If there's our first base nearby
+		if (unit.distanceTo(xvr.getFirstBase()) <= 19) {
+			return;
+		}
+		
+		// If there's our cannon nearby
+		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon, 2,
+				unit, true).size() > 0) {
 			return;
 		}
 
@@ -396,10 +412,6 @@ public class UnitManager {
 				false).size() > 2) {
 			return;
 		}
-
-		// System.out.println(unit.getName() + ": "
-		// + StrengthEvaluator.isStrengthRatioFavorableFor(unit) + " : "
-		// + StrengthEvaluator.calculateStrengthRatioFor(unit));
 
 		if (!StrengthEvaluator.isStrengthRatioFavorableFor(unit)) {
 			UnitActions.moveTo(unit, xvr.getLastBase());
@@ -505,7 +517,8 @@ public class UnitManager {
 
 			// There's no valid target, attack this enemy.
 			else {
-				if (!StrengthEvaluator.isStrengthRatioFavorableFor(unit)) {
+				if (!StrengthEvaluator.isStrengthRatioFavorableFor(unit)
+						&& unit.distanceTo(xvr.getFirstBase()) > 20) {
 					return;
 				}
 
@@ -616,48 +629,24 @@ public class UnitManager {
 			}
 
 			if (StrategyManager.getTargetPoint() != null) {
-				// if (MassiveAttack.getTargetPoint() != null
-				// && xvr.getDistanceBetween(unit,
-				// MassiveAttack.getTargetPoint()) > 4) {
-				// if (!unit.isIdle() && unit.isUnderAttack()) {
 				if (!isUnitAttackingSomeone(unit)) {
 					UnitActions.attackTo(unit,
 							StrategyManager.getTargetPoint().x,
 							StrategyManager.getTargetPoint().y);
 				}
-				// attackTo(unit, MassiveAttack.getTargetPoint().x,
-				// MassiveAttack.getTargetPoint().y);
-				// }
-
 				if (isUnitFullyIdle(unit)) {
-					// System.out.println("Spread out fully iddle");
 					UnitActions.spreadOutRandomly(unit);
 				}
 			} else {
-				// if (shouldSpreadOut(unit)) {
-				// Debug.message(xvr, unit.getName() +
-				// " spreads out (option 1)");
 				UnitActions.spreadOutRandomly(unit);
-				// }
 			}
 		}
 
 		// If no attack target is defined it probably means that the fog
 		// of war is hiding from us other enemy buildings
 		else {
-			// Debug.message(xvr, unit.getName() +
-			// " spreads out (option 2)");
-			// if (shouldSpreadOut(unit)) {
 			UnitActions.spreadOutRandomly(unit);
-			// }
 		}
-		// }
-		//
-		// // Unit is almost alone, retreat to base in hope to find some
-		// // other units
-		// else {
-		// goToNearestUnitIfNotAlreadyThere(unit);
-		// }
 
 		if (!StrengthEvaluator.isStrengthRatioFavorableFor(unit)) {
 			UnitActions.moveToMainBase(unit);

@@ -61,8 +61,10 @@ public class ProtossGateway {
 			if (BotStrategyManager.isExpandWithGateways()) {
 				if (gateways <= 3 && (isMajorityOfGatewaysTrainingUnits())
 						&& xvr.canAfford(134)) {
-					ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
-					return true;
+					if (gateways < 2 || UnitCounter.getNumberOfInfantryUnits() > 0) {
+						ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+						return true;
+					}
 				} else {
 					if (!UnitCounter
 							.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core)

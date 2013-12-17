@@ -60,7 +60,7 @@ public class UnitCounter {
 
 	public static int getNumberOfUnitsCompleted(UnitTypes type) {
 		int result = 0;
-		for (Unit unit : XVR.getInstance().getUnitsOfType(type)) {
+		for (Unit unit : xvr.getUnitsOfType(type)) {
 			if (unit.isCompleted()) {
 				result++;
 			}

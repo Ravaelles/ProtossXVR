@@ -17,7 +17,13 @@ import ai.utils.RUtilities;
 public class WorkerManager {
 
 	public static final int EXPLORER_INDEX = 6;
+	public static final int DEFEND_BASE_RADIUS = 23;
+
 	private static XVR xvr = XVR.getInstance();
+
+//	private static int _maxWorkerCounterToDefendBase = -1;
+
+	// ======================
 
 	public static void act() {
 		int counter = 0;
@@ -25,9 +31,21 @@ public class WorkerManager {
 		MapExploration.explorer = workers.size() > EXPLORER_INDEX ? workers
 				.get(EXPLORER_INDEX) : null;
 
+		// ==================================
+		// Detect Zergling rush, if it's early and we have just 1 infantry
+		// completed, use Probes
+//		_maxWorkerCounterToDefendBase = defineMaxWorkerCounterToEarlyDefendBase();
+
+		// ==================================
 		for (Unit worker : workers) {
 			if (counter != EXPLORER_INDEX) {
+
+				// // Check if defend base
+				// if (counter > _maxWorkerCounterToDefendBase) {
 				WorkerManager.act(worker);
+				// } else {
+				// defendBase(worker);
+				// }
 			} else {
 				MapExploration.explore(worker);
 			}
@@ -36,10 +54,61 @@ public class WorkerManager {
 		}
 	}
 
+//	private static int defineMaxWorkerCounterToEarlyDefendBase() {
+//		if (xvr.getTimeSecond() < 500
+//				&& UnitCounter.getNumberOfInfantryUnitsCompleted() <= 1) {
+//			Collection<Unit> zerglings = xvr
+//					.getEnemyUnitsOfType(UnitTypes.Zerg_Zergling);
+//			int numberOfZerglings = 0;
+//			Unit firstBase = xvr.getFirstBase();
+//
+//			// Look for Zerglings near base
+//			for (Unit zergling : zerglings) {
+//				if (zergling.distanceTo(firstBase) <= DEFEND_BASE_RADIUS) {
+//					numberOfZerglings++;
+//				}
+//			}
+//
+//			// If there's Zergling near the base, send probes
+//			if (numberOfZerglings > 0) {
+//				return (int) (numberOfZerglings * 3);
+//			}
+//		}
+//		return -1;
+//	}
+
+	private static void defendBase(Unit worker) {
+		Unit enemyToFight = xvr.getNearestEnemyInRadius(xvr.getFirstBase(),
+				DEFEND_BASE_RADIUS);
+		double dist = worker.distanceTo(enemyToFight);
+		
+		System.out.println("ENEMY RADIUS: " + dist);
+
+		if (dist > 0 && dist < 17 && !worker.isAttacking()) {
+			System.out.println("        ######## ATATCK");
+			UnitActions.attackTo(worker, enemyToFight);
+		}
+	}
+
 	public static void act(Unit unit) {
 		if (unit.equals(MapExploration.getExplorer())) {
 			return;
 		}
+		
+		// Defend base?
+//		if (_maxWorkerCounterToDefendBase > -1) {
+		defendBase(unit);
+//		}
+
+		if (unit.isAttacking() && unit.distanceTo(xvr.getFirstBase()) < 17) {
+			return;
+		}
+
+		if (unit.isAttacking() && unit.distanceTo(xvr.getFirstBase()) < 17) {
+			return;
+		}
+
+		// ==================================
 
 		// If we should destroy this unit
 		// if (unit.isShouldScrapUnit()) {
@@ -100,7 +169,7 @@ public class WorkerManager {
 
 		// Act with idle worker
 		if (unit.isIdle() && !unit.isGatheringGas()
-				&& !unit.isGatheringMinerals()) {
+				&& !unit.isGatheringMinerals() && !unit.isAttacking()) {
 
 			// Find the nearest base for this SCV
 			Unit nearestBase = ProtossNexus.getNearestBaseForUnit(unit);
@@ -217,14 +286,14 @@ public class WorkerManager {
 			minerals = ProtossNexus.getMineralsNearBase(nearestBase,
 					15 + 10 * counter++);
 		}
-		
-//		if (minerals.isEmpty()) {
-//			// minerals = xvr.getMineralsUnits();
-//			minerals = xvr
-//					.getUnitsInRadius(nearestBase, 17 + (UnitCounter
-//							.getNumberOfUnits(UnitManager.BASE) - 1) * 13, xvr
-//							.getMineralsUnits());
-//		}
+
+		// if (minerals.isEmpty()) {
+		// // minerals = xvr.getMineralsUnits();
+		// minerals = xvr
+		// .getUnitsInRadius(nearestBase, 17 + (UnitCounter
+		// .getNumberOfUnits(UnitManager.BASE) - 1) * 13, xvr
+		// .getMineralsUnits());
+		// }
 
 		// Get workers
 		ArrayList<Unit> workers = ProtossNexus.getWorkersNearBase(nearestBase);

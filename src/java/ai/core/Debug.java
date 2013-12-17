@@ -250,6 +250,10 @@ public class Debug {
 							false, false);
 					bwapi.drawCircle(u.getX(), u.getY(), 11, BWColor.RED,
 							false, false);
+					
+					bwapi.drawLine(u.getX(), u.getY(), 
+							u.getTargetX(), u.getTargetY(), BWColor.RED, false);
+					
 				} else if (u.isRepairing()) {
 					bwapi.drawCircle(u.getX(), u.getY(), 12, BWColor.PURPLE,
 							false, false);

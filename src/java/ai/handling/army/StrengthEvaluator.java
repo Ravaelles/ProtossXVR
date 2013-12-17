@@ -18,6 +18,7 @@ public class StrengthEvaluator {
 	private static final int BATTLE_RADIUS_ENEMIES = 11;
 	private static final int BATTLE_RADIUS_ALLIES = 9;
 	private static final double CRITICAL_RATIO_THRESHOLD = 0.7;
+	private static final double FAVORABLE_RATIO_THRESHOLD = 1.6;
 	private static final double ENEMY_RANGE_WEAPON_STRENGTH_BONUS = 1.9;
 	private static final int RANGE_BONUS_IF_ENEMY_DEF_BUILDING_NEAR = 6;
 	private static final int DEFENSIVE_BUILDING_ATTACK_BONUS = 24;
@@ -272,7 +273,7 @@ public class StrengthEvaluator {
 		if (strengthRatio < 0) {
 			return true;
 		}
-		return !(strengthRatio < 1.6);
+		return !(strengthRatio < FAVORABLE_RATIO_THRESHOLD);
 	}
 
 	/**
