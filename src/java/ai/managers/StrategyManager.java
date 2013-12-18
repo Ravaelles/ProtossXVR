@@ -5,7 +5,6 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import jnibwapi.model.Unit;
-import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.Debug;
 import ai.core.XVR;
 import ai.handling.army.ArmyPlacing;
@@ -17,10 +16,10 @@ public class StrategyManager {
 
 	private static XVR xvr = XVR.getInstance();
 
-//	private static final int MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME = 5;
-//	private static final int MINIMUM_NON_INITIAL_ARMY_TO_PUSH = 25;
-//	private static final int MINIMUM_THRESHOLD_ARMY_TO_PUSH = 41;
-//	private static final int MINIMUM_ARMY_PSI_USED_THRESHOLD = 75;
+	// private static final int MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME = 5;
+	// private static final int MINIMUM_NON_INITIAL_ARMY_TO_PUSH = 25;
+	private static final int MINIMUM_THRESHOLD_ARMY_TO_PUSH = 41;
+	// private static final int MINIMUM_ARMY_PSI_USED_THRESHOLD = 75;
 
 	/**
 	 * It means we are NOT ready to attack the enemy, because we suck pretty
@@ -62,22 +61,39 @@ public class StrategyManager {
 	 */
 	private static Unit _attackTargetUnit;
 
-	@SuppressWarnings("unused")
 	private static int retreatsCounter = 0;
-//	private static boolean pushedInitially = false;
+	private static final int EXTRA_UNITS_PER_RETREAT = 5;
+
+	private static int minBattleUnits = 0;
+
+	// private static boolean pushedInitially = false;
 
 	// ====================================================
 
 	private static boolean decideIfWeAreReadyToAttack(boolean forceMinimum) {
 		int battleUnits = UnitCounter.getNumberOfBattleUnitsCompleted();
-		int minUnits = BotStrategyManager.getMinBattleUnits();
-		int dragoons = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dragoon);
+		int minUnits = getMinBattleUnits() + retreatsCounter * EXTRA_UNITS_PER_RETREAT;
+		// int dragoons =
+		// UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dragoon);
 
 		if (battleUnits >= minUnits) {
 			return true;
 		} else {
-			return minUnits != 0 && (dragoons >= minUnits * 0.18
-					&& isAnyAttackFormPending());
+			boolean weAreReady = minUnits != 0
+					&& (battleUnits >= minUnits * 0.28 && isAnyAttackFormPending());
+
+			if (battleUnits > MINIMUM_THRESHOLD_ARMY_TO_PUSH) {
+				weAreReady = true;
+			}
+
+			if (isAnyAttackFormPending() && !weAreReady) {
+				if (retreatsCounter == 0 || minBattleUnits == 0) {
+					minBattleUnits = 13;
+				}
+				retreatsCounter++;
+			}
+
+			return weAreReady;
 		}
 
 		// if (battleUnits >= MINIMUM_INITIAL_ARMY_TO_PUSH_ONE_TIME
@@ -231,8 +247,7 @@ public class StrategyManager {
 		Collection<Unit> enemyBuildings = xvr.getEnemyBuildings();
 
 		// Remove refineries, geysers etc
-		for (Iterator<Unit> iterator = enemyBuildings.iterator(); iterator
-				.hasNext();) {
+		for (Iterator<Unit> iterator = enemyBuildings.iterator(); iterator.hasNext();) {
 			Unit unit = (Unit) iterator.next();
 			if (unit.getType().isOnGeyser()) {
 				iterator.remove();
@@ -241,16 +256,13 @@ public class StrategyManager {
 
 		// Try to target some crucial building
 		if (!TargetHandling.isProperTarget(target)) {
-			target = TargetHandling
-					.findTopPriorityTargetIfPossible(enemyBuildings);
+			target = TargetHandling.findTopPriorityTargetIfPossible(enemyBuildings);
 		}
 		if (!TargetHandling.isProperTarget(target)) {
-			target = TargetHandling
-					.findHighPriorityTargetIfPossible(enemyBuildings);
+			target = TargetHandling.findHighPriorityTargetIfPossible(enemyBuildings);
 		}
 		if (!TargetHandling.isProperTarget(target)) {
-			target = TargetHandling
-					.findNormalPriorityTargetIfPossible(enemyBuildings);
+			target = TargetHandling.findNormalPriorityTargetIfPossible(enemyBuildings);
 		}
 
 		// If not target found attack the nearest building
@@ -259,8 +271,7 @@ public class StrategyManager {
 			if (base == null) {
 				return;
 			}
-			target = xvr.getUnitNearestFromList(base.getX(), base.getY(),
-					enemyBuildings);
+			target = xvr.getUnitNearestFromList(base.getX(), base.getY(), enemyBuildings);
 		}
 
 		// Update the target.
@@ -286,8 +297,7 @@ public class StrategyManager {
 	}
 
 	private static void updateTargetPosition() {
-		Point point = new Point(_attackTargetUnit.getX(),
-				_attackTargetUnit.getY());
+		Point point = new Point(_attackTargetUnit.getX(), _attackTargetUnit.getY());
 		_attackPoint = point;
 	}
 
@@ -321,8 +331,7 @@ public class StrategyManager {
 	public static boolean isSomethingToAttackDefined() {
 		// return _attackUnitNeighbourhood != null
 		// && _attackUnitNeighbourhood.isExists();
-		return _attackTargetUnit != null
-				&& !_attackTargetUnit.getType().isOnGeyser();
+		return _attackTargetUnit != null && !_attackTargetUnit.getType().isOnGeyser();
 	}
 
 	private static void armyIsNotReadyToAttack() {
@@ -365,7 +374,14 @@ public class StrategyManager {
 		return _attackPoint;
 	}
 
-	
+	public static void waitUntilMinBattleUnits(int minUnits) {
+		minBattleUnits = minUnits;
+	}
+
+	public static int getMinBattleUnits() {
+		return minBattleUnits;
+	}
+
 	public static void forcePeace() {
 		changeStateTo(STATE_PEACE);
 	}

@@ -465,6 +465,9 @@ public class XVR {
 
 	public ArrayList<Unit> getUnitsOfGivenTypeInRadius(UnitTypes type,
 			int tileRadius, MapPoint point, boolean onlyMyUnits) {
+		if (point == null) {
+			return new ArrayList<>();
+		}
 		return getUnitsOfGivenTypeInRadius(type, tileRadius, point.getX(),
 				point.getY(), onlyMyUnits);
 	}
@@ -944,6 +947,20 @@ public class XVR {
 
 		for (Unit enemy : getBwapi().getEnemyUnits()) {
 			if (enemy.getType().isWorker()) {
+				if (getDistanceBetween(explorer, enemy) <= tileRadius) {
+					result.add(enemy);
+				}
+			}
+		}
+		return result;
+	}
+	
+	public Collection<Unit> getEnemyUnitsInRadius(int tileRadius,
+			Unit explorer) {
+		ArrayList<Unit> result = new ArrayList<>();
+		
+		for (Unit enemy : getBwapi().getEnemyUnits()) {
+			if (!enemy.getType().isBuilding()) {
 				if (getDistanceBetween(explorer, enemy) <= tileRadius) {
 					result.add(enemy);
 				}

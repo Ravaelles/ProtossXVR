@@ -4,7 +4,6 @@ public class BotStrategyManager {
 
 	private static boolean expandWithCannons = false;
 	private static boolean expandWithGateways = true;
-	private static int minBattleUnits = 0;
 
 	// =============
 
@@ -28,12 +27,4 @@ public class BotStrategyManager {
 		BotStrategyManager.expandWithCannons = false;
 	}
 	
-	public static void waitUntilMinBattleUnits(int minUnits) {
-		minBattleUnits = minUnits;
-	}
-
-	public static int getMinBattleUnits() {
-		return minBattleUnits;
-	}
-
 }

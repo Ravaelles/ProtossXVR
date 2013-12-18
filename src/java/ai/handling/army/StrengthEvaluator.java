@@ -8,7 +8,6 @@ import jnibwapi.types.UnitType;
 import ai.core.Debug;
 import ai.core.XVR;
 import ai.handling.map.MapExploration;
-import ai.managers.BotStrategyManager;
 import ai.managers.StrategyManager;
 import ai.protoss.ProtossGateway;
 
@@ -40,8 +39,8 @@ public class StrengthEvaluator {
 
 		// If there's at least one building like cannon, sunken colony, bunker,
 		// then increase range of units search and look again for enemy units.
-		if (xvr.getEnemyDefensiveGroundBuildingNear(unit.getX(), unit.getY(),
-				BATTLE_RADIUS_ENEMIES + RANGE_BONUS_IF_ENEMY_DEF_BUILDING_NEAR) != null) {
+		if (xvr.getEnemyDefensiveGroundBuildingNear(unit.getX(), unit.getY(), BATTLE_RADIUS_ENEMIES
+				+ RANGE_BONUS_IF_ENEMY_DEF_BUILDING_NEAR) != null) {
 			_rangeBonus += RANGE_BONUS_IF_ENEMY_DEF_BUILDING_NEAR;
 		}
 
@@ -105,8 +104,7 @@ public class StrengthEvaluator {
 	// return false;
 	// }
 
-	private static double calculateTotalAttackOf(ArrayList<Unit> units,
-			boolean forEnemy) {
+	private static double calculateTotalAttackOf(ArrayList<Unit> units, boolean forEnemy) {
 		int total = 0;
 		int seconds = xvr.getTimeSecond();
 		int defensiveBuildings = 0;
@@ -147,8 +145,7 @@ public class StrengthEvaluator {
 							total -= DEFENSIVE_BUILDING_ATTACK_BONUS;
 						}
 					}
-					if (!ProtossGateway.LIMIT_ZEALOTS && !type.isBunker()
-							&& seconds < 550) {
+					if (!ProtossGateway.LIMIT_ZEALOTS && !type.isBunker() && seconds < 550) {
 						total -= DEFENSIVE_BUILDING_ATTACK_BONUS;
 						total -= attackValue * 0.7;
 					} else {
@@ -166,14 +163,11 @@ public class StrengthEvaluator {
 			}
 		}
 
-		if (defensiveBuildings >= 2 && _ourUnits.size() < 7
-				&& XVR.isEnemyProtoss()) {
-			BotStrategyManager
-					.waitUntilMinBattleUnits(IF_CANNONS_WAIT_FOR_N_UNITS);
+		if (defensiveBuildings >= 2 && _ourUnits.size() < 7 && XVR.isEnemyProtoss()) {
+			StrategyManager.waitUntilMinBattleUnits(IF_CANNONS_WAIT_FOR_N_UNITS);
 			total = 99999;
 		}
-		if (defensiveBuildings > 0 && defensiveBuildings <= 7
-				&& _ourUnits.size() >= 7) {
+		if (defensiveBuildings > 0 && defensiveBuildings <= 7 && _ourUnits.size() >= 7) {
 			if (!ProtossGateway.LIMIT_ZEALOTS) {
 				total /= 2;
 			} else {
@@ -181,10 +175,9 @@ public class StrengthEvaluator {
 			}
 		}
 
-		if ((vultures >= 3 || defensiveBuildings >= 3)
-				&& !ProtossGateway.LIMIT_ZEALOTS && xvr.getTimeSecond() < 600) {
-			BotStrategyManager
-					.waitUntilMinBattleUnits(IF_CANNONS_WAIT_FOR_N_UNITS);
+		if ((vultures >= 3 || defensiveBuildings >= 3) && !ProtossGateway.LIMIT_ZEALOTS
+				&& xvr.getTimeSecond() < 600) {
+			StrategyManager.waitUntilMinBattleUnits(IF_CANNONS_WAIT_FOR_N_UNITS);
 			StrategyManager.forcePeace();
 			ProtossGateway.LIMIT_ZEALOTS = true;
 			Debug.message(xvr, "Dont build zealots mode enabled");
@@ -198,8 +191,7 @@ public class StrengthEvaluator {
 		for (Unit unit : units) {
 			UnitType type = unit.getType();
 
-			if (unit.isCompleted()
-					&& (!type.isBuilding() || unit.isDefensiveGroundBuilding())) {
+			if (unit.isCompleted() && (!type.isBuilding() || unit.isDefensiveGroundBuilding())) {
 				total += unit.getHitPoints() + unit.getShields();
 				if (type.isMedic()) {
 					total += 60;
@@ -210,17 +202,14 @@ public class StrengthEvaluator {
 	}
 
 	private static ArrayList<Unit> getEnemiesNear(Unit ourUnit) {
-		return xvr.getUnitsInRadius(ourUnit, BATTLE_RADIUS_ENEMIES
-				+ _rangeBonus,
+		return xvr.getUnitsInRadius(ourUnit, BATTLE_RADIUS_ENEMIES + _rangeBonus,
 				xvr.getEnemyArmyUnitsIncludingDefensiveBuildings());
 	}
 
 	private static ArrayList<Unit> getOurUnitsNear(Unit ourUnit) {
-		ArrayList<Unit> unitsInRadius = xvr.getUnitsInRadius(ourUnit,
-				BATTLE_RADIUS_ALLIES,
+		ArrayList<Unit> unitsInRadius = xvr.getUnitsInRadius(ourUnit, BATTLE_RADIUS_ALLIES,
 				xvr.getArmyUnitsIncludingDefensiveBuildings());
-		for (Iterator<Unit> iterator = unitsInRadius.iterator(); iterator
-				.hasNext();) {
+		for (Iterator<Unit> iterator = unitsInRadius.iterator(); iterator.hasNext();) {
 			Unit unit = (Unit) iterator.next();
 			if (unit.getShields() < 5) {
 				iterator.remove();

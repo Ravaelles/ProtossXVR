@@ -245,6 +245,9 @@ public class Debug {
 				} else if (u.isGatheringGas()) {
 					bwapi.drawCircle(u.getX(), u.getY(), 12, BWColor.GREEN,
 							false, false);
+				} else if (u.isMoving()) {
+					bwapi.drawLine(u.getX(), u.getY(), 
+							u.getTargetX(), u.getTargetY(), BWColor.WHITE, false);
 				} else if (u.isAttacking()) {
 					bwapi.drawCircle(u.getX(), u.getY(), 12, BWColor.RED,
 							false, false);
@@ -253,7 +256,6 @@ public class Debug {
 					
 					bwapi.drawLine(u.getX(), u.getY(), 
 							u.getTargetX(), u.getTargetY(), BWColor.RED, false);
-					
 				} else if (u.isRepairing()) {
 					bwapi.drawCircle(u.getX(), u.getY(), 12, BWColor.PURPLE,
 							false, false);

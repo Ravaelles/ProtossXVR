@@ -21,20 +21,21 @@ public class WorkerManager {
 
 	private static XVR xvr = XVR.getInstance();
 
-//	private static int _maxWorkerCounterToDefendBase = -1;
+	// private static int _maxWorkerCounterToDefendBase = -1;
 
 	// ======================
 
 	public static void act() {
 		int counter = 0;
 		ArrayList<Unit> workers = xvr.getUnitsOfType(UnitManager.WORKER);
-		MapExploration.explorer = workers.size() > EXPLORER_INDEX ? workers
-				.get(EXPLORER_INDEX) : null;
+		// MapExploration.explorer = workers.size() > EXPLORER_INDEX ? workers
+		// .get(EXPLORER_INDEX) : null;
 
 		// ==================================
 		// Detect Zergling rush, if it's early and we have just 1 infantry
 		// completed, use Probes
-//		_maxWorkerCounterToDefendBase = defineMaxWorkerCounterToEarlyDefendBase();
+		// _maxWorkerCounterToDefendBase =
+		// defineMaxWorkerCounterToEarlyDefendBase();
 
 		// ==================================
 		for (Unit worker : workers) {
@@ -54,38 +55,37 @@ public class WorkerManager {
 		}
 	}
 
-//	private static int defineMaxWorkerCounterToEarlyDefendBase() {
-//		if (xvr.getTimeSecond() < 500
-//				&& UnitCounter.getNumberOfInfantryUnitsCompleted() <= 1) {
-//			Collection<Unit> zerglings = xvr
-//					.getEnemyUnitsOfType(UnitTypes.Zerg_Zergling);
-//			int numberOfZerglings = 0;
-//			Unit firstBase = xvr.getFirstBase();
-//
-//			// Look for Zerglings near base
-//			for (Unit zergling : zerglings) {
-//				if (zergling.distanceTo(firstBase) <= DEFEND_BASE_RADIUS) {
-//					numberOfZerglings++;
-//				}
-//			}
-//
-//			// If there's Zergling near the base, send probes
-//			if (numberOfZerglings > 0) {
-//				return (int) (numberOfZerglings * 3);
-//			}
-//		}
-//		return -1;
-//	}
+	// private static int defineMaxWorkerCounterToEarlyDefendBase() {
+	// if (xvr.getTimeSecond() < 500
+	// && UnitCounter.getNumberOfInfantryUnitsCompleted() <= 1) {
+	// Collection<Unit> zerglings = xvr
+	// .getEnemyUnitsOfType(UnitTypes.Zerg_Zergling);
+	// int numberOfZerglings = 0;
+	// Unit firstBase = xvr.getFirstBase();
+	//
+	// // Look for Zerglings near base
+	// for (Unit zergling : zerglings) {
+	// if (zergling.distanceTo(firstBase) <= DEFEND_BASE_RADIUS) {
+	// numberOfZerglings++;
+	// }
+	// }
+	//
+	// // If there's Zergling near the base, send probes
+	// if (numberOfZerglings > 0) {
+	// return (int) (numberOfZerglings * 3);
+	// }
+	// }
+	// return -1;
+	// }
 
 	private static void defendBase(Unit worker) {
-		Unit enemyToFight = xvr.getNearestEnemyInRadius(xvr.getFirstBase(),
-				DEFEND_BASE_RADIUS);
+		Unit enemyToFight = xvr.getNearestEnemyInRadius(xvr.getFirstBase(), DEFEND_BASE_RADIUS);
 		double dist = worker.distanceTo(enemyToFight);
-		
-		System.out.println("ENEMY RADIUS: " + dist);
+
+		// System.out.println("ENEMY RADIUS: " + dist);
 
 		if (dist > 0 && dist < 17 && !worker.isAttacking()) {
-			System.out.println("        ######## ATATCK");
+			// System.out.println("        ######## ATATCK");
 			UnitActions.attackTo(worker, enemyToFight);
 		}
 	}
@@ -94,11 +94,11 @@ public class WorkerManager {
 		if (unit.equals(MapExploration.getExplorer())) {
 			return;
 		}
-		
+
 		// Defend base?
-//		if (_maxWorkerCounterToDefendBase > -1) {
+		// if (_maxWorkerCounterToDefendBase > -1) {
 		defendBase(unit);
-//		}
+		// }
 
 		if (unit.isAttacking() && unit.distanceTo(xvr.getFirstBase()) < 17) {
 			return;
@@ -132,11 +132,9 @@ public class WorkerManager {
 		if (unit.isUnderAttack()) {
 
 			// If nearest enemy is worker, attack this bastard!
-			Unit nearestEnemy = xvr.getUnitNearestFromList(unit, xvr.getBwapi()
-					.getEnemyUnits());
+			Unit nearestEnemy = xvr.getUnitNearestFromList(unit, xvr.getBwapi().getEnemyUnits());
 			if (nearestEnemy != null) {
-				if (xvr.getDistanceSimple(unit, xvr.getFirstBase()) <= 6
-						&& !unit.isConstructing()) {
+				if (xvr.getDistanceSimple(unit, xvr.getFirstBase()) <= 6 && !unit.isConstructing()) {
 					UnitActions.attackEnemyUnit(unit, nearestEnemy);
 					return;
 				}
@@ -147,8 +145,8 @@ public class WorkerManager {
 			MapPoint goTo = null;
 
 			// Try to go to the nearest bunker
-			Unit defensiveBuildings = xvr.getUnitOfTypeNearestTo(
-					UnitTypes.Protoss_Photon_Cannon, unit);
+			Unit defensiveBuildings = xvr.getUnitOfTypeNearestTo(UnitTypes.Protoss_Photon_Cannon,
+					unit);
 			if (defensiveBuildings != null) {
 				goTo = defensiveBuildings;
 			} else {
@@ -159,17 +157,16 @@ public class WorkerManager {
 				if (xvr.getDistanceSimple(unit, goTo) >= 15) {
 					UnitActions.moveTo(unit, goTo.getX(), goTo.getY());
 				} else {
-					UnitActions.moveTo(unit,
-							goTo.getX() + 5 - RUtilities.rand(0, 12),
-							goTo.getY() + 5 - RUtilities.rand(0, 12));
+					UnitActions.moveTo(unit, goTo.getX() + 5 - RUtilities.rand(0, 12), goTo.getY()
+							+ 5 - RUtilities.rand(0, 12));
 					UnitActions.callForHelp(unit, false);
 				}
 			}
 		}
 
 		// Act with idle worker
-		if (unit.isIdle() && !unit.isGatheringGas()
-				&& !unit.isGatheringMinerals() && !unit.isAttacking()) {
+		if (unit.isIdle() && !unit.isGatheringGas() && !unit.isGatheringMinerals()
+				&& !unit.isAttacking()) {
 
 			// Find the nearest base for this SCV
 			Unit nearestBase = ProtossNexus.getNearestBaseForUnit(unit);
@@ -214,77 +211,60 @@ public class WorkerManager {
 	}
 
 	private static void gatherGas(Unit worker, Unit base) {
-		Unit onGeyser = xvr.getUnitOfTypeNearestTo(
-				UnitTypes.Protoss_Assimilator, base);
+		Unit onGeyser = xvr.getUnitOfTypeNearestTo(UnitTypes.Protoss_Assimilator, base);
 		if (onGeyser != null) {
 			xvr.getBwapi().rightClick(worker.getID(), onGeyser.getID());
 		}
 	}
 
 	private static void gatherMinerals(Unit gathererToAssign, Unit nearestBase) {
-		Unit mineral = getOptimalMineralForGatherer(gathererToAssign,
-				nearestBase);
+		Unit mineral = getOptimalMineralForGatherer(gathererToAssign, nearestBase);
 		if (mineral != null) {
-			xvr.getBwapi()
-					.rightClick(gathererToAssign.getID(), mineral.getID());
+			xvr.getBwapi().rightClick(gathererToAssign.getID(), mineral.getID());
 		}
 	}
 
 	public static void forceGatherMinerals(Unit gathererToAssign, Unit mineral) {
 		if (gathererToAssign.isCarryingMinerals()) {
-			Unit nearBase = ProtossNexus
-					.getNearestBaseForUnit(gathererToAssign);
-			xvr.getBwapi().rightClick(gathererToAssign.getID(),
-					nearBase.getID());
+			Unit nearBase = ProtossNexus.getNearestBaseForUnit(gathererToAssign);
+			xvr.getBwapi().rightClick(gathererToAssign.getID(), nearBase.getID());
 			return;
 		} else if (gathererToAssign.isCarryingGas()) {
-			Unit nearBase = ProtossNexus
-					.getNearestBaseForUnit(gathererToAssign);
-			xvr.getBwapi().rightClick(gathererToAssign.getID(),
-					nearBase.getID());
+			Unit nearBase = ProtossNexus.getNearestBaseForUnit(gathererToAssign);
+			xvr.getBwapi().rightClick(gathererToAssign.getID(), nearBase.getID());
 			return;
 		}
 
 		if (mineral != null) {
-			xvr.getBwapi()
-					.rightClick(gathererToAssign.getID(), mineral.getID());
+			xvr.getBwapi().rightClick(gathererToAssign.getID(), mineral.getID());
 		}
 	}
 
 	public static void forceGatherGas(Unit gathererToAssign, Unit nearestBase) {
-		Unit onGeyser = ProtossNexus
-				.getExistingCompletedAssimilatorNearBase(nearestBase);
+		Unit onGeyser = ProtossNexus.getExistingCompletedAssimilatorNearBase(nearestBase);
 
 		if (gathererToAssign.isCarryingMinerals()) {
-			Unit nearBase = ProtossNexus
-					.getNearestBaseForUnit(gathererToAssign);
-			xvr.getBwapi().rightClick(gathererToAssign.getID(),
-					nearBase.getID());
+			Unit nearBase = ProtossNexus.getNearestBaseForUnit(gathererToAssign);
+			xvr.getBwapi().rightClick(gathererToAssign.getID(), nearBase.getID());
 			return;
 		} else if (gathererToAssign.isCarryingGas()) {
-			Unit nearBase = ProtossNexus
-					.getNearestBaseForUnit(gathererToAssign);
-			xvr.getBwapi().rightClick(gathererToAssign.getID(),
-					nearBase.getID());
+			Unit nearBase = ProtossNexus.getNearestBaseForUnit(gathererToAssign);
+			xvr.getBwapi().rightClick(gathererToAssign.getID(), nearBase.getID());
 			return;
 		}
 
 		if (onGeyser != null) {
-			xvr.getBwapi().rightClick(gathererToAssign.getID(),
-					onGeyser.getID());
+			xvr.getBwapi().rightClick(gathererToAssign.getID(), onGeyser.getID());
 		}
 	}
 
-	private static Unit getOptimalMineralForGatherer(Unit gathererToAssign,
-			Unit nearestBase) {
+	private static Unit getOptimalMineralForGatherer(Unit gathererToAssign, Unit nearestBase) {
 
 		// Get the minerals that are closes to the base.
-		ArrayList<Unit> minerals = ProtossNexus
-				.getMineralsNearBase(nearestBase);
+		ArrayList<Unit> minerals = ProtossNexus.getMineralsNearBase(nearestBase);
 		int counter = 0;
 		while (minerals.isEmpty()) {
-			minerals = ProtossNexus.getMineralsNearBase(nearestBase,
-					15 + 10 * counter++);
+			minerals = ProtossNexus.getMineralsNearBase(nearestBase, 15 + 10 * counter++);
 		}
 
 		// if (minerals.isEmpty()) {
@@ -317,8 +297,7 @@ public class WorkerManager {
 				// if (scv.isGatheringMinerals()) {
 
 				if (workersAtMineral.containsKey(mineral)) {
-					workersAtMineral.put(mineral,
-							workersAtMineral.get(mineral) + 1);
+					workersAtMineral.put(mineral, workersAtMineral.get(mineral) + 1);
 				} else {
 					workersAtMineral.put(mineral, 1);
 				}
@@ -341,8 +320,7 @@ public class WorkerManager {
 				return mineral;
 			}
 		}
-		return minerals.isEmpty() ? null : (Unit) RUtilities
-				.getRandomListElement(minerals);
+		return minerals.isEmpty() ? null : (Unit) RUtilities.getRandomListElement(minerals);
 	}
 
 	public static Unit findNearestWorkerTo(int x, int y) {
@@ -359,8 +337,8 @@ public class WorkerManager {
 
 		for (Unit otherUnit : xvr.getUnitsOfType(UnitManager.WORKER)) {
 			if (!otherUnit.isCompleted()
-					|| (!otherUnit.isGatheringMinerals() && !otherUnit
-							.isGatheringGas()) || otherUnit.isConstructing()) {
+					|| (!otherUnit.isGatheringMinerals() && !otherUnit.isGatheringGas())
+					|| otherUnit.isConstructing()) {
 				continue;
 			}
 
@@ -383,8 +361,7 @@ public class WorkerManager {
 		Unit nearestUnit = null;
 
 		for (Unit otherUnit : xvr.getUnitsOfType(UnitManager.WORKER)) {
-			if (!otherUnit.isCompleted() || otherUnit.isRepairing()
-					|| otherUnit.isConstructing()) {
+			if (!otherUnit.isCompleted() || otherUnit.isRepairing() || otherUnit.isConstructing()) {
 				continue;
 			}
 

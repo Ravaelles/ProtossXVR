@@ -19,8 +19,7 @@ public class ArmyCreationManager {
 		if (weShouldBuildBattleUnits()) {
 
 			// ROBOTICS FACILITY
-			ArrayList<Unit> roboticsFacilitiesList = ProtossRoboticsFacility
-					.getAllObjects();
+			ArrayList<Unit> roboticsFacilitiesList = ProtossRoboticsFacility.getAllObjects();
 			if (!roboticsFacilitiesList.isEmpty()) {
 				for (Unit roboticsFacility : roboticsFacilitiesList) {
 					ProtossRoboticsFacility.act(roboticsFacility);
@@ -48,8 +47,7 @@ public class ArmyCreationManager {
 	public static boolean weShouldBuildBattleUnits() {
 		int battleUnits = UnitCounter.getNumberOfBattleUnits();
 
-		if (battleUnits <= 6
-				|| (battleUnits < BotStrategyManager.getMinBattleUnits() + 2)) {
+		if (battleUnits <= 6 || (battleUnits < StrategyManager.getMinBattleUnits() + 2)) {
 			return true;
 		}
 		if (!xvr.canAfford(125)) {
