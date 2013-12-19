@@ -11,7 +11,7 @@ import ai.handling.map.MapPoint;
 
 public class TargetHandling {
 
-	public static final int MAX_DIST = 350;
+	public static final int MAX_DIST = 50;
 
 	private static XVR xvr = XVR.getInstance();
 
@@ -82,6 +82,10 @@ public class TargetHandling {
 		if (target == null) {
 			return false;
 		}
+		
+		if (!target.isDetected()) {
+			return false;
+		}
 
 		boolean isProper;
 		UnitType type = target.getType();
@@ -93,13 +97,13 @@ public class TargetHandling {
 		if (type.isBuilding()) {
 			isProper = target.isExists() || !target.isVisible();
 		} else {
-			if (target.isHidden()) {
+			if ((target.isHidden() || !target.isDetected())) {
 				return false;
 			}
 
 			isProper = target.isExists() || !target.isVisible();
 
-			if (isProper && target.isHidden()) {
+			if (isProper && (target.isHidden() || !target.isDetected())) {
 				return false;
 			}
 		}

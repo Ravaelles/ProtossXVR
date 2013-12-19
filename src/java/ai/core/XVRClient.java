@@ -13,6 +13,7 @@ import jnibwapi.types.UnitType;
 import ai.handling.map.MapExploration;
 import ai.handling.other.NukeHandling;
 import ai.managers.StrategyManager;
+import ai.protoss.ProtossCyberneticsCore;
 import ai.protoss.ProtossGateway;
 import ai.protoss.ProtossNexus;
 import ai.protoss.ProtossObserver;
@@ -233,6 +234,12 @@ public class XVRClient implements BWAPIEventListener {
 
 		// System.out.println("Unit discover: " + (unit != null ? unit.getName()
 		// : "null"));
+		
+		if (XVR.isEnemyProtoss()) {
+			if (unit.getType().isDragoon()) {
+				ProtossCyberneticsCore.forceShouldBuild();
+			}
+		}
 	}
 
 	public void unitEvade(int unitID) {

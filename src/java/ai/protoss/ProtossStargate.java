@@ -32,17 +32,18 @@ public class ProtossStargate {
 	public static boolean shouldBuild() {
 		// UnitCounter.weHaveBuilding(UnitTypes.Protoss_Cybernetics_Core)
 		if (UnitCounter.weHaveBuilding(UnitTypes.Protoss_Templar_Archives)
+				&& UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Reaver) >= 4
 				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Observatory)
-				&& UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Observer) > 0
+				&& UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Observer) >= 3
 				&& !UnitCounter.weHaveBuilding(buildingType)
-				&& xvr.canAfford(400, 250)
 				&& !Constructing.weAreBuilding(buildingType)) {
+			// if (UnitCounter.getNumberOfBattleUnitsCompleted() > 15) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
+			// }
 		}
 
-		if (UnitCounter.getNumberOfUnits(buildingType) == 1
-				&& xvr.canAfford(800, 500)) {
+		if (UnitCounter.getNumberOfUnits(buildingType) == 1 && xvr.canAfford(800, 500)) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
 		}
@@ -84,18 +85,15 @@ public class ProtossStargate {
 			freeGas -= buildingQueueDetails[1];
 		}
 
-		if (buildingQueueDetails == null
-				|| (freeMinerals >= 200 && freeGas >= 400)) {
+		if (buildingQueueDetails == null || (freeMinerals >= 200 && freeGas >= 400)) {
 			if (facility.getTrainingQueueSize() == 0) {
-				xvr.buildUnit(facility,
-						defineUnitToBuild(freeMinerals, freeGas));
+				xvr.buildUnit(facility, defineUnitToBuild(freeMinerals, freeGas));
 			}
 		}
 	}
 
 	private static UnitTypes defineUnitToBuild(int freeMinerals, int freeGas) {
-		boolean arbiterAllowed = UnitCounter
-				.weHaveBuilding(UnitTypes.Protoss_Arbiter_Tribunal);
+		boolean arbiterAllowed = UnitCounter.weHaveBuilding(UnitTypes.Protoss_Arbiter_Tribunal);
 
 		// ARBITER
 		if (arbiterAllowed && xvr.countUnitsOfType(ARBITER) < MINIMUM_ARBITERS) {
@@ -109,9 +107,8 @@ public class ProtossStargate {
 
 		// CORSAIR
 		if (UnitCounter.getNumberOfUnits(CORSAIR) < MINIMUM_CORSAIRS
-				|| (UnitCounter.countAirUnitsNonCorsair()
-						* CORSAIRS_PER_OTHER_AIR_UNIT < UnitCounter
-							.getNumberOfUnits(CORSAIR))) {
+				|| (UnitCounter.countAirUnitsNonCorsair() * CORSAIRS_PER_OTHER_AIR_UNIT < UnitCounter
+						.getNumberOfUnits(CORSAIR))) {
 			return CORSAIR;
 		}
 

@@ -24,7 +24,7 @@ public class ArmyPlacing {
 
 		// If only one base, then go to nearest cannon
 		if (bases == 1) {
-			Unit base = xvr.getLastBase();
+			MapPoint base = ProtossNexus.getSecondBaseLocation();
 			runTo = base;
 
 			// Unit forge = null;

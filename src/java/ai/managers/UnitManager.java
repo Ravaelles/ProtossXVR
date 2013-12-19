@@ -18,6 +18,7 @@ import ai.protoss.ProtossArbiter;
 import ai.protoss.ProtossArchon;
 import ai.protoss.ProtossDarkTemplar;
 import ai.protoss.ProtossHighTemplar;
+import ai.protoss.ProtossNexus;
 import ai.protoss.ProtossObserver;
 import ai.protoss.ProtossReaver;
 import ai.utils.RUtilities;
@@ -82,10 +83,6 @@ public class UnitManager {
 			// Run from lurkers etc
 			avoidHiddenUnitsIfNecessary(unit);
 
-			// ==================================
-			// Anti-HERO-One-fights-the-army code, avoid being overwhelmed
-//			decideSkirmishIfToFightOrRetreat(unit);
-
 			// Wounded units should avoid being killed if possible
 			handleWoundedUnitBehaviourIfNecessary(unit);
 
@@ -111,8 +108,8 @@ public class UnitManager {
 			// TOP PRIORITY: Act when enemy detector or some AA building is
 			// nearby:
 			// just run away, no matter what.
-			if (UnitActions.runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
-					unit, false, true, true)) {
+			if (UnitActions.runFromEnemyDetectorOrDefensiveBuildingIfNecessary(unit, false, true,
+					true)) {
 				return;
 			}
 		}
@@ -202,9 +199,8 @@ public class UnitManager {
 			// .size() >= 2
 			if (shouldFightBack
 					|| unit.isStuck()
-					|| (unit.isMoving() && xvr.getUnitsInRadius(unit, 1,
-							xvr.getUnitsNonWorker()).size() >= 2)
-					|| unit.getGroundWeaponCooldown() == 0) {
+					|| (unit.isMoving() && xvr.getUnitsInRadius(unit, 1, xvr.getUnitsNonWorker())
+							.size() >= 2) || unit.getGroundWeaponCooldown() == 0) {
 				actTryAttackingCloseEnemyUnits(unit);
 			}
 		}
@@ -280,13 +276,17 @@ public class UnitManager {
 			}
 
 			// If there are tanks nearby, DON'T RUN. Rather die first!
-			if (xvr.countUnitsOfGivenTypeInRadius(
-					UnitTypes.Terran_Siege_Tank_Siege_Mode, 15, unit, false) > 0) {
+			if (xvr.countUnitsOfGivenTypeInRadius(UnitTypes.Terran_Siege_Tank_Siege_Mode, 15, unit,
+					false) > 0) {
+				return;
+			}
+
+			// If there are tanks nearby, DON'T RUN. Rather die first!
+			if (unit.distanceTo(xvr.getFirstBase()) < 17) {
 				return;
 			}
 			
-			// If there are tanks nearby, DON'T RUN. Rather die first!
-			if (unit.distanceTo(xvr.getFirstBase()) < 17) {
+			if (StrategyManager.isAttackPending()) {
 				return;
 			}
 
@@ -302,8 +302,7 @@ public class UnitManager {
 		// Only if we're only unit in this region it makes sense to die.
 		int alliesNearby = -1 + xvr.countUnitsInRadius(unit, 5, true);
 		if (alliesNearby <= 0) {
-			Unit enemy = xvr.getEnemyDefensiveGroundBuildingNear(unit.getX(),
-					unit.getY());
+			Unit enemy = xvr.getEnemyDefensiveGroundBuildingNear(unit.getX(), unit.getY());
 			if (xvr.getDistanceBetween(enemy, unit) <= 3) {
 				return true;
 			}
@@ -313,11 +312,10 @@ public class UnitManager {
 	}
 
 	private static void avoidHiddenUnitsIfNecessary(Unit unit) {
-		Unit hiddenEnemyUnitNearby = MapExploration
-				.getHiddenEnemyUnitNearbyTo(unit);
-		if (hiddenEnemyUnitNearby != null && unit.isDetected()) {
-			UnitActions.moveAwayFromUnitIfPossible(unit, hiddenEnemyUnitNearby,
-					5);
+		Unit hiddenEnemyUnitNearby = MapExploration.getHiddenEnemyUnitNearbyTo(unit);
+		if (hiddenEnemyUnitNearby != null && unit.isDetected()
+				&& !hiddenEnemyUnitNearby.isDetected()) {
+			UnitActions.moveAwayFromUnitIfPossible(unit, hiddenEnemyUnitNearby, 9);
 		}
 	}
 
@@ -326,8 +324,7 @@ public class UnitManager {
 			if (unit.isMoving()) {
 				return;
 			}
-			UnitActions.moveTo(unit,
-					unit.getX() + 5 * 32 * (-1 * RUtilities.rand(0, 1)),
+			UnitActions.moveTo(unit, unit.getX() + 5 * 32 * (-1 * RUtilities.rand(0, 1)),
 					unit.getY() + 5 * 32 * (-1 * RUtilities.rand(0, 1)));
 		}
 	}
@@ -354,62 +351,59 @@ public class UnitManager {
 		}
 
 		// Don't interrupt shooting dragoons
-		if (type.isDragoon()) {
+		if (type.isDragoon() || type.isReaver()) {
 			if (unit.isStartingAttack()) {
 				return;
 			}
-			Unit enemyNear = xvr.getUnitNearestFromList(unit,
-					xvr.getEnemyUnitsVisible());
-			if (unit != null && enemyNear != null
-					&& xvr.getDistanceBetween(unit, enemyNear) <= 3) {
+			Unit enemyNear = xvr.getUnitNearestFromList(unit, xvr.getEnemyUnitsVisible());
+			if (unit != null && enemyNear != null && xvr.getDistanceBetween(unit, enemyNear) <= 3) {
 				return;
 			}
 		}
 
 		// If there's tank nearby, DON't retreat
-		if (xvr.getUnitsOfGivenTypeInRadius(
-				UnitTypes.Terran_Siege_Tank_Siege_Mode, 13, unit, false).size() > 0) {
+		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Terran_Siege_Tank_Siege_Mode, 20, unit, false)
+				.size() > 0) {
 			return;
 		}
 
 		// If there's bunker
-		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Terran_Bunker, 3, unit,
-				false).size() > 0) {
+		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Terran_Bunker, 3, unit, false).size() > 0) {
 			return;
 		}
 
 		// If there's enemy cannon
-		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon, 3,
-				unit, false).size() > 0) {
+		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon, 3, unit, false).size() > 0) {
 			return;
 		}
-		
+
 		// If there's our first base nearby
 		if (unit.distanceTo(xvr.getFirstBase()) <= 19) {
 			return;
 		}
-		
-		// If there's our cannon nearby
-		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon, 2,
-				unit, true).size() > 0) {
+
+		// If there's our first base nearby
+		if (xvr.getDistanceBetween(xvr.getUnitNearestFromList(unit, ProtossNexus.getBases()), unit) <= 10) {
 			return;
 		}
 
-		// If there's cannon
-		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Carrier, 9, unit,
-				false).size() > 0) {
+		// If there's enemy CANNON
+		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon, 4, unit, false).size() > 0) {
+			return;
+		}
+
+		// If there's OUR CANNON
+		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon, 4, unit, true).size() > 0) {
 			return;
 		}
 
 		// If there's sunken
-		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Zerg_Sunken_Colony, 3,
-				unit, false).size() > 0) {
+		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Zerg_Sunken_Colony, 3, unit, false).size() > 0) {
 			return;
 		}
 
 		// Attack Probes if possible
-		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Probe, 10, unit,
-				false).size() > 2) {
+		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Probe, 10, unit, false).size() > 2) {
 			return;
 		}
 
@@ -448,31 +442,28 @@ public class UnitManager {
 		Unit enemyWorker = xvr.getEnemyWorkerInRadius(2, unit);
 		if (enemyWorker != null) {
 			importantEnemyUnitNearby = enemyWorker;
-			if (xvr.getDistanceBetween(xvr.getFirstBase(),
-					importantEnemyUnitNearby) > 30 || xvr.getTimeSecond() > 600) {
+			if (xvr.getDistanceBetween(xvr.getFirstBase(), importantEnemyUnitNearby) > 30
+					|| xvr.getTimeSecond() > 600) {
 				UnitActions.attackEnemyUnit(unit, enemyToAttack);
 				return;
 			}
 		}
-		
+
 		// Disallow wounded units to attack distant targets.
 		if (XVR.isEnemyTerran() && xvr.getTimeSecond() > 600) {
-			if ((unit.getShields() < 15 || (unit.getShields() < 40 && unit
-					.getHitPoints() < 40))) {
+			if ((unit.getShields() < 15 || (unit.getShields() < 40 && unit.getHitPoints() < 40))) {
 				return;
 			}
 		}
 
-
 		// Try selecting top priority units like lurkers, siege tanks.
-		importantEnemyUnitNearby = TargetHandling
-				.getImportantEnemyUnitTargetIfPossibleFor(unit,
-						groundAttackCapable, airAttackCapable);
-
-		ArrayList<Unit> enemyUnits = xvr.getEnemyUnitsVisible(
+		importantEnemyUnitNearby = TargetHandling.getImportantEnemyUnitTargetIfPossibleFor(unit,
 				groundAttackCapable, airAttackCapable);
 
-		if (importantEnemyUnitNearby != null) {
+		ArrayList<Unit> enemyUnits = xvr
+				.getEnemyUnitsVisible(groundAttackCapable, airAttackCapable);
+
+		if (importantEnemyUnitNearby != null && importantEnemyUnitNearby.isDetected()) {
 			if (!importantEnemyUnitNearby.getType().isTerranMine()
 					|| (unit.getType().getGroundWeapon().getMaxRange() / 32) >= 2)
 				enemyToAttack = importantEnemyUnitNearby;
@@ -482,19 +473,20 @@ public class UnitManager {
 		else {
 			enemyToAttack = xvr.getUnitNearestFromList(unit, enemyUnits);
 		}
+		
+		if (enemyToAttack != null && !enemyToAttack.isDetected()) {
+			enemyToAttack = null;
+		}
 
 		if (enemyToAttack != null
-				&& (enemyToAttack.getType().isWorker()
-						&& xvr.getTimeSecond() < 600 && xvr.getDistanceBetween(
-						enemyToAttack, xvr.getFirstBase()) < 30)) {
+				&& (enemyToAttack.getType().isWorker() && xvr.getTimeSecond() < 600 && xvr
+						.getDistanceBetween(enemyToAttack, xvr.getFirstBase()) < 30)) {
 			enemyToAttack = null;
 
-			for (Iterator<Unit> iterator = enemyUnits.iterator(); iterator
-					.hasNext();) {
+			for (Iterator<Unit> iterator = enemyUnits.iterator(); iterator.hasNext();) {
 				Unit enemyUnit = (Unit) iterator.next();
 				if (enemyUnit.getType().isWorker()
-						&& xvr.getDistanceBetween(enemyToAttack,
-								xvr.getFirstBase()) < 25) {
+						&& xvr.getDistanceBetween(enemyToAttack, xvr.getFirstBase()) < 25) {
 					iterator.remove();
 				}
 			}
@@ -503,22 +495,24 @@ public class UnitManager {
 		}
 
 		// Attack selected target if it's not too far away.
-		if (enemyToAttack != null) {
+		if (enemyToAttack != null && enemyToAttack.isDetected()) {
+			if (isUnitInPositionToAlwaysAttack(unit)) {
+				UnitActions.attackEnemyUnit(unit, enemyToAttack);
+				return;
+			}
 
 			Unit nearestEnemy = xvr.getUnitNearestFromList(unit,
-					xvr.getEnemyUnitsVisible(groundAttackCapable,
-							airAttackCapable));
+					xvr.getEnemyUnitsVisible(groundAttackCapable, airAttackCapable));
 
 			// If there's an enemy near to this unit, don't change the target.
-			if (nearestEnemy != null
-					&& xvr.getDistanceBetween(unit, nearestEnemy) <= 1) {
+			if (nearestEnemy != null && xvr.getDistanceBetween(unit, nearestEnemy) <= 1) {
 				return;
 			}
 
 			// There's no valid target, attack this enemy.
 			else {
 				if (!StrengthEvaluator.isStrengthRatioFavorableFor(unit)
-						&& unit.distanceTo(xvr.getFirstBase()) > 20) {
+						&& unit.distanceTo(xvr.getFirstBase()) > 25) {
 					return;
 				}
 
@@ -529,8 +523,7 @@ public class UnitManager {
 							enemyWorker = xvr.getEnemyWorkerInRadius(12, unit);
 							if (enemyWorker != null) {
 								importantEnemyUnitNearby = enemyWorker;
-								UnitActions
-										.attackEnemyUnit(unit, enemyToAttack);
+								UnitActions.attackEnemyUnit(unit, enemyToAttack);
 								return;
 							}
 							return;
@@ -540,6 +533,15 @@ public class UnitManager {
 				}
 			}
 		}
+	}
+
+	private static boolean isUnitInPositionToAlwaysAttack(Unit unit) {
+		boolean ourPhotonCannonIsNear = xvr.getUnitsOfGivenTypeInRadius(
+				UnitTypes.Protoss_Photon_Cannon, 4, unit, true).size() > 0;
+		boolean baseInDanger = (xvr.getDistanceBetween(
+				xvr.getUnitNearestFromList(unit, ProtossNexus.getBases()), unit) <= 7);
+
+		return ourPhotonCannonIsNear || baseInDanger;
 	}
 
 	private static void actWhenOnCallForHelpMission(Unit unit) {
@@ -613,7 +615,7 @@ public class UnitManager {
 	}
 
 	private static boolean shouldUnitBeExplorer(Unit unit) {
-		return (_unitCounter == 5 || _unitCounter == 14)
+		return (_unitCounter == 4 || _unitCounter == 8)
 				|| unit.getTypeID() == UnitTypes.Protoss_Dark_Templar.ordinal();
 	}
 
@@ -630,8 +632,7 @@ public class UnitManager {
 
 			if (StrategyManager.getTargetPoint() != null) {
 				if (!isUnitAttackingSomeone(unit)) {
-					UnitActions.attackTo(unit,
-							StrategyManager.getTargetPoint().x,
+					UnitActions.attackTo(unit, StrategyManager.getTargetPoint().x,
 							StrategyManager.getTargetPoint().y);
 				}
 				if (isUnitFullyIdle(unit)) {
@@ -654,8 +655,7 @@ public class UnitManager {
 	}
 
 	private static boolean isUnitFullyIdle(Unit unit) {
-		return !unit.isAttacking() && !unit.isMoving() && !unit.isUnderAttack()
-				&& unit.isIdle();
+		return !unit.isAttacking() && !unit.isMoving() && !unit.isUnderAttack() && unit.isIdle();
 		// && unit.getGroundWeaponCooldown() == 0
 	}
 

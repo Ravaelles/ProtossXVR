@@ -14,14 +14,14 @@ import ai.protoss.ProtossGateway;
 public class StrengthEvaluator {
 
 	private static XVR xvr = XVR.getInstance();
-	private static final int BATTLE_RADIUS_ENEMIES = 11;
-	private static final int BATTLE_RADIUS_ALLIES = 9;
+	private static final int BATTLE_RADIUS_ENEMIES = 12;
+	private static final int BATTLE_RADIUS_ALLIES = 11;
 	private static final double CRITICAL_RATIO_THRESHOLD = 0.7;
 	private static final double FAVORABLE_RATIO_THRESHOLD = 1.6;
 	private static final double ENEMY_RANGE_WEAPON_STRENGTH_BONUS = 1.9;
 	private static final int RANGE_BONUS_IF_ENEMY_DEF_BUILDING_NEAR = 6;
 	private static final int DEFENSIVE_BUILDING_ATTACK_BONUS = 24;
-	private static final int IF_CANNONS_WAIT_FOR_N_UNITS = 7;
+	// private static final int IF_CANNONS_WAIT_FOR_N_UNITS = 7;
 
 	private static boolean changePlanToBuildAntiAirUnits = false;
 
@@ -90,6 +90,11 @@ public class StrengthEvaluator {
 		// + unit.getGroundAttackNormalized());
 		// }
 
+		if (ourUnits.size() >= 3 && ratio < 0.8) {
+			// StrategyManager.waitUntilMinBattleUnits(10);
+			StrategyManager.waitForMoreUnits();
+		}
+
 		_rangeBonus = 0;
 		return ratio;
 	}
@@ -123,12 +128,19 @@ public class StrengthEvaluator {
 			if (forEnemy) {
 				total += attackValue;
 
-				if (unit.getType().isVulture()) {
+				if (type.isVulture()) {
 					vultures++;
 					total -= attackValue * 1.4;
 				}
-				if (unit.getType().isHydralisk()) {
+				if (type.isHydralisk()) {
 					total -= attackValue * 0.4;
+				}
+				if (type.isFirebat()) {
+					total += attackValue * 0.3;
+				}
+				if (type.isDragoon()) {
+					// dragoons++;
+					total += attackValue * 0.4;
 				}
 
 				// Handle defensive buildings
@@ -164,7 +176,7 @@ public class StrengthEvaluator {
 		}
 
 		if (defensiveBuildings >= 2 && _ourUnits.size() < 7 && XVR.isEnemyProtoss()) {
-			StrategyManager.waitUntilMinBattleUnits(IF_CANNONS_WAIT_FOR_N_UNITS);
+			StrategyManager.waitForMoreUnits();
 			total = 99999;
 		}
 		if (defensiveBuildings > 0 && defensiveBuildings <= 7 && _ourUnits.size() >= 7) {
@@ -177,8 +189,7 @@ public class StrengthEvaluator {
 
 		if ((vultures >= 3 || defensiveBuildings >= 3) && !ProtossGateway.LIMIT_ZEALOTS
 				&& xvr.getTimeSecond() < 600) {
-			StrategyManager.waitUntilMinBattleUnits(IF_CANNONS_WAIT_FOR_N_UNITS);
-			StrategyManager.forcePeace();
+			StrategyManager.waitForMoreUnits();
 			ProtossGateway.LIMIT_ZEALOTS = true;
 			Debug.message(xvr, "Dont build zealots mode enabled");
 		}
@@ -202,8 +213,16 @@ public class StrengthEvaluator {
 	}
 
 	private static ArrayList<Unit> getEnemiesNear(Unit ourUnit) {
-		return xvr.getUnitsInRadius(ourUnit, BATTLE_RADIUS_ENEMIES + _rangeBonus,
-				xvr.getEnemyArmyUnitsIncludingDefensiveBuildings());
+		ArrayList<Unit> unitsInRadius = xvr.getUnitsInRadius(ourUnit, BATTLE_RADIUS_ENEMIES
+				+ _rangeBonus, xvr.getEnemyArmyUnitsIncludingDefensiveBuildings());
+		for (Iterator<Unit> iterator = unitsInRadius.iterator(); iterator.hasNext();) {
+			Unit unit = (Unit) iterator.next();
+			if (unit.getType().isBuilding()
+					&& (!unit.isDefensiveGroundBuilding() || !unit.isCompleted())) {
+				iterator.remove();
+			}
+		}
+		return unitsInRadius;
 	}
 
 	private static ArrayList<Unit> getOurUnitsNear(Unit ourUnit) {

@@ -989,12 +989,5 @@ public class Unit extends MapPoint implements Comparable<Unit> {
 	public void setLastTimeWorkerDiedNear(int lastTimeWorkerDiedNear) {
 		this.lastTimeWorkerDiedNear = lastTimeWorkerDiedNear;
 	}
-	
-	public double distanceTo(MapPoint point) {
-		if (point == null) {
-			return -1;
-		}
-		return XVR.getInstance().getDistanceBetween(point, getX(), getY());
-	}
 
 }

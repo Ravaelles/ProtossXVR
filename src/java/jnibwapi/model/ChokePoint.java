@@ -26,7 +26,7 @@ public class ChokePoint extends MapPoint {
 	private int secondSideY;
 	private Region firstRegion;
 	private Region secondRegion;
-	
+
 	private boolean disabled = false;
 
 	public ChokePoint(int[] data, int index) {
@@ -99,18 +99,18 @@ public class ChokePoint extends MapPoint {
 		return secondSideY;
 	}
 
+	// ==============================
+
 	@Override
 	public int getX() {
 		return getCenterX();
 	}
-	
-	
+
 	@Override
 	public int getY() {
 		return getCenterY();
 	}
 
-	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -118,7 +118,6 @@ public class ChokePoint extends MapPoint {
 		result = prime * result + ID;
 		return result;
 	}
-	
 
 	@Override
 	public boolean equals(Object obj) {
@@ -142,5 +141,4 @@ public class ChokePoint extends MapPoint {
 		this.disabled = disabled;
 	}
 
-	
 }

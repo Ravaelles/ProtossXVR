@@ -1,5 +1,7 @@
 package ai.handling.map;
 
+import ai.core.XVR;
+
 public abstract class MapPoint {
 
 	public abstract int getX();
@@ -16,6 +18,13 @@ public abstract class MapPoint {
 
 	public String toStringLocation() {
 		return "[" + getTx() + ", " + getTy() + "]";
+	}
+	
+	public double distanceTo(MapPoint point) {
+		if (point == null) {
+			return -1;
+		}
+		return XVR.getInstance().getDistanceBetween(point, getX(), getY());
 	}
 	
 	// =================

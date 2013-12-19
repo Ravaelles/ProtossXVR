@@ -62,9 +62,10 @@ public class StrategyManager {
 	private static Unit _attackTargetUnit;
 
 	private static int retreatsCounter = 0;
-	private static final int EXTRA_UNITS_PER_RETREAT = 5;
+	private static final int EXTRA_UNITS_PER_RETREAT = 7;
 
-	private static int minBattleUnits = 0;
+	private static int _minBattleUnits = 2;
+	private static int _lastTimeWaitCalled = 0;
 
 	// private static boolean pushedInitially = false;
 
@@ -72,26 +73,25 @@ public class StrategyManager {
 
 	private static boolean decideIfWeAreReadyToAttack(boolean forceMinimum) {
 		int battleUnits = UnitCounter.getNumberOfBattleUnitsCompleted();
-		int minUnits = getMinBattleUnits() + retreatsCounter * EXTRA_UNITS_PER_RETREAT;
+		int minUnits = calculateMinimumUnitsToAttack();
 		// int dragoons =
 		// UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dragoon);
 
 		if (battleUnits >= minUnits) {
 			return true;
 		} else {
-			boolean weAreReady = minUnits != 0
-					&& (battleUnits >= minUnits * 0.28 && isAnyAttackFormPending());
+			boolean weAreReady = (battleUnits >= minUnits * 0.28) && isAnyAttackFormPending();
 
 			if (battleUnits > MINIMUM_THRESHOLD_ARMY_TO_PUSH) {
 				weAreReady = true;
 			}
 
-			if (isAnyAttackFormPending() && !weAreReady) {
-				if (retreatsCounter == 0 || minBattleUnits == 0) {
-					minBattleUnits = 13;
-				}
-				retreatsCounter++;
-			}
+//			if (isAnyAttackFormPending() && !weAreReady) {
+//				if (retreatsCounter == 0 || _minBattleUnits == 0) {
+//					_minBattleUnits = 13;
+//				}
+//				retreatsCounter++;
+//			}
 
 			return weAreReady;
 		}
@@ -156,6 +156,10 @@ public class StrategyManager {
 		// }
 
 		// return weAreReadyToAttack;
+	}
+
+	public static int calculateMinimumUnitsToAttack() {
+		return getMinBattleUnits() + retreatsCounter * EXTRA_UNITS_PER_RETREAT;
 	}
 
 	/**
@@ -374,16 +378,32 @@ public class StrategyManager {
 		return _attackPoint;
 	}
 
-	public static void waitUntilMinBattleUnits(int minUnits) {
-		minBattleUnits = minUnits;
+	private static void waitUntilMinBattleUnits() {
+		int now = xvr.getTimeSecond();
+		if (now - _lastTimeWaitCalled > 100) {
+			_lastTimeWaitCalled = now;
+
+			// if (minBattleUnits < minUnits) {
+			// minBattleUnits += minUnits;
+			// }
+
+			_minBattleUnits++;
+			retreatsCounter++;
+			forcePeace();
+		}
+
 	}
 
 	public static int getMinBattleUnits() {
-		return minBattleUnits;
+		return _minBattleUnits;
 	}
 
 	public static void forcePeace() {
 		changeStateTo(STATE_PEACE);
+	}
+
+	public static void waitForMoreUnits() {
+		waitUntilMinBattleUnits();
 	}
 
 }

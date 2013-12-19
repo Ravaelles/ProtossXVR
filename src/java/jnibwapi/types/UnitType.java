@@ -601,6 +601,10 @@ public class UnitType {
 		return getID() == UnitTypes.Zerg_Hydralisk.ordinal();
 	}
 	
+	public boolean isFirebat() {
+		return getID() == UnitTypes.Terran_Firebat.ordinal();
+	}
+	
 	public boolean isTerranMine() {
 		return getID() == UnitTypes.Terran_Vulture_Spider_Mine.ordinal();
 	}

@@ -20,8 +20,8 @@ public class ProtossTemplarArchives {
 
 	public static boolean shouldBuild() {
 		if (!UnitCounter.weHaveBuilding(buildingType)
-				&& UnitCounter.weHaveBuilding(ProtossCitadelOfAdun
-						.getBuildingtype())
+				&& UnitCounter.weHaveBuilding(UnitTypes.Protoss_Robotics_Facility)
+				&& UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Reaver) > 0
 				&& !Constructing.weAreBuilding(buildingType)) {
 			// if (UnitCounter.getNumberOfBattleUnits() >= 15) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);

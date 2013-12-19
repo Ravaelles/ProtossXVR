@@ -46,6 +46,11 @@ public class ProtossNexus {
 		int bases = UnitCounter.getNumberOfUnits(buildingType);
 		int gateways = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Gateway);
 		int battleUnits = UnitCounter.getNumberOfBattleUnits();
+		
+		if (xvr.canAfford(750)) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			return true;
+		}
 
 		if (bases >= 3 && !xvr.canAfford(700)) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
@@ -66,7 +71,7 @@ public class ProtossNexus {
 
 		// FORCE quick expansion if we're rich
 		if (xvr.canAfford(330)) {
-			if (gateways >= 3 && battleUnits >= (BotStrategyManager.isExpandWithCannons() ? 6 : 10)
+			if (gateways >= 3 && battleUnits >= (BotStrategyManager.isExpandWithCannons() ? 7 : 15)
 					&& !XVR.isEnemyTerran()) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
@@ -194,38 +199,6 @@ public class ProtossNexus {
 		}
 	}
 
-	// private static void tooManyWorkersAtBase(Unit base) {
-	//
-	// // If we have workers at base over optimal amount and we have
-	// // another
-	// // base try sending them to the new base
-	// int overLimitWorkers = getNumberOfMineralGatherersForBase(base)
-	// - getOptimalMineralGatherersAtBase(base) - 1;
-	// if (overLimitWorkers > 0
-	// && UnitCounter.getNumberOfUnitsCompleted(buildingType) > 1) {
-	// ArrayList<Unit> gatherers = getMineralWorkersNearBase(base);
-	//
-	// Collection<Unit> mineralsInNeihgborhood = xvr.getUnitsInRadius(
-	// base, 17, xvr.getMineralsUnits());
-	// if (!mineralsInNeihgborhood.isEmpty()) {
-	// int counter = overLimitWorkers;
-	// for (Unit worker : gatherers) {
-	// if (RUtilities.rand(0, 15) == 0) {
-	// if (counter-- < 0) {
-	// break;
-	// } else {
-	// WorkerManager
-	// .forceGatherMinerals(
-	// worker,
-	// (Unit) RUtilities
-	// .getRandomElement(mineralsInNeihgborhood));
-	// }
-	// }
-	// }
-	// }
-	// }
-	// }
-
 	private static void haveOverLimitGasWorkers(Unit base, int overLimitWorkers) {
 		ArrayList<Unit> gatherers = getGasWorkersNearBase(base);
 		// for (int i = 0; i < overLimitWorkers && i < gatherers.size();
@@ -297,22 +270,39 @@ public class ProtossNexus {
 		}
 
 		// ===============================
+		BaseLocation nearestFreeBaseLocation = getNearestFreeBaseLocation();
+		if (nearestFreeBaseLocation != null) {
+			MapPoint point = nearestFreeBaseLocation;
 
-		Map map = xvr.getBwapi().getMap();
+			// MapPoint point = new MapPointInstance(
+			// nearestFreeBaseLocation.getTx(),
+			// nearestFreeBaseLocation.getTy());
+			// Debug.message(xvr, "Tile for new base: " + point.getTx() + ","
+			// + point.getTy());
+			_cachedNextBaseTile = Constructing.getLegitTileToBuildNear(xvr.getRandomWorker(),
+					buildingType, point, 0, 30, false);
+		} else {
+			// if (UnitCounter.getNumberOfUnits(UnitManager.BASE) <= 1) {
+			// Debug.message(xvr, "Error! No place for next base!");
+			 System.out.println("Error! No place for next base!");
+			// }
+			_cachedNextBaseTile = null;
+		}
+
+		return _cachedNextBaseTile;
+	}
+
+	private static BaseLocation getNearestFreeBaseLocation() {
 		Unit expansionCenter = xvr.getFirstBase();
 		// if (!xvr.getLastBase().equals(xvr.getFirstBase())) {
 		// expansionCenter = xvr.getLastBase();
 		// }
-
 		if (expansionCenter == null) {
 			return null;
 		}
-
-		// Region mainBaseRegion = map.getRegion(mainBase.getTx(),
-		// mainBase.getTy());
-		double nearestDistance = 999999;
+		Map map = xvr.getBwapi().getMap();
 		BaseLocation nearestFreeBaseLocation = null;
-
+		double nearestDistance = 999999;
 		for (BaseLocation location : xvr.getBwapi().getMap().getBaseLocations()) {
 
 			// If there's already a base there don't build. Check for both our
@@ -341,25 +331,8 @@ public class ProtossNexus {
 				nearestFreeBaseLocation = location;
 			}
 		}
-
-		if (nearestFreeBaseLocation != null) {
-			MapPoint point = nearestFreeBaseLocation;
-
-			// MapPoint point = new MapPointInstance(
-			// nearestFreeBaseLocation.getTx(),
-			// nearestFreeBaseLocation.getTy());
-			// Debug.message(xvr, "Tile for new base: " + point.getTx() + ","
-			// + point.getTy());
-			_cachedNextBaseTile = Constructing.getLegitTileToBuildNear(xvr.getRandomWorker(),
-					buildingType, point, 0, 30, false);
-		} else {
-			// if (UnitCounter.getNumberOfUnits(UnitManager.BASE) <= 1) {
-			// Debug.message(xvr, "Error! No place for next base!");
-			// }
-			_cachedNextBaseTile = null;
-		}
-
-		return _cachedNextBaseTile;
+		
+		return nearestFreeBaseLocation;
 	}
 
 	private static boolean existsBaseNear(int x, int y) {

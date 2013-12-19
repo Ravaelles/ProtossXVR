@@ -4,6 +4,7 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import jnibwapi.model.Region;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
+import ai.core.Debug;
 import ai.core.XVR;
 import ai.handling.units.UnitActions;
 import ai.handling.units.UnitCounter;
@@ -63,13 +65,16 @@ public class MapExploration {
 		}
 
 		boolean isWounded = isExplorerWounded();
+		double distToEnemy = getDistanceToNearestEnemy();
 
 		// ===========================
 		// Don't interfere if explorer is building or attacking etc.
 		boolean shouldBeConstructing = explorer.isConstructing();
 		boolean shouldContinueAttacking = explorer.isAttacking() && !isWounded;
-		boolean shouldBeDiscoveringEnemyBase = _isDiscoveringEnemyBase;
-		boolean shouldBeMoving = explorer.isMoving() && getDistanceToNearestEnemy() < 3;
+		boolean shouldBeDiscoveringEnemyBase = _isDiscoveringEnemyBase
+				|| enemyBuildingsDiscovered.isEmpty();
+		boolean isEnemyClose = distToEnemy > 0 && distToEnemy < 3;
+		boolean shouldBeMoving = explorer.isMoving() && isEnemyClose;
 		if (!explorer.isIdle()
 				&& (shouldBeDiscoveringEnemyBase || shouldBeMoving || shouldBeConstructing || shouldContinueAttacking)) {
 			return;
@@ -117,7 +122,8 @@ public class MapExploration {
 	}
 
 	private static boolean isExplorerWounded() {
-		return (explorer.getShields()) < 11;
+		return (explorer.getShields()) < 16
+				|| (explorer.getShields() < 20 && (explorer.getShields() + explorer.getHitPoints() < 30));
 	}
 
 	private static boolean tryRunningFromEnemiesIfNecessary() {
@@ -127,12 +133,20 @@ public class MapExploration {
 				xvr.getEnemyUnitsVisible());
 		double distToNearestEnemy = explorer.distanceTo(nearestEnemy);
 
+		boolean isUnitUnderAttack = explorer.isUnderAttack();
 		boolean isEnemyArmyUnitClose = isEnemyArmyUnitCloseToExplorer();
-		boolean isEnemyCloseAndUnitIsWounded = distToNearestEnemy < 4 && isWounded;
+		boolean isEnemyCloseAndUnitIsWounded = distToNearestEnemy > 0 && distToNearestEnemy <= 5
+				&& isWounded;
 		boolean isAttackingAndIsOverwhelmed = explorer.isAttacking()
-				&& xvr.getEnemyUnitsInRadius(4, explorer).size() >= 2;
-		if (isEnemyArmyUnitClose || isEnemyCloseAndUnitIsWounded || isAttackingAndIsOverwhelmed
-				|| explorer.isUnderAttack()) {
+				&& xvr.getEnemyUnitsInRadius(6, explorer).size() >= 2;
+
+		// System.out.println("#### " + explorer.getID());
+		// System.out.println(isEnemyArmyUnitClose);
+		// System.out.println(isEnemyCloseAndUnitIsWounded);
+		// System.out.println(isAttackingAndIsOverwhelmed);
+
+		if (isUnitUnderAttack || isEnemyArmyUnitClose
+				|| (isEnemyCloseAndUnitIsWounded && isAttackingAndIsOverwhelmed)) {
 			double distToMainBase = explorer.distanceTo(xvr.getFirstBase());
 
 			// If already at base, run to the most distant base
@@ -155,46 +169,96 @@ public class MapExploration {
 		Unit nearestArmyUnit = xvr.getUnitNearestFromList(explorer, xvr.getEnemyArmyUnits());
 		if (nearestArmyUnit == null) {
 			return false;
-		}
-		else {
-			return nearestArmyUnit.distanceTo(explorer) < 12;
+		} else {
+			double dist = nearestArmyUnit.distanceTo(explorer);
+			return dist < 12 && dist > 0 && !nearestArmyUnit.isWorker();
 		}
 	}
 
 	private static boolean tryAttackingEnemyIfPossible() {
-		Unit nearestEnemyBuilding = xvr.getUnitNearestFromList(explorer, xvr.getEnemyBuildings());
+		Unit enemyUnit = null;
 
-		boolean isProperTargetSelected = nearestEnemyBuilding != null;
-		boolean isNormalBuilding = isProperTargetSelected
-				&& (!nearestEnemyBuilding.isDefensiveGroundBuilding() || !nearestEnemyBuilding
-						.isCompleted());
+		// if (XVR.isEnemyProtoss()) {
+		// Collection<Unit> pylons =
+		// xvr.getEnemyUnitsOfType(ProtossPylon.getBuildingType());
+		// if (!pylons.isEmpty()) {
+		// nearestEnemyBuilding = (Unit) RUtilities.getRandomElement(pylons);
+		// }
+		// } else if (XVR.isEnemyZerg()) {
+		// Collection<Unit> pools =
+		// xvr.getEnemyUnitsOfType(UnitTypes.Zerg_Spawning_Pool);
+		// if (!pools.isEmpty()) {
+		// nearestEnemyBuilding = (Unit) RUtilities.getRandomElement(pools);
+		// }
+		// } else if (XVR.isEnemyTerran()) {
+		// nearestEnemyBuilding = xvr.getEnemyWorkerInRadius(300, explorer);
+		// }
+
+		enemyUnit = xvr.getEnemyWorkerInRadius(300, explorer);
+		if (enemyUnit != null && enemyUnit.distanceTo(xvr.getFirstBase()) < 20) {
+			enemyUnit = null;
+		}
+
+		// boolean isWounded = isExplorerWounded();
+		boolean isWounded = isExplorerWounded();
+		boolean isProperTargetSelected = enemyUnit != null;
 		boolean isNeighborhoodQuiteSafe = (xvr.getEnemyUnitsInRadius(3, explorer).size() == 0 && xvr
 				.getEnemyUnitsInRadius(6, explorer).size() <= 1);
 		boolean isUnitVeryMuchAlive = explorer.getShields() >= 19;
 
-		if (isProperTargetSelected && isNormalBuilding
+		if (isProperTargetSelected && (!isWounded || isNeighborhoodQuiteSafe)
 				&& (isNeighborhoodQuiteSafe || isUnitVeryMuchAlive)) {
-			UnitActions.attackTo(explorer, nearestEnemyBuilding);
+			UnitActions.attackEnemyUnit(explorer, enemyUnit);
 			return true;
 		}
 
-		// System.out.println(isNormalBuilding + " / " + isNeighborhoodQuiteSafe
-		// + " / "
-		// + isUnitVeryMuchAlive);
-
-		if (explorer.isIdle() || (!_isDiscoveringEnemyBase && nearestEnemyBuilding == null)) {
-			Unit nearestEnemyUnit = xvr.getUnitNearestFromList(explorer, xvr.getBwapi()
-					.getEnemyUnits());
-			if (nearestEnemyUnit != null && xvr.getEnemyUnitsInRadius(6, explorer).size() <= 1) {
-				UnitActions.attackTo(explorer, nearestEnemyUnit);
-				return true;
-			}
+		if (enemyUnit == null) {
+			enemyUnit = xvr.getUnitNearestFromList(explorer, xvr.getEnemyBuildings());
 		}
+
+		if (enemyUnit != null) {
+			UnitActions.attackTo(explorer, enemyUnit);
+			return true;
+		}
+
+		// boolean isProperTargetSelected = nearestEnemyBuilding != null;
+		// boolean isNormalBuilding = isProperTargetSelected
+		// && (!nearestEnemyBuilding.isDefensiveGroundBuilding() ||
+		// !nearestEnemyBuilding
+		// .isCompleted());
+		// boolean isNeighborhoodQuiteSafe = (xvr.getEnemyUnitsInRadius(3,
+		// explorer).size() == 0 && xvr
+		// .getEnemyUnitsInRadius(6, explorer).size() <= 1);
+		// boolean isUnitVeryMuchAlive = explorer.getShields() >= 19;
+		//
+		// if (isProperTargetSelected && isNormalBuilding
+		// && (isNeighborhoodQuiteSafe || isUnitVeryMuchAlive)) {
+		// UnitActions.attackTo(explorer, nearestEnemyBuilding);
+		// return true;
+		// }
+		//
+		// // System.out.println(isNormalBuilding + " / " +
+		// isNeighborhoodQuiteSafe
+		// // + " / "
+		// // + isUnitVeryMuchAlive);
+		//
+		// if (explorer.isIdle() || (!_isDiscoveringEnemyBase &&
+		// nearestEnemyBuilding == null)) {
+		// Unit nearestEnemyUnit = xvr.getUnitNearestFromList(explorer,
+		// xvr.getBwapi()
+		// .getEnemyUnits());
+		// if (nearestEnemyUnit != null && xvr.getEnemyUnitsInRadius(6,
+		// explorer).size() <= 1) {
+		// UnitActions.attackTo(explorer, nearestEnemyUnit);
+		// return true;
+		// }
+		// }
+
 		return false;
 	}
 
 	private static boolean tryDiscoveringEnemyBaseLocation() {
-		boolean hasDiscoveredBaseLocation = !baseLocationsDiscovered.isEmpty();
+		boolean hasDiscoveredBaseLocation = !enemyBuildingsDiscovered.isEmpty();
 		if (!hasDiscoveredBaseLocation) {
 			BaseLocation goTo = null;
 
@@ -227,6 +291,7 @@ public class MapExploration {
 		if (!_exploredSecondBase) {
 			MapPoint secondBase = ProtossNexus.getSecondBaseLocation();
 			UnitActions.moveTo(explorer, secondBase);
+			Debug.message(xvr, "Scout next base 1");
 			_exploredSecondBase = true;
 			return true;
 		}
@@ -234,6 +299,7 @@ public class MapExploration {
 		if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Nexus) >= 2) {
 			MapPoint tileForNextBase = ProtossNexus.getTileForNextBase(false);
 			if (!xvr.getBwapi().isVisible(tileForNextBase.getTx(), tileForNextBase.getTy())) {
+				Debug.message(xvr, "Scout next base 2");
 				UnitActions.moveTo(explorer, tileForNextBase);
 				return true;
 			}
@@ -346,7 +412,7 @@ public class MapExploration {
 		for (ChokePoint object : chokePointsProcessed) {
 			double distance = xvr
 					.getDistanceBetween(x, y, object.getCenterX(), object.getCenterY())
-					- object.getRadius() / 50;
+					- object.getRadius() / 33;
 			if (distance < nearestDistance) {
 				nearestDistance = distance;
 				nearestObject = object;
@@ -677,28 +743,20 @@ public class MapExploration {
 		if (percentSkipped > 0) {
 			System.out.println("Skipped " + percentSkipped + "% of initial choke points");
 		}
-
-		// // Remove nearest choke point from perspective of the first base
-		// ChokePoint choke = MapExploration.getImportantChokePointNear(xvr
-		// .getFirstBase());
-		// if (chokePointsProcessed.remove(choke)) {
-		// System.out.println("Removed nearest choke point to the main base.");
-		// }
 	}
 
 	public static ChokePoint getImportantChokePointNear(MapPoint point) {
 		ArrayList<ChokePoint> nearestChokePoints = getChokePointsForRegion(xvr.getBwapi().getMap()
-				.getRegion(point));
+				.getRegion(point), point);
 
 		if (!nearestChokePoints.isEmpty()) {
 			MapPoint secondBase = ProtossNexus.getSecondBaseLocation();
 
 			// We're at second base
-			if (xvr.getDistanceBetween(secondBase, point) < 10) {
+			if (xvr.getDistanceBetween(secondBase, point) < 13) {
 				ChokePoint chokeNearMainBase = MapExploration.getImportantChokePointNear(xvr
 						.getFirstBase());
-				boolean removed = nearestChokePoints.remove(chokeNearMainBase);
-				System.out.println("removed = " + removed);
+				nearestChokePoints.remove(chokeNearMainBase);
 				return nearestChokePoints.isEmpty() ? chokeNearMainBase : nearestChokePoints.get(0);
 			} else {
 				return nearestChokePoints.get(0);
@@ -759,7 +817,7 @@ public class MapExploration {
 
 	}
 
-	private static ArrayList<ChokePoint> getChokePointsForRegion(Region region) {
+	private static ArrayList<ChokePoint> getChokePointsForRegion(Region region, final MapPoint point) {
 		ArrayList<ChokePoint> result = new ArrayList<ChokePoint>();
 		if (region == null) {
 			return result;
@@ -770,6 +828,15 @@ public class MapExploration {
 				result.add(choke);
 			}
 		}
+
+		Collections.sort(result, new Comparator<ChokePoint>() {
+			@Override
+			public int compare(ChokePoint o1, ChokePoint o2) {
+				return Double.compare(o1.distanceTo(point) - o1.getRadius() / 32,
+						o2.distanceTo(point) - o2.getRadius() / 32);
+			}
+		});
+
 		return result;
 	}
 

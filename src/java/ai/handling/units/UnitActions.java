@@ -58,7 +58,7 @@ public class UnitActions {
 	}
 
 	public static void attackEnemyUnit(Unit ourUnit, Unit enemy) {
-		if (ourUnit != null && enemy != null) {
+		if (ourUnit != null && enemy != null && enemy.isDetected()) {
 			xvr.getBwapi().attack(ourUnit.getID(), enemy.getID());
 		}
 	}

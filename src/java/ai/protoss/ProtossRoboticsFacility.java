@@ -30,14 +30,13 @@ public class ProtossRoboticsFacility {
 
 	public static boolean shouldBuild() {
 		int facilities = UnitCounter.getNumberOfUnits(buildingType);
-		int dragoons = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dragoon);
+//		int dragoons = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dragoon);
 
-		if (dragoons >= 3
-				&& UnitCounter.getNumberOfUnits(ProtossGateway
-						.getBuildingType()) >= 2 && facilities <= 2
+		if (UnitCounter.getNumberOfUnits(ProtossGateway
+						.getBuildingType()) >= 2 && facilities < 2
 				&& !Constructing.weAreBuilding(buildingType)) {
-			if (UnitCounter.getNumberOfBattleUnits() >= (9 + 10 * facilities)
-					|| xvr.canAfford(450 + 300 * facilities)) {
+			if (UnitCounter.getNumberOfBattleUnits() >= (9 + 4 * facilities)
+					|| facilities == 0) {
 				ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 				return true;
 			}

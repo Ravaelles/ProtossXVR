@@ -272,8 +272,7 @@ public class XVR {
 
 		for (Unit unit : getUnitsNonWorker()) {
 			UnitType type = unit.getType();
-			if (unit.isCompleted()
-					&& (!type.isBuilding() || unit.isDefensiveGroundBuilding())) {
+			if (unit.isCompleted() && (!type.isBuilding() || unit.isDefensiveGroundBuilding())) {
 				objectsOfThisType.add(unit);
 			}
 		}
@@ -286,8 +285,7 @@ public class XVR {
 
 		for (Unit unit : bwapi.getEnemyUnits()) {
 			UnitType type = unit.getType();
-			if ((!type.isBuilding() && !unit.isWorker() && !unit.getType()
-					.isLarvaOrEgg())
+			if ((!type.isBuilding() && !unit.isWorker() && !unit.getType().isLarvaOrEgg())
 					|| (type.isBuilding() && unit.isDefensiveGroundBuilding())) {
 				objectsOfThisType.add(unit);
 			}
@@ -317,8 +315,7 @@ public class XVR {
 	}
 
 	public int getSuppliesFree() {
-		return (bwapi.getSelf().getSupplyTotal() - bwapi.getSelf()
-				.getSupplyUsed()) / 2;
+		return (bwapi.getSelf().getSupplyTotal() - bwapi.getSelf().getSupplyUsed()) / 2;
 	}
 
 	public int getSuppliesTotal() {
@@ -335,14 +332,14 @@ public class XVR {
 
 	public double getDistanceBetween(MapPoint u1, MapPoint point) {
 		if (u1 == null || point == null) {
-			return 0;
+			return -1;
 		}
 		return getDistanceBetween(u1.getX(), u1.getY(), point.getX(), point.getX());
 	}
 
 	public double getDistanceBetween(Unit u1, Unit u2) {
 		if (u2 == null) {
-			return 0;
+			return -1;
 		}
 		return getDistanceBetween(u1, u2.getX(), u2.getY());
 	}
@@ -366,8 +363,7 @@ public class XVR {
 		int m3 = UnitTypes.Resource_Mineral_Field_Type_3.ordinal();
 
 		for (Unit unit : bwapi.getNeutralUnits()) {
-			if (unit.getTypeID() == m1 || unit.getTypeID() == m2
-					|| unit.getTypeID() == m3) {
+			if (unit.getTypeID() == m1 || unit.getTypeID() == m2 || unit.getTypeID() == m3) {
 				objectsOfThisType.add(unit);
 			}
 		}
@@ -440,44 +436,41 @@ public class XVR {
 		return true;
 	}
 
-	public int countUnitsOfGivenTypeInRadius(UnitTypes type, int tileRadius,
-			MapPoint point, boolean onlyMyUnits) {
+	public int countUnitsOfGivenTypeInRadius(UnitTypes type, int tileRadius, MapPoint point,
+			boolean onlyMyUnits) {
 		if (point == null) {
-			return 0;
+			return -1;
 		}
-		return countUnitsOfGivenTypeInRadius(type, tileRadius, point.getX(),
-				point.getY(), onlyMyUnits);
+		return countUnitsOfGivenTypeInRadius(type, tileRadius, point.getX(), point.getY(),
+				onlyMyUnits);
 	}
 
-	public int countUnitsOfGivenTypeInRadius(UnitTypes type, int tileRadius,
-			int x, int y, boolean onlyMyUnits) {
+	public int countUnitsOfGivenTypeInRadius(UnitTypes type, int tileRadius, int x, int y,
+			boolean onlyMyUnits) {
 		int result = 0;
-		Collection<Unit> unitsList = onlyMyUnits ? bwapi.getMyUnits() : bwapi
-				.getAllUnits();
+		Collection<Unit> unitsList = onlyMyUnits ? bwapi.getMyUnits() : bwapi.getAllUnits();
 		for (Unit unit : unitsList) {
-			if (type.ordinal() == unit.getTypeID()
-					&& getDistanceBetween(unit, x, y) <= tileRadius) {
+			if (type.ordinal() == unit.getTypeID() && getDistanceBetween(unit, x, y) <= tileRadius) {
 				result++;
 			}
 		}
 		return result;
 	}
 
-	public ArrayList<Unit> getUnitsOfGivenTypeInRadius(UnitTypes type,
-			int tileRadius, MapPoint point, boolean onlyMyUnits) {
+	public ArrayList<Unit> getUnitsOfGivenTypeInRadius(UnitTypes type, int tileRadius,
+			MapPoint point, boolean onlyMyUnits) {
 		if (point == null) {
 			return new ArrayList<>();
 		}
-		return getUnitsOfGivenTypeInRadius(type, tileRadius, point.getX(),
-				point.getY(), onlyMyUnits);
+		return getUnitsOfGivenTypeInRadius(type, tileRadius, point.getX(), point.getY(),
+				onlyMyUnits);
 	}
 
-	public ArrayList<Unit> getUnitsOfGivenTypeInRadius(UnitTypes type,
-			int tileRadius, int x, int y, boolean onlyMyUnits) {
+	public ArrayList<Unit> getUnitsOfGivenTypeInRadius(UnitTypes type, int tileRadius, int x,
+			int y, boolean onlyMyUnits) {
 		HashMap<Unit, Double> unitToDistance = new HashMap<Unit, Double>();
 
-		for (Unit unit : (onlyMyUnits ? bwapi.getMyUnits() : bwapi
-				.getAllUnits())) {
+		for (Unit unit : (onlyMyUnits ? bwapi.getMyUnits() : bwapi.getAllUnits())) {
 			double distance = getDistanceBetween(unit, x, y);
 			if (type.ordinal() == unit.getTypeID() && distance <= tileRadius) {
 				unitToDistance.put(unit, distance);
@@ -486,25 +479,20 @@ public class XVR {
 
 		// Return listed sorted by distance ascending.
 		ArrayList<Unit> resultList = new ArrayList<Unit>();
-		resultList
-				.addAll(RUtilities.sortByValue(unitToDistance, true).keySet());
+		resultList.addAll(RUtilities.sortByValue(unitToDistance, true).keySet());
 		return resultList;
 	}
 
-	public int countUnitsInRadius(MapPoint point, int tileRadius,
-			boolean onlyMyUnits) {
-		return countUnitsInRadius(point.getX(), point.getY(), tileRadius,
-				onlyMyUnits);
+	public int countUnitsInRadius(MapPoint point, int tileRadius, boolean onlyMyUnits) {
+		return countUnitsInRadius(point.getX(), point.getY(), tileRadius, onlyMyUnits);
 	}
 
-	public int countUnitsInRadius(int x, int y, int tileRadius,
-			boolean onlyMyUnits) {
+	public int countUnitsInRadius(int x, int y, int tileRadius, boolean onlyMyUnits) {
 		return countUnitsInRadius(new MapPointInstance(x, y), tileRadius,
 				(onlyMyUnits ? bwapi.getMyUnits() : bwapi.getAllUnits()));
 	}
 
-	public int countUnitsInRadius(MapPoint point, int tileRadius,
-			Collection<Unit> units) {
+	public int countUnitsInRadius(MapPoint point, int tileRadius, Collection<Unit> units) {
 		int result = 0;
 
 		for (Unit unit : units) {
@@ -516,14 +504,11 @@ public class XVR {
 		return result;
 	}
 
-	public ArrayList<Unit> getArmyUnitsInRadius(int x, int y, int tileRadius,
-			boolean onlyMyUnits) {
+	public ArrayList<Unit> getArmyUnitsInRadius(int x, int y, int tileRadius, boolean onlyMyUnits) {
 		ArrayList<Unit> resultList = new ArrayList<Unit>();
 
-		for (Unit unit : (onlyMyUnits ? bwapi.getMyUnits() : bwapi
-				.getAllUnits())) {
-			if (unit.getType().isArmy()
-					&& getDistanceBetween(unit, x, y) <= tileRadius) {
+		for (Unit unit : (onlyMyUnits ? bwapi.getMyUnits() : bwapi.getAllUnits())) {
+			if (unit.getType().isArmy() && getDistanceBetween(unit, x, y) <= tileRadius) {
 				resultList.add(unit);
 			}
 		}
@@ -541,8 +526,7 @@ public class XVR {
 		return result;
 	}
 
-	public ArrayList<Unit> getIdleArmyUnitsInRadiusOf(int x, int y,
-			int tileRadius) {
+	public ArrayList<Unit> getIdleArmyUnitsInRadiusOf(int x, int y, int tileRadius) {
 		ArrayList<Unit> units = new ArrayList<Unit>();
 		for (Unit unit : getUnitsNonWorker()) {
 			if (unit.isIdle() && getDistanceBetween(unit, x, y) <= tileRadius) {
@@ -588,8 +572,7 @@ public class XVR {
 		return nearestUnit;
 	}
 
-	public ArrayList<Unit> getEnemyUnitsVisible(boolean includeGroundUnits,
-			boolean includeAirUnits) {
+	public ArrayList<Unit> getEnemyUnitsVisible(boolean includeGroundUnits, boolean includeAirUnits) {
 		ArrayList<Unit> units = new ArrayList<Unit>();
 		for (Unit unit : bwapi.getEnemyUnits()) {
 			UnitType type = unit.getType();
@@ -611,7 +594,8 @@ public class XVR {
 	public Collection<Unit> getEnemyArmyUnits() {
 		ArrayList<Unit> armyUnits = new ArrayList<Unit>();
 		for (Unit enemy : MapExploration.getEnemyUnitsDiscovered()) {
-			if (!enemy.isWorker() && !enemy.getType().isBuilding()) {
+			if (!enemy.isWorker() && !enemy.getType().isBuilding()
+					&& enemy.getType().getGroundAttackNormalized() > 0) {
 				armyUnits.add(enemy);
 			}
 		}
@@ -643,14 +627,11 @@ public class XVR {
 		return MapExploration.getEnemyBuildingsDiscovered();
 	}
 
-	public int getNumberOfUnitsInRadius(Unit unit, int tileRadius,
-			ArrayList<Unit> unitsList) {
-		return getNumberOfUnitsInRadius(unit.getX(), unit.getY(), tileRadius,
-				unitsList);
+	public int getNumberOfUnitsInRadius(Unit unit, int tileRadius, ArrayList<Unit> unitsList) {
+		return getNumberOfUnitsInRadius(unit.getX(), unit.getY(), tileRadius, unitsList);
 	}
 
-	public int getNumberOfUnitsInRadius(int x, int y, int tileRadius,
-			ArrayList<Unit> unitsList) {
+	public int getNumberOfUnitsInRadius(int x, int y, int tileRadius, ArrayList<Unit> unitsList) {
 		int counter = 0;
 
 		for (Unit unit : unitsList) {
@@ -663,8 +644,7 @@ public class XVR {
 	}
 
 	public ArrayList<Unit> getUnitsInRadius(int x, int y, int tileRadius) {
-		return getUnitsInRadius(new MapPointInstance(x, y), tileRadius,
-				getAllUnits());
+		return getUnitsInRadius(new MapPointInstance(x, y), tileRadius, getAllUnits());
 	}
 
 	private ArrayList<Unit> getAllUnits() {
@@ -679,8 +659,7 @@ public class XVR {
 		HashMap<Unit, Double> unitToDistance = new HashMap<Unit, Double>();
 
 		for (Unit unit : unitsList) {
-			double distance = getDistanceBetween(unit, point.getX(),
-					point.getY());
+			double distance = getDistanceBetween(unit, point.getX(), point.getY());
 			if (distance <= tileRadius) {
 				unitToDistance.put(unit, distance);
 			}
@@ -688,8 +667,7 @@ public class XVR {
 
 		// Return listed sorted by distance ascending.
 		ArrayList<Unit> resultList = new ArrayList<Unit>();
-		resultList
-				.addAll(RUtilities.sortByValue(unitToDistance, true).keySet());
+		resultList.addAll(RUtilities.sortByValue(unitToDistance, true).keySet());
 		return resultList;
 	}
 
@@ -717,7 +695,7 @@ public class XVR {
 			// boolean shouldExpandWithCannons =
 			// enemyBotName.contains("alberta");
 			// boolean shouldExpandWithCannons = true;
-			// BotStrategyManager.setExpandWithCannons(shouldExpandWithCannons);
+			// BotStrategyManager.setExpandWithCannons(true);
 		}
 
 		// ============
@@ -737,8 +715,7 @@ public class XVR {
 
 	public Unit getRandomWorker() {
 		for (Unit unit : bwapi.getMyUnits()) {
-			if (unit.getTypeID() == UnitManager.WORKER.ordinal()
-					&& !unit.isConstructing()) {
+			if (unit.getTypeID() == UnitManager.WORKER.ordinal() && !unit.isConstructing()) {
 				return unit;
 			}
 		}
@@ -748,9 +725,8 @@ public class XVR {
 	public Unit getOptimalBuilder(MapPoint buildTile) {
 		ArrayList<Unit> freeWorkers = new ArrayList<Unit>();
 		for (Unit worker : getWorkers()) {
-			if (worker.isCompleted() && !worker.isConstructing()
-					&& !worker.isRepairing() && !worker.isUnderAttack()
-					&& !worker.equals(MapExploration.getExplorer())) {
+			if (worker.isCompleted() && !worker.isConstructing() && !worker.isRepairing()
+					&& !worker.isUnderAttack() && !worker.equals(MapExploration.getExplorer())) {
 				freeWorkers.add(worker);
 			}
 		}
@@ -772,8 +748,8 @@ public class XVR {
 	}
 
 	public Unit getEnemyDetectorNear(int x, int y) {
-		ArrayList<Unit> enemiesNearby = getUnitsInRadius(new MapPointInstance(
-				x, y), WHAT_IS_NEAR_DISTANCE, bwapi.getEnemyUnits());
+		ArrayList<Unit> enemiesNearby = getUnitsInRadius(new MapPointInstance(x, y),
+				WHAT_IS_NEAR_DISTANCE, bwapi.getEnemyUnits());
 		for (Unit enemy : enemiesNearby) {
 			if (enemy.isCompleted() && enemy.getType().isDetector()) {
 				return enemy;
@@ -787,8 +763,8 @@ public class XVR {
 	}
 
 	public boolean isEnemyDefensiveGroundBuildingNear(int x, int y) {
-		ArrayList<Unit> enemiesNearby = getUnitsInRadius(new MapPointInstance(
-				x, y), 11, getEnemyBuildings());
+		ArrayList<Unit> enemiesNearby = getUnitsInRadius(new MapPointInstance(x, y), 11,
+				getEnemyBuildings());
 		for (Unit enemy : enemiesNearby) {
 			if (enemy.isCompleted() && enemy.getType().isAttackCapable()
 					&& enemy.canAttackGroundUnits()) {
@@ -799,8 +775,8 @@ public class XVR {
 	}
 
 	public boolean isEnemyDefensiveAirBuildingNear(int x, int y) {
-		ArrayList<Unit> enemiesNearby = getUnitsInRadius(new MapPointInstance(
-				x, y), WHAT_IS_NEAR_DISTANCE, getEnemyBuildings());
+		ArrayList<Unit> enemiesNearby = getUnitsInRadius(new MapPointInstance(x, y),
+				WHAT_IS_NEAR_DISTANCE, getEnemyBuildings());
 		for (Unit enemy : enemiesNearby) {
 			if (enemy.isCompleted() && enemy.getType().isAttackCapable()
 					&& enemy.canAttackAirUnits()) {
@@ -815,8 +791,8 @@ public class XVR {
 	}
 
 	public Unit getEnemyDefensiveGroundBuildingNear(int x, int y, int tileRadius) {
-		ArrayList<Unit> enemiesNearby = getUnitsInRadius(new MapPointInstance(
-				x, y), WHAT_IS_NEAR_DISTANCE, getEnemyBuildings());
+		ArrayList<Unit> enemiesNearby = getUnitsInRadius(new MapPointInstance(x, y),
+				WHAT_IS_NEAR_DISTANCE, getEnemyBuildings());
 		for (Unit enemy : enemiesNearby) {
 			if (enemy.isCompleted() && enemy.getType().isAttackCapable()
 					&& enemy.canAttackGroundUnits()) {
@@ -831,8 +807,8 @@ public class XVR {
 	}
 
 	public Unit getEnemyDefensiveAirBuildingNear(int x, int y) {
-		ArrayList<Unit> enemiesNearby = getUnitsInRadius(new MapPointInstance(
-				x, y), WHAT_IS_NEAR_DISTANCE, getEnemyBuildings());
+		ArrayList<Unit> enemiesNearby = getUnitsInRadius(new MapPointInstance(x, y),
+				WHAT_IS_NEAR_DISTANCE, getEnemyBuildings());
 		for (Unit enemy : enemiesNearby) {
 			if (enemy.isCompleted() && enemy.getType().isAttackCapable()
 					&& enemy.canAttackAirUnits()) {
@@ -867,20 +843,17 @@ public class XVR {
 	/** Returns Manhattan distance between two locations, expressed in tiles. */
 	public int getDistanceSimple(MapPoint point1, MapPoint point2) {
 		if (point1 == null || point2 == null) {
-			return 0;
+			return -1;
 		}
-		return (Math.abs(point1.getX() - point2.getX()) + Math.abs(point1
-				.getY() - point2.getY())) / 32;
+		return (Math.abs(point1.getX() - point2.getX()) + Math.abs(point1.getY() - point2.getY())) / 32;
 	}
 
 	public Unit getBaseNearestToEnemy() {
 
 		// Try to tell where may be some enemy base.
 		Unit nearestEnemyBase = MapExploration.getNearestEnemyBase();
-		if (nearestEnemyBase == null
-				&& !MapExploration.getEnemyBuildingsDiscovered().isEmpty()) {
-			nearestEnemyBase = MapExploration.getEnemyBuildingsDiscovered()
-					.iterator().next();
+		if (nearestEnemyBase == null && !MapExploration.getEnemyBuildingsDiscovered().isEmpty()) {
+			nearestEnemyBase = MapExploration.getEnemyBuildingsDiscovered().iterator().next();
 		}
 
 		// If we have no knowledge at all about enemy position, return the last
@@ -888,8 +861,7 @@ public class XVR {
 		if (nearestEnemyBase == null) {
 			return getLastBase();
 		} else {
-			Unit base = getUnitNearestFromList(nearestEnemyBase,
-					ProtossNexus.getBases());
+			Unit base = getUnitNearestFromList(nearestEnemyBase, ProtossNexus.getBases());
 			if (base.equals(getFirstBase())) {
 				base = getLastBase();
 			}
@@ -930,6 +902,18 @@ public class XVR {
 		return objectsOfThisType;
 	}
 
+	public ArrayList<Unit> getUnitsBuildings() {
+		ArrayList<Unit> objectsOfThisType = new ArrayList<Unit>();
+
+		for (Unit unit : bwapi.getMyUnits()) {
+			if (unit.getType().isBuilding()) {
+				objectsOfThisType.add(unit);
+			}
+		}
+
+		return objectsOfThisType;
+	}
+
 	public Unit getEnemyWorkerInRadius(int tileRadius, Unit explorer) {
 		for (Unit enemy : getBwapi().getEnemyUnits()) {
 			if (enemy.getType().isWorker()) {
@@ -941,8 +925,7 @@ public class XVR {
 		return null;
 	}
 
-	public Collection<Unit> getEnemyWorkersInRadius(int tileRadius,
-			Unit explorer) {
+	public Collection<Unit> getEnemyWorkersInRadius(int tileRadius, Unit explorer) {
 		ArrayList<Unit> result = new ArrayList<>();
 
 		for (Unit enemy : getBwapi().getEnemyUnits()) {
@@ -954,11 +937,10 @@ public class XVR {
 		}
 		return result;
 	}
-	
-	public Collection<Unit> getEnemyUnitsInRadius(int tileRadius,
-			Unit explorer) {
+
+	public Collection<Unit> getEnemyUnitsInRadius(int tileRadius, Unit explorer) {
 		ArrayList<Unit> result = new ArrayList<>();
-		
+
 		for (Unit enemy : getBwapi().getEnemyUnits()) {
 			if (!enemy.getType().isBuilding()) {
 				if (getDistanceBetween(explorer, enemy) <= tileRadius) {

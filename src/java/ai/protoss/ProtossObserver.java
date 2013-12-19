@@ -96,7 +96,7 @@ public class ProtossObserver {
 	}
 
 	public static void hiddenUnitDetected(Unit unit) {
-		if (unit.isEnemy() && unit.isHidden()) {
+		if (unit.isEnemy() && (unit.isHidden() || !unit.isDetected())) {
 			if (UnitCounter.getNumberOfUnits(OBSERVER) > 0) {
 				tryToScanUnit(unit);
 			}
