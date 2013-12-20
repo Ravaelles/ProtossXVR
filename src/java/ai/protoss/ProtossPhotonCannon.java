@@ -41,19 +41,16 @@ public class ProtossPhotonCannon {
 				}
 			}
 
+			// If main base isn't protected at all, build some cannons
+			if (shouldBuildNearMainNexus()) {
+				return true;
+			}
+
 			if (cannons <= maxCannonStack && ProtossPylon.calculateExistingPylonsStrength() >= 1.35
 					&& calculateExistingCannonsStrength() < maxCannonStack) {
 				// System.out.println("FIRST CASE");
 				return true;
 			}
-
-			// if (cannons == 2 && battleUnits <= 6) {
-			// return false;
-			// }
-
-			// if (cannons >= 4 * bases) {
-			// return xvr.canAfford(1200) && cannons <= 7 * bases;
-			// }
 
 			// Select one place to reinforce
 			for (MapPoint base : getPlacesToReinforce()) {
@@ -63,11 +60,6 @@ public class ProtossPhotonCannon {
 						return true;
 					}
 				}
-			}
-
-			// If main base isn't protected at all, build some cannons
-			if (shouldBuildNearMainNexus()) {
-				return true;
 			}
 
 			// If reached here, then check if build cannon at next base
@@ -316,6 +308,14 @@ public class ProtossPhotonCannon {
 
 		MapPoint tileForCannon = Constructing.getLegitTileToBuildNear(xvr.getRandomWorker(),
 				buildingType, point, 0, 10, true);
+
+		// Debug.message(xvr, "## Build cannon for main base ##");
+		// System.out.println(" ################################ ");
+		// System.out.println(" ################################ PROTECTED THE BASE");
+		// System.out.println(" ################################ ");
+		// System.out.println(tileForCannon);
+		// System.out.println();
+
 		if (tileForCannon != null) {
 			return tileForCannon;
 		}

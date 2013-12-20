@@ -615,7 +615,7 @@ public class UnitManager {
 	}
 
 	private static boolean shouldUnitBeExplorer(Unit unit) {
-		return (_unitCounter == 4 || _unitCounter == 8)
+		return (_unitCounter == 0 || _unitCounter == 1 || _unitCounter == 7)
 				|| unit.getTypeID() == UnitTypes.Protoss_Dark_Templar.ordinal();
 	}
 

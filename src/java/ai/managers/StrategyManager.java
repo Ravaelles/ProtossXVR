@@ -62,7 +62,7 @@ public class StrategyManager {
 	private static Unit _attackTargetUnit;
 
 	private static int retreatsCounter = 0;
-	private static final int EXTRA_UNITS_PER_RETREAT = 7;
+	private static final int EXTRA_UNITS_PER_RETREAT = 5;
 
 	private static int _minBattleUnits = 2;
 	private static int _lastTimeWaitCalled = 0;
@@ -71,16 +71,26 @@ public class StrategyManager {
 
 	// ====================================================
 
-	private static boolean decideIfWeAreReadyToAttack(boolean forceMinimum) {
+	private static boolean decideIfWeAreReadyToAttack() {
 		int battleUnits = UnitCounter.getNumberOfBattleUnitsCompleted();
 		int minUnits = calculateMinimumUnitsToAttack();
+		
+		if (xvr.getTimeSecond() >= 380 && minUnits < 5) {
+			final int EXTRA = 5;
+			minUnits += EXTRA;
+			_minBattleUnits += EXTRA;
+		}
+		
 		// int dragoons =
 		// UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Dragoon);
 
+//		System.out.println("battleUnits >= minUnits -> " + battleUnits + " / " + minUnits);
 		if (battleUnits >= minUnits) {
+//			System.out.println("   YES");
 			return true;
 		} else {
-			boolean weAreReady = (battleUnits >= minUnits * 0.28) && isAnyAttackFormPending();
+			boolean weAreReady = (battleUnits >= minUnits * 0.35) && isAnyAttackFormPending();
+//			System.out.println("   NO: " + weAreReady);
 
 			if (battleUnits > MINIMUM_THRESHOLD_ARMY_TO_PUSH) {
 				weAreReady = true;
@@ -159,7 +169,8 @@ public class StrategyManager {
 	}
 
 	public static int calculateMinimumUnitsToAttack() {
-		return getMinBattleUnits() + retreatsCounter * EXTRA_UNITS_PER_RETREAT;
+		return getMinBattleUnits() + retreatsCounter * EXTRA_UNITS_PER_RETREAT
+				+ (retreatsCounter >= 2 ? retreatsCounter * 2 : 0);
 	}
 
 	/**
@@ -183,7 +194,7 @@ public class StrategyManager {
 
 		// According to many different factors decide if we should attack
 		// enemy.
-		boolean shouldAttack = decideIfWeAreReadyToAttack(true);
+		boolean shouldAttack = decideIfWeAreReadyToAttack();
 
 		// If we should attack, change the status correspondingly.
 		if (shouldAttack) {
@@ -226,7 +237,7 @@ public class StrategyManager {
 			// }
 
 			// Check again if continue attack or to retreat.
-			boolean shouldAttack = decideIfWeAreReadyToAttack(false);
+			boolean shouldAttack = decideIfWeAreReadyToAttack();
 			if (!shouldAttack) {
 				retreatsCounter++;
 				changeStateTo(STATE_RETREAT);
@@ -316,7 +327,7 @@ public class StrategyManager {
 		}
 	}
 
-	private static boolean isAnyAttackFormPending() {
+	public static boolean isAnyAttackFormPending() {
 		return currentState != STATE_PEACE;
 	}
 
@@ -387,7 +398,6 @@ public class StrategyManager {
 			// minBattleUnits += minUnits;
 			// }
 
-			_minBattleUnits++;
 			retreatsCounter++;
 			forcePeace();
 		}

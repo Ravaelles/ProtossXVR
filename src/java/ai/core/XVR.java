@@ -15,6 +15,7 @@ import ai.handling.map.MapPoint;
 import ai.handling.map.MapPointInstance;
 import ai.handling.units.UnitCounter;
 import ai.managers.ArmyCreationManager;
+import ai.managers.BotStrategyManager;
 import ai.managers.ConstructingManager;
 import ai.managers.StrategyManager;
 import ai.managers.TechnologyManager;
@@ -623,6 +624,26 @@ public class XVR {
 		return armyUnits;
 	}
 
+	public Unit getEnemyUnitOfType(UnitTypes... types) {
+
+		// Create set object containing all allowed types of units to return
+		ArrayList<UnitTypes> typesList = new ArrayList<UnitTypes>();
+		for (UnitTypes unitTypes : types) {
+			typesList.add(unitTypes);
+		}
+
+		// Iterate through enemy units and check if they're types match
+		for (UnitTypes type : types) {
+			for (Unit enemy : getBwapi().getEnemyUnits()) {
+				// for (Unit enemy : MapExploration.getEnemyUnitsDiscovered()) {
+				if (type.getID() == enemy.getType().getID()) {
+					return enemy;
+				}
+			}
+		}
+		return null;
+	}
+
 	public Collection<Unit> getEnemyBuildings() {
 		return MapExploration.getEnemyBuildingsDiscovered();
 	}
@@ -695,7 +716,7 @@ public class XVR {
 			// boolean shouldExpandWithCannons =
 			// enemyBotName.contains("alberta");
 			// boolean shouldExpandWithCannons = true;
-			// BotStrategyManager.setExpandWithCannons(true);
+			BotStrategyManager.setExpandWithCannons(true);
 		}
 
 		// ============
@@ -726,7 +747,7 @@ public class XVR {
 		ArrayList<Unit> freeWorkers = new ArrayList<Unit>();
 		for (Unit worker : getWorkers()) {
 			if (worker.isCompleted() && !worker.isConstructing() && !worker.isRepairing()
-					&& !worker.isUnderAttack() && !worker.equals(MapExploration.getExplorer())) {
+					&& !worker.isUnderAttack()) {
 				freeWorkers.add(worker);
 			}
 		}
@@ -918,6 +939,17 @@ public class XVR {
 		for (Unit enemy : getBwapi().getEnemyUnits()) {
 			if (enemy.getType().isWorker()) {
 				if (getDistanceBetween(explorer, enemy) <= tileRadius) {
+					return enemy;
+				}
+			}
+		}
+		return null;
+	}
+
+	public Unit getEnemyWorkerRepairingInRadius(int tileRadius, Unit explorer) {
+		for (Unit enemy : getBwapi().getEnemyUnits()) {
+			if (enemy.getType().isWorker()) {
+				if (enemy.isRepairing() && getDistanceBetween(explorer, enemy) <= tileRadius) {
 					return enemy;
 				}
 			}

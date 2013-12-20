@@ -100,22 +100,40 @@ public class UnitActions {
 		UnitActions.moveTo(unit, goTo.getCenterX(), goTo.getCenterY());
 	}
 
-	public static void moveAwayFromUnitIfPossible(Unit unit,
-			MapPoint unitToMoveAwayFrom, int howManyTiles) {
-		if (unit == null || unitToMoveAwayFrom == null) {
+	public static void moveAwayFromUnitIfPossible(Unit unit, MapPoint placeToMoveAwayFrom,
+			int howManyTiles) {
+		if (unit == null || placeToMoveAwayFrom == null) {
 			return;
 		}
 
-		int xDirectionToUnit = unitToMoveAwayFrom.getX() - unit.getX();
-		int yDirectionToUnit = unitToMoveAwayFrom.getY() - unit.getY();
+		int xDirectionToUnit = placeToMoveAwayFrom.getX() - unit.getX();
+		int yDirectionToUnit = placeToMoveAwayFrom.getY() - unit.getY();
 
-		moveTo(unit, unit.getX() - xDirectionToUnit, unit.getY()
-				- yDirectionToUnit);
+		double vectorLength = xvr.getDistanceBetween(placeToMoveAwayFrom, unit);
+		double ratio = howManyTiles / vectorLength;
+
+		moveTo(unit, (int) (unit.getX() - ratio * xDirectionToUnit), (int) (unit.getY() - ratio
+				* yDirectionToUnit));
+	}
+
+	public static void moveInDirectionOfPointIfPossible(Unit unit,
+			MapPoint pointThatMakesDirection, int howManyTiles) {
+		if (unit == null || pointThatMakesDirection == null) {
+			return;
+		}
+
+		int xDirectionToUnit = pointThatMakesDirection.getX() - unit.getX();
+		int yDirectionToUnit = pointThatMakesDirection.getY() - unit.getY();
+
+		double vectorLength = xvr.getDistanceBetween(pointThatMakesDirection, unit);
+		double ratio = howManyTiles / vectorLength;
+
+		moveTo(unit, (int) (unit.getX() + ratio * xDirectionToUnit), (int) (unit.getY() + ratio
+				* yDirectionToUnit));
 	}
 
 	public static boolean shouldSpreadOut(Unit unit) {
-		return unit.isIdle() && !unit.isMoving() && !unit.isAttacking()
-				&& !unit.isUnderAttack();
+		return unit.isIdle() && !unit.isMoving() && !unit.isAttacking() && !unit.isUnderAttack();
 	}
 
 	public static void spreadOutRandomly(Unit unit) {
@@ -127,8 +145,7 @@ public class UnitActions {
 		// Act when enemy detector is nearby, run away
 		if (!StrategyManager.isAttackPending()
 				&& (xvr.isEnemyDetectorNear(unit.getX(), unit.getY()) || xvr
-						.isEnemyDefensiveGroundBuildingNear(unit.getX(),
-								unit.getY()))) {
+						.isEnemyDefensiveGroundBuildingNear(unit.getX(), unit.getY()))) {
 			Unit goTo = xvr.getLastBase();
 			UnitActions.attackTo(unit, goTo.getX(), goTo.getY());
 			return;
@@ -145,33 +162,28 @@ public class UnitActions {
 		// Look if there's really important unit nearby
 		boolean groundAttackCapable = unit.canAttackGroundUnits();
 		boolean airAttackCapable = unit.canAttackAirUnits();
-		Unit importantEnemyUnit = TargetHandling
-				.getImportantEnemyUnitTargetIfPossibleFor(unit,
-						groundAttackCapable, airAttackCapable);
+		Unit importantEnemyUnit = TargetHandling.getImportantEnemyUnitTargetIfPossibleFor(unit,
+				groundAttackCapable, airAttackCapable);
 		if (importantEnemyUnit != null && importantEnemyUnit.isDetected()) {
 			Unit goTo = importantEnemyUnit;
 			UnitActions.attackTo(unit, goTo.getX(), goTo.getY());
 		}
 
 		// System.out.println("###### SPREAD OUT ########");
-		if (!unit.isMoving() && !unit.isUnderAttack()
-				&& unit.getHitPoints() > 18) {
+		if (!unit.isMoving() && !unit.isUnderAttack() && unit.getHitPoints() > 18) {
 
 			// If distance to current target is smaller than N it means that
 			// unit can spread out and scout nearby grounds
 			// if (xvr.getDistanceBetween(unit, unit.getTargetX(),
 			// unit.getTargetY()) < 38) {
-			MapPoint goTo = MapExploration.getNearestUnknownPointFor(
-					unit.getX(), unit.getY(), true);
+			MapPoint goTo = MapExploration
+					.getNearestUnknownPointFor(unit.getX(), unit.getY(), true);
 			if (goTo != null
-					&& xvr.getBwapi()
-							.getMap()
-							.isConnected(unit, goTo.getX() / 32,
-									goTo.getY() / 32)) {
+					&& xvr.getBwapi().getMap()
+							.isConnected(unit, goTo.getX() / 32, goTo.getY() / 32)) {
 				UnitActions.attackTo(unit, goTo.getX(), goTo.getY());
 			} else {
-				UnitActions.attackTo(unit,
-						unit.getX() + 1000 - RUtilities.rand(0, 2000),
+				UnitActions.attackTo(unit, unit.getX() + 1000 - RUtilities.rand(0, 2000),
 						unit.getY() + 1000 - RUtilities.rand(0, 2000));
 			}
 			// }
@@ -179,8 +191,7 @@ public class UnitActions {
 			UnitActions.moveTo(unit, xvr.getFirstBase());
 		}
 
-		if (unit.isAttacking()
-				&& !StrengthEvaluator.isStrengthRatioFavorableFor(unit)) {
+		if (unit.isAttacking() && !StrengthEvaluator.isStrengthRatioFavorableFor(unit)) {
 			UnitActions.moveToMainBase(unit);
 		}
 	}
@@ -198,9 +209,8 @@ public class UnitActions {
 		}
 	}
 
-	public static boolean runFromEnemyDetectorOrDefensiveBuildingIfNecessary(
-			Unit unit, boolean tryAvoidingDetectors,
-			boolean allowAttackingDetectorsIfSafe, boolean isAirUnit) {
+	public static boolean runFromEnemyDetectorOrDefensiveBuildingIfNecessary(Unit unit,
+			boolean tryAvoidingDetectors, boolean allowAttackingDetectorsIfSafe, boolean isAirUnit) {
 		final int RUN_DISTANCE = 6;
 
 		// If we should avoid detectors, look for one nearby.
@@ -218,19 +228,16 @@ public class UnitActions {
 				if (allowAttackingDetectorsIfSafe) {
 					Unit enemyDetector = xvr.getEnemyDetectorNear(unit);
 					if (isAirUnit) {
-						canDetectorShootAtThisUnit = enemyDetector
-								.canAttackAirUnits();
+						canDetectorShootAtThisUnit = enemyDetector.canAttackAirUnits();
 					} else {
-						canDetectorShootAtThisUnit = enemyDetector
-								.canAttackGroundUnits();
+						canDetectorShootAtThisUnit = enemyDetector.canAttackGroundUnits();
 					}
 
 					// If detector cannot shoot at this unit, but is surrounded
 					// by some enemies then do not attack
 					if (!canDetectorShootAtThisUnit) {
-						ArrayList<Unit> enemyUnitsNearDetector = xvr
-								.getUnitsInRadius(enemyDetector, 9,
-										xvr.getEnemyArmyUnits());
+						ArrayList<Unit> enemyUnitsNearDetector = xvr.getUnitsInRadius(
+								enemyDetector, 9, xvr.getEnemyArmyUnits());
 						if (enemyUnitsNearDetector.size() <= 1) {
 							isAttackingDetectorSafe = true;
 						}
@@ -243,46 +250,37 @@ public class UnitActions {
 
 					// Try to move away from this enemy detector on N tiles.
 					UnitActions.moveAwayFromUnitIfPossible(unit,
-							xvr.getEnemyDetectorNear(unit.getX(), unit.getY()),
-							RUN_DISTANCE);
+							xvr.getEnemyDetectorNear(unit.getX(), unit.getY()), RUN_DISTANCE);
 					return true;
 				}
 			}
 		}
 
-		boolean isEnemyBuildingNear = isAirUnit ? xvr
-				.isEnemyDefensiveAirBuildingNear(unit.getX(), unit.getY())
-				: xvr.isEnemyDefensiveGroundBuildingNear(unit.getX(),
-						unit.getY());
+		boolean isEnemyBuildingNear = isAirUnit ? xvr.isEnemyDefensiveAirBuildingNear(unit.getX(),
+				unit.getY()) : xvr.isEnemyDefensiveGroundBuildingNear(unit.getX(), unit.getY());
 		if (isEnemyBuildingNear) {
-			Unit enemyBuilding = isAirUnit ? xvr
-					.getEnemyDefensiveAirBuildingNear(unit.getX(), unit.getY())
-					: xvr.getEnemyDefensiveGroundBuildingNear(unit.getX(),
-							unit.getY());
-			UnitActions.moveAwayFromUnitIfPossible(unit, enemyBuilding,
-					RUN_DISTANCE);
+			Unit enemyBuilding = isAirUnit ? xvr.getEnemyDefensiveAirBuildingNear(unit.getX(),
+					unit.getY()) : xvr
+					.getEnemyDefensiveGroundBuildingNear(unit.getX(), unit.getY());
+			UnitActions.moveAwayFromUnitIfPossible(unit, enemyBuilding, RUN_DISTANCE);
 			return true;
 		}
 
 		return false;
 	}
 
-	public static void actWhenLowHitPointsOrShields(Unit unit,
-			boolean isImportantUnit) {
+	public static void actWhenLowHitPointsOrShields(Unit unit, boolean isImportantUnit) {
 		UnitType type = unit.getType();
 		Unit goTo = null;
 
-		if (xvr.getTimeSecond() < 750
-				&& (UnitCounter
-						.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) < 2 || !XVR
+		if (xvr.getTimeSecond() < 340
+				&& (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) < 2 || !XVR
 						.isEnemyProtoss())) {
 			return;
 		}
 
 		if (xvr.getTimeSecond() < 300
-				&& xvr.getTimeSecond() < 300
-				&& UnitCounter
-						.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) == 0) {
+				&& UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Photon_Cannon) == 0) {
 			return;
 		}
 
@@ -293,8 +291,7 @@ public class UnitActions {
 
 		// If there's massive attack and unit has more than 60% of initial
 		// shields, we treat it as healthy, as there's nothing to do about it.
-		if (StrategyManager.isAttackPending()
-				&& currShields >= 0.13 * maxShields) {
+		if (StrategyManager.isAttackPending() && currShields >= 0.13 * maxShields) {
 			if (!isImportantUnit && currHP >= 0.6 * maxHP) {
 				return;
 			}
@@ -307,28 +304,24 @@ public class UnitActions {
 
 		// =============================
 		// Disallow running from some critical units
-		
+
 		// If there's BUNKER
-		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Terran_Bunker, 3, unit,
-				false).size() > 0) {
+		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Terran_Bunker, 3, unit, false).size() > 0) {
 			return;
 		}
 
 		// If there's CANNON
-		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon, 3,
-				unit, false).size() > 0) {
+		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon, 3, unit, false).size() > 0) {
 			return;
 		}
 
 		// If there's enemy ARCHON
-		if (xvr.getUnitsInRadius(unit, 3,
-				xvr.getEnemyUnitsOfType(UnitTypes.Protoss_Archon)).size() > 0) {
+		if (xvr.getUnitsInRadius(unit, 3, xvr.getEnemyUnitsOfType(UnitTypes.Protoss_Archon)).size() > 0) {
 			return;
 		}
 
 		// If there's SUKEN COLONY
-		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Zerg_Sunken_Colony, 3,
-				unit, false).size() > 0) {
+		if (xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Zerg_Sunken_Colony, 3, unit, false).size() > 0) {
 			return;
 		}
 
@@ -362,8 +355,7 @@ public class UnitActions {
 
 		// Then try to go to cannon nearest to the last base, if exists.
 		else {
-			goTo = xvr.getUnitOfTypeNearestTo(UnitTypes.Protoss_Photon_Cannon,
-					xvr.getLastBase());
+			goTo = xvr.getUnitOfTypeNearestTo(UnitTypes.Protoss_Photon_Cannon, xvr.getLastBase());
 		}
 
 		// If not, go to the first base.
@@ -379,8 +371,7 @@ public class UnitActions {
 
 	private static void rightClick(Unit unit, Unit clickTo) {
 		if (unit == null || clickTo == null) {
-			System.err.println("rightClick # unit: " + unit + " # clickTo: "
-					+ clickTo);
+			System.err.println("rightClick # unit: " + unit + " # clickTo: " + clickTo);
 			return;
 		}
 		xvr.getBwapi().rightClick(unit.getID(), clickTo.getID());

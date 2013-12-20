@@ -62,27 +62,30 @@ public class Constructing {
 			resetInfoAboutConstructions();
 		}
 
-		// Check only every N seconds
+		// Check only every N frames
+		boolean shouldBuildNexus = ProtossNexus.shouldBuild();
+		boolean canBuildOtherThingThanNexus = !shouldBuildNexus || xvr.canAfford(550);
+
 		if (_actCounter == 0) {
 			ProtossNexus.buildIfNecessary();
+		} else if (_actCounter == 1 && canBuildOtherThingThanNexus) {
+			ProtossPhotonCannon.buildIfNecessary();
 			ProtossRoboticsFacility.buildIfNecessary();
 			ProtossCyberneticsCore.buildIfNecessary();
 			ProtossRoboticsSupportBay.buildIfNecessary();
-			ProtossArbiterTribunal.buildIfNecessary();
-			ProtossGateway.buildIfNecessary();
-		} else if (_actCounter == 1) {
-			ProtossPhotonCannon.buildIfNecessary();
 			ProtossTemplarArchives.buildIfNecessary();
 			ProtossGateway.buildIfNecessary();
 			ProtossObservatory.buildIfNecessary();
 			ProtossAssimilator.buildIfNecessary();
 			ProtossCitadelOfAdun.buildIfNecessary();
-		} else {
+		} else if (canBuildOtherThingThanNexus) {
 			ProtossPhotonCannon.buildIfNecessary();
 			ProtossPylon.buildIfNecessary();
 			ProtossStargate.buildIfNecessary();
 			ProtossForge.buildIfNecessary();
 			ProtossShieldBattery.buildIfNecessary();
+			ProtossArbiterTribunal.buildIfNecessary();
+			ProtossGateway.buildIfNecessary();
 		}
 
 		// It can happen that damned worker will stuck somewhere (what a retard)
@@ -349,21 +352,18 @@ public class Constructing {
 						if (optimalBuilder != null
 								&& (isCannon || isBase || isBuildTileFreeFromUnits(
 										optimalBuilder.getID(), i, j))) {
-							if (!isTooNearMineralAndBase(place)
-									&& isEnoughPlaceToOtherBuildings(place, type)
-									&& !isOverlappingNextNexus(place, type)) {
-								ChokePoint choke = MapExploration.getNearestChokePointFor(place);
-								if (choke.getRadius() >= 192
-										|| xvr.getDistanceBetween(choke, place) - choke.getRadius()
-												/ 32 >= MIN_DIST_FROM_CHOKE_POINT) {
-									// if (type.isPhotonCannon()) {
-									// System.out.println("@@@@@@@ "
-									// + xvr.getDistanceBetween(choke, place) +
-									// "/"
-									// + choke.getRadius());
-									// }
-									return place;
-								}
+							if ((isBase || !isTooNearMineralAndBase(place))
+									&& (isBase || isEnoughPlaceToOtherBuildings(place, type))
+									&& (isBase || !isOverlappingNextNexus(place, type))
+									&& (isBase || !isTooCloseToAnyChokePoint(place))) {
+
+								// if (type.isPhotonCannon()) {
+								// System.out.println("@@@@@@@ "
+								// + xvr.getDistanceBetween(choke, place) +
+								// "/"
+								// + choke.getRadius());
+								// }
+								return place;
 							}
 						}
 					}
@@ -376,6 +376,16 @@ public class Constructing {
 		return null;
 	}
 
+	public static boolean isTooCloseToAnyChokePoint(MapPointInstance place) {
+//		for (ChokePoint choke : MapExploration.getChokePoints()) {
+//			if (choke.getRadius() < 210
+//					&& (xvr.getDistanceBetween(choke, place) - choke.getRadius() / 32) <= MIN_DIST_FROM_CHOKE_POINT) {
+//				return true;
+//			}
+//		}
+		return false;
+	}
+
 	private static boolean isOverlappingNextNexus(MapPoint place, UnitType type) {
 		if (!type.isBase() && UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Pylon) >= 1) {
 			return xvr.getDistanceSimple(place, ProtossNexus.getTileForNextBase(false)) <= 4;
@@ -385,19 +395,21 @@ public class Constructing {
 	}
 
 	private static boolean isEnoughPlaceToOtherBuildings(MapPoint place, UnitType type) {
-		if (type.isPhotonCannon() || type.isBase() || type.isOnGeyser()) {
+		// type.isPhotonCannon() ||
+		if (type.isBase() || type.isOnGeyser()) {
 			return true;
 		}
 
 		int wHalf = type.getTileWidth();
 		int hHalf = type.getTileHeight();
+		int maxDimension = wHalf > hHalf ? wHalf : hHalf;
 		// Map map = xvr.getBwapi().getMap();
 
 		// Define center of the building
 		// MapPoint center = new MapPointInstance(place.getX(), place.getY());
-		MapPoint center = new MapPointInstance(place.getX() - wHalf, place.getY() - hHalf);
+		MapPoint center = new MapPointInstance(place.getX() + wHalf, place.getY() + hHalf);
 
-		ArrayList<Unit> buildingsNearby = xvr.getUnitsInRadius(center, wHalf + 1,
+		ArrayList<Unit> buildingsNearby = xvr.getUnitsInRadius(center, maxDimension + 1,
 				xvr.getUnitsBuildings());
 
 		// System.out.println("FOR: " + type.getName());
@@ -408,7 +420,7 @@ public class Constructing {
 		// System.out.println();
 
 		for (Unit unit : buildingsNearby) {
-			if (unit.distanceTo(center) <= wHalf) {
+			if (unit.getType().isBuilding() && unit.distanceTo(center) <= maxDimension + 1) {
 				return false;
 			}
 		}
@@ -515,54 +527,59 @@ public class Constructing {
 	private static void handleBaseConstruction(UnitTypes building, MapPoint buildTile) {
 		boolean baseInterrupted = false;
 
+		// ==============================
+		// Ensure there's pylon nearby
+
+		// if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Nexus) > 2) {
+
 		// Try to find proper choke to reinforce
 		ChokePoint choke = MapExploration.getImportantChokePointNear(buildTile);
 
 		// Get point in between choke and base
 		MapPointInstance point = MapPointInstance.getMiddlePointBetween(buildTile, choke);
 
-		// ==============================
-		// Ensure there's pylon nearby
 		ArrayList<Unit> pylons = xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Pylon, 10,
 				choke, true);
 		int cannonsNearby = xvr.countUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon, 13,
 				point, true);
 
-		if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Nexus) > 2) {
-			boolean pylonIsOkay = !pylons.isEmpty() && pylons.get(0).isCompleted();
-			if (!pylonIsOkay) {
-				baseInterrupted = true;
-				building = UnitTypes.Protoss_Pylon;
+		boolean pylonIsOkay = !pylons.isEmpty() && pylons.get(0).isCompleted();
+		if (!pylonIsOkay) {
+			baseInterrupted = true;
+			building = UnitTypes.Protoss_Pylon;
 
-				// Get the base location
-				// MapPoint base = ProtossNexus.getTileForNextBase(false);
+			// Get the base location
+			// MapPoint base = ProtossNexus.getTileForNextBase(false);
 
-				// Refind proper place for pylon
-				buildTile = getLegitTileToBuildNear(xvr.getRandomWorker(), building, point, 0, 15,
-						true);
-			}
-
-			// ==============================
-			// Ensure there's at least some cannon nearby
-			if (pylonIsOkay && cannonsNearby < 0) {
-				baseInterrupted = true;
-				building = UnitTypes.Protoss_Photon_Cannon;
-
-				buildTile = ProtossPhotonCannon.findTileForCannon();
-				// System.out.println("------------- FORCE CANNON FOR BASE");
-			}
+			// Refind proper place for pylon
+			buildTile = getLegitTileToBuildNear(xvr.getRandomWorker(), building, point, 0, 15, true);
 		}
+
+		// ==============================
+		// Ensure there's at least some cannon nearby
+		if (pylonIsOkay && cannonsNearby < 0) {
+			baseInterrupted = true;
+			building = UnitTypes.Protoss_Photon_Cannon;
+
+			buildTile = ProtossPhotonCannon.findTileForCannon();
+			// System.out.println("------------- FORCE CANNON FOR BASE");
+		}
+		// }
 
 		// ==============================
 		// We can build the base
 		if (!baseInterrupted) {
-			if (!Constructing.canBuildAt(buildTile, UnitManager.BASE)) {
-				// System.out.println("TEST cant Build At !");
+			if (buildTile == null || !Constructing.canBuildAt(buildTile, UnitManager.BASE)) {
+				System.out.println("TEST cant Build At: " + buildTile);
 				buildTile = ProtossNexus.getTileForNextBase(true);
 			}
-			// System.out.println("BASE READY # pylonsNearby = " + pylons.size()
-			// + ", cannonsNearby = " + cannonsNearby);
+			// // System.out.println("BASE READY # pylonsNearby = " +
+			// pylons.size()
+			// // + ", cannonsNearby = " + cannonsNearby);
 		}
+
+		System.out.println((buildTile != null ? buildTile.toStringLocation() : "NULL") + " : "
+				+ Constructing.canBuildAt(buildTile, UnitManager.BASE));
 
 		constructBuilding(xvr, building, buildTile);
 	}
@@ -684,18 +701,20 @@ public class Constructing {
 		// && isBuildTileFreeFromUnits(builder.getID(), tx, ty)
 	}
 
-	/** This method shouldn't be used other than in very, very specific cases. */
-	public static void forceConstructingPylonNear(MapPoint tryBuildingAroundHere) {
-
-		// First find proper place for building.
-		MapPoint tileForBuilding = getLegitTileToBuildNear(getRandomWorker(),
-				ProtossPylon.getBuildingType(), tryBuildingAroundHere, 5, 13, false);
-
-		// Construct building here.
-		constructBuilding(xvr, ProtossPylon.getBuildingType(), tileForBuilding);
-		// if (!operation) {
-		// Debug.message(xvr, "Forced constr: no place for " + buildingtype);
-		// }
-	}
+	// /** This method shouldn't be used other than in very, very specific
+	// cases. */
+	// public static void forceConstructingPylonNear(MapPoint
+	// tryBuildingAroundHere) {
+	//
+	// // First find proper place for building.
+	// MapPoint tileForBuilding = getLegitTileToBuildNear(getRandomWorker(),
+	// ProtossPylon.getBuildingType(), tryBuildingAroundHere, 5, 13, false);
+	//
+	// // Construct building here.
+	// constructBuilding(xvr, ProtossPylon.getBuildingType(), tileForBuilding);
+	// // if (!operation) {
+	// // Debug.message(xvr, "Forced constr: no place for " + buildingtype);
+	// // }
+	// }
 
 }

@@ -27,11 +27,6 @@ public class MapPointInstance extends MapPoint {
 		return getY() / 32;
 	}
 
-	@Override
-	public String toString() {
-		return "[x:" + _x + ", y:" + _y + "]";
-	}
-
 	public static MapPointInstance getMiddlePointBetween(MapPoint point1,
 			MapPoint point2) {
 		MapPointInstance point = new MapPointInstance(

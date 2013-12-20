@@ -20,6 +20,10 @@ public abstract class MapPoint {
 		return "[" + getTx() + ", " + getTy() + "]";
 	}
 	
+	public String toString() {
+		return toStringLocation();
+	}
+	
 	public double distanceTo(MapPoint point) {
 		if (point == null) {
 			return -1;
@@ -52,6 +56,11 @@ public abstract class MapPoint {
 		if (getY() != other.getY())
 			return false;
 		return true;
+	}
+
+	
+	public MapPoint translate(int dx, int dy) {
+		return new MapPointInstance(getX() + dx, getY() + dy);
 	}
 	
 }

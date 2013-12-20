@@ -3,6 +3,7 @@ package ai.handling.army;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import jnibwapi.model.ChokePoint;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType;
 import ai.core.Debug;
@@ -17,6 +18,7 @@ public class StrengthEvaluator {
 	private static final int BATTLE_RADIUS_ENEMIES = 12;
 	private static final int BATTLE_RADIUS_ALLIES = 11;
 	private static final double CRITICAL_RATIO_THRESHOLD = 0.7;
+	private static final double RATIO_PENALTY_FOR_CLOSE_CHOKE_POINT = 0.3;
 	private static final double FAVORABLE_RATIO_THRESHOLD = 1.6;
 	private static final double ENEMY_RANGE_WEAPON_STRENGTH_BONUS = 1.9;
 	private static final int RANGE_BONUS_IF_ENEMY_DEF_BUILDING_NEAR = 6;
@@ -78,6 +80,15 @@ public class StrengthEvaluator {
 		// Ratio < 1.0 means
 		double ratio = ourStrength / enemyStrength;
 
+		// Include info about choke points near
+		if (StrategyManager.isAnyAttackFormPending()) {
+			ChokePoint nearestChoke = MapExploration.getNearestChokePointFor(unit);
+			double distToNearestChoke = xvr.getDistanceBetween(nearestChoke, unit);
+			if (distToNearestChoke > -0.1 && distToNearestChoke <= 9) {
+				ratio -= RATIO_PENALTY_FOR_CLOSE_CHOKE_POINT;
+			}
+		}
+
 		// System.out.println("\n========= RATIO: " + ratio);
 		// System.out.println("WE: " + ourStrength);
 		// for (Unit unit : ourUnits) {
@@ -91,7 +102,6 @@ public class StrengthEvaluator {
 		// }
 
 		if (ourUnits.size() >= 3 && ratio < 0.8) {
-			// StrategyManager.waitUntilMinBattleUnits(10);
 			StrategyManager.waitForMoreUnits();
 		}
 
@@ -136,7 +146,7 @@ public class StrengthEvaluator {
 					total -= attackValue * 0.4;
 				}
 				if (type.isFirebat()) {
-					total += attackValue * 0.3;
+					total += attackValue * 0.4;
 				}
 				if (type.isDragoon()) {
 					// dragoons++;

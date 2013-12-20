@@ -5,11 +5,12 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import jnibwapi.model.Unit;
+import jnibwapi.types.UnitType;
 import jnibwapi.types.UnitType.UnitTypes;
 import ai.core.Debug;
 import ai.core.XVR;
 import ai.handling.army.StrengthEvaluator;
-import ai.handling.map.MapExploration;
+import ai.handling.map.Explorer;
 import ai.handling.map.MapPoint;
 import ai.handling.units.UnitActions;
 import ai.protoss.ProtossNexus;
@@ -17,8 +18,8 @@ import ai.utils.RUtilities;
 
 public class WorkerManager {
 
-	public static final int GUY_TO_CHASE_OTHERS_INDEX = 3;
-	public static final int EXPLORER_INDEX = 4;
+	public static final int GUY_TO_CHASE_OTHERS_INDEX = 1;
+	public static final int EXPLORER_INDEX = 6;
 	public static final int DEFEND_BASE_RADIUS = 23;
 
 	private static XVR xvr = XVR.getInstance();
@@ -41,13 +42,13 @@ public class WorkerManager {
 
 		// ==================================
 		_counter = 0;
-		boolean shouldStopExploring = Debug.ourDeaths >= 2
-				&& !MapExploration.getEnemyBuildingsDiscovered().isEmpty();
+//		boolean shouldStopExploring = Debug.ourDeaths >= 2
+//				&& !MapExploration.getEnemyBuildingsDiscovered().isEmpty();
 		for (Unit worker : workers) {
-			if (_counter != EXPLORER_INDEX || shouldStopExploring) {
+			if (_counter != EXPLORER_INDEX) {
 				WorkerManager.act(worker);
 			} else {
-				MapExploration.explore(worker);
+				Explorer.explore(worker);
 			}
 
 			_counter++;
@@ -55,12 +56,42 @@ public class WorkerManager {
 	}
 
 	private static void defendBase(Unit worker) {
+
+		// Check for any enemy workers
+		if (_counter == GUY_TO_CHASE_OTHERS_INDEX) {
+			Unit enemyWorkerNearMainBase = xvr.getEnemyWorkerInRadius(38, xvr.getFirstBase());
+			UnitActions.attackEnemyUnit(worker, enemyWorkerNearMainBase);
+			return;
+		}
+
+		// =================
+		// Look for potential dangers to the main base
 		Unit enemyToFight = xvr.getNearestEnemyInRadius(xvr.getFirstBase(), DEFEND_BASE_RADIUS);
 		if (enemyToFight == null) {
 			return;
 		}
+
 		boolean isEnemyWorker = enemyToFight.isWorker();
 		double distToEnemy = worker.distanceTo(enemyToFight);
+		UnitType type = enemyToFight.getType();
+		boolean isCriticalUnit = type.isLurker() || type.isTank() || type.isReaver();
+
+		// ==========================
+		// If there's enemy army unit nearby, run
+		if (!isEnemyWorker && !enemyToFight.getType().isZergling()) {
+			int numberOfEnemies = xvr.getEnemyUnitsInRadius(8, worker).size();
+			if (isCriticalUnit || numberOfEnemies > 2) {
+				Unit safeCannon = xvr.getUnitOfTypeNearestTo(UnitTypes.Protoss_Photon_Cannon,
+						xvr.getLastBase());
+				if (safeCannon != null) {
+					UnitActions.moveTo(worker, safeCannon);
+					return;
+				} else {
+					UnitActions.moveAwayFromUnitIfPossible(worker, enemyToFight, 5);
+					return;
+				}
+			}
+		}
 
 		// ==============================
 		boolean shouldThisWorkerConsiderAttack = distToEnemy > 0 && distToEnemy < 17
@@ -71,10 +102,10 @@ public class WorkerManager {
 				&& distToEnemy < 22;
 		boolean isEnemyWorkerAttackingUs = isEnemyWorker && enemyToFight.isAttacking()
 				&& distToEnemy <= 2;
-		if ((shouldThisWorkerConsiderAttack && (isTargetDangerous || isEnemyWorkerAttackingUs)
-				|| isTargetExtremelyDangerous) && distToEnemy < DEFEND_BASE_RADIUS) {
+		if ((shouldThisWorkerConsiderAttack && (isTargetDangerous || isEnemyWorkerAttackingUs) || isTargetExtremelyDangerous)
+				&& distToEnemy < DEFEND_BASE_RADIUS) {
 			// System.out.println("        ######## ATATCK");
-//			Debug.message(xvr, "Attack unit: " + enemyToFight.getName());
+			// Debug.message(xvr, "Attack unit: " + enemyToFight.getName());
 			UnitActions.attackTo(worker, enemyToFight);
 			return;
 		}
@@ -96,20 +127,11 @@ public class WorkerManager {
 	}
 
 	public static void act(Unit unit) {
-		if (unit.equals(MapExploration.getExplorer())) {
+		if (unit.equals(Explorer.getExplorer())) {
 			return;
 		}
 
-		if (_counter == GUY_TO_CHASE_OTHERS_INDEX) {
-			Unit enemyWorkerNearMainBase = xvr.getEnemyWorkerInRadius(25, xvr.getFirstBase());
-			UnitActions.attackEnemyUnit(unit, enemyWorkerNearMainBase);
-			return;
-		}
-
-		// Defend base?
-		// if (_maxWorkerCounterToDefendBase > -1) {
 		defendBase(unit);
-		// }
 
 		if (unit.isAttacking() && unit.distanceTo(xvr.getFirstBase()) < 17) {
 			return;

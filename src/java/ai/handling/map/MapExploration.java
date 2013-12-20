@@ -17,12 +17,7 @@ import jnibwapi.model.ChokePoint;
 import jnibwapi.model.Region;
 import jnibwapi.model.Unit;
 import jnibwapi.types.UnitType;
-import jnibwapi.types.UnitType.UnitTypes;
-import ai.core.Debug;
 import ai.core.XVR;
-import ai.handling.units.UnitActions;
-import ai.handling.units.UnitCounter;
-import ai.managers.WorkerManager;
 import ai.protoss.ProtossNexus;
 import ai.utils.RUtilities;
 
@@ -34,278 +29,13 @@ public class MapExploration {
 	private static JNIBWAPI bwapi = XVR.getInstance().getBwapi();
 	private static ArrayList<ChokePoint> chokePointsProcessed = new ArrayList<ChokePoint>();
 
-	private static TreeSet<BaseLocation> baseLocationsDiscovered = new TreeSet<BaseLocation>();
-	private static HashMap<Integer, Unit> enemyBasesDiscovered = new HashMap<Integer, Unit>();
-	private static HashMap<Integer, Unit> enemyBuildingsDiscovered = new HashMap<Integer, Unit>();
-	private static HashMap<Integer, Unit> enemyUnitsDiscovered = new HashMap<Integer, Unit>();
-	private static ArrayList<Unit> _hiddenEnemyUnits = new ArrayList<Unit>();
+	protected static TreeSet<BaseLocation> baseLocationsDiscovered = new TreeSet<BaseLocation>();
+	protected static HashMap<Integer, Unit> enemyBasesDiscovered = new HashMap<Integer, Unit>();
+	protected static HashMap<Integer, Unit> enemyBuildingsDiscovered = new HashMap<Integer, Unit>();
+	protected static HashMap<Integer, Unit> enemyUnitsDiscovered = new HashMap<Integer, Unit>();
+	protected static ArrayList<Unit> _hiddenEnemyUnits = new ArrayList<Unit>();
 
-	public static Unit explorer;
 	private static boolean _disabledChokePointsNearMainBase = false;
-
-	public static Unit getExplorer() {
-		return explorer;
-	}
-
-	private static boolean _exploredSecondBase = false;
-	private static boolean _isDiscoveringEnemyBase = false;
-
-	public static void explore(Unit explorer) {
-		if (!explorer.isCompleted()) {
-			return;
-		}
-		MapExploration.explorer = explorer;
-
-		// If explorer is marked to be discovering enemy base, but he's
-		// attacked, then unmark him from his task, thus allowing him to run.
-		if (_isDiscoveringEnemyBase && explorer.isUnderAttack() && explorer.getShields() < 14) {
-			if (xvr.getEnemyBuildings().size() > 0) {
-				_isDiscoveringEnemyBase = false;
-			}
-		}
-
-		boolean isWounded = isExplorerWounded();
-		double distToEnemy = getDistanceToNearestEnemy();
-
-		// ===========================
-		// Don't interfere if explorer is building or attacking etc.
-		boolean shouldBeConstructing = explorer.isConstructing();
-		boolean shouldContinueAttacking = explorer.isAttacking() && !isWounded;
-		boolean shouldBeDiscoveringEnemyBase = _isDiscoveringEnemyBase
-				|| enemyBuildingsDiscovered.isEmpty();
-		boolean isEnemyClose = distToEnemy > 0 && distToEnemy < 3;
-		boolean shouldBeMoving = explorer.isMoving() && isEnemyClose;
-		if (!explorer.isIdle()
-				&& (shouldBeDiscoveringEnemyBase || shouldBeMoving || shouldBeConstructing || shouldContinueAttacking)) {
-			return;
-		}
-
-		// ===========================
-		// If unit is WOUNDED, then retreat to the main base
-		if (tryRunningFromEnemiesIfNecessary()) {
-			return;
-		}
-
-		// ===========================
-		// Explorer ACTIONS
-
-		// If we need to scout next base location (Nexus construction can screw
-		// otherwise), do it.
-		if (tryScoutingNextBaseLocation()) {
-			return;
-		}
-
-		// Discover base location of the enemy
-		if (tryDiscoveringEnemyBaseLocation()) {
-			return;
-		}
-
-		// Always when possible, try to trololo the enemy
-		if (tryAttackingEnemyIfPossible()) {
-			return;
-		}
-
-		// Gather minerals if idle
-		gatherResourcesIfIdle();
-	}
-
-	private static void gatherResourcesIfIdle() {
-		if (explorer.isIdle()) {
-			WorkerManager.gatherResources(explorer, xvr.getFirstBase());
-		}
-	}
-
-	private static double getDistanceToNearestEnemy() {
-		Unit nearestEnemy = xvr.getUnitNearestFromList(explorer.getX(), explorer.getY(),
-				xvr.getEnemyUnitsVisible());
-		return explorer.distanceTo(nearestEnemy);
-	}
-
-	private static boolean isExplorerWounded() {
-		return (explorer.getShields()) < 16
-				|| (explorer.getShields() < 20 && (explorer.getShields() + explorer.getHitPoints() < 30));
-	}
-
-	private static boolean tryRunningFromEnemiesIfNecessary() {
-		boolean isWounded = isExplorerWounded();
-
-		Unit nearestEnemy = xvr.getUnitNearestFromList(explorer.getX(), explorer.getY(),
-				xvr.getEnemyUnitsVisible());
-		double distToNearestEnemy = explorer.distanceTo(nearestEnemy);
-
-		boolean isUnitUnderAttack = explorer.isUnderAttack();
-		boolean isEnemyArmyUnitClose = isEnemyArmyUnitCloseToExplorer();
-		boolean isEnemyCloseAndUnitIsWounded = distToNearestEnemy > 0 && distToNearestEnemy <= 5
-				&& isWounded;
-		boolean isAttackingAndIsOverwhelmed = explorer.isAttacking()
-				&& xvr.getEnemyUnitsInRadius(6, explorer).size() >= 2;
-
-		// System.out.println("#### " + explorer.getID());
-		// System.out.println(isEnemyArmyUnitClose);
-		// System.out.println(isEnemyCloseAndUnitIsWounded);
-		// System.out.println(isAttackingAndIsOverwhelmed);
-
-		if (isUnitUnderAttack || isEnemyArmyUnitClose
-				|| (isEnemyCloseAndUnitIsWounded && isAttackingAndIsOverwhelmed)) {
-			double distToMainBase = explorer.distanceTo(xvr.getFirstBase());
-
-			// If already at base, run to the most distant base
-			if (distToMainBase < 13) {
-				UnitActions.moveTo(explorer, getMostDistantBaseLocation(explorer));
-				return true;
-			}
-
-			// Not yet at base, still go there.
-			else {
-				UnitActions.moveToMainBase(explorer);
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	private static boolean isEnemyArmyUnitCloseToExplorer() {
-		Unit nearestArmyUnit = xvr.getUnitNearestFromList(explorer, xvr.getEnemyArmyUnits());
-		if (nearestArmyUnit == null) {
-			return false;
-		} else {
-			double dist = nearestArmyUnit.distanceTo(explorer);
-			return dist < 12 && dist > 0 && !nearestArmyUnit.isWorker();
-		}
-	}
-
-	private static boolean tryAttackingEnemyIfPossible() {
-		Unit enemyUnit = null;
-
-		// if (XVR.isEnemyProtoss()) {
-		// Collection<Unit> pylons =
-		// xvr.getEnemyUnitsOfType(ProtossPylon.getBuildingType());
-		// if (!pylons.isEmpty()) {
-		// nearestEnemyBuilding = (Unit) RUtilities.getRandomElement(pylons);
-		// }
-		// } else if (XVR.isEnemyZerg()) {
-		// Collection<Unit> pools =
-		// xvr.getEnemyUnitsOfType(UnitTypes.Zerg_Spawning_Pool);
-		// if (!pools.isEmpty()) {
-		// nearestEnemyBuilding = (Unit) RUtilities.getRandomElement(pools);
-		// }
-		// } else if (XVR.isEnemyTerran()) {
-		// nearestEnemyBuilding = xvr.getEnemyWorkerInRadius(300, explorer);
-		// }
-
-		enemyUnit = xvr.getEnemyWorkerInRadius(300, explorer);
-		if (enemyUnit != null && enemyUnit.distanceTo(xvr.getFirstBase()) < 20) {
-			enemyUnit = null;
-		}
-
-		// boolean isWounded = isExplorerWounded();
-		boolean isWounded = isExplorerWounded();
-		boolean isProperTargetSelected = enemyUnit != null;
-		boolean isNeighborhoodQuiteSafe = (xvr.getEnemyUnitsInRadius(3, explorer).size() == 0 && xvr
-				.getEnemyUnitsInRadius(6, explorer).size() <= 1);
-		boolean isUnitVeryMuchAlive = explorer.getShields() >= 19;
-
-		if (isProperTargetSelected && (!isWounded || isNeighborhoodQuiteSafe)
-				&& (isNeighborhoodQuiteSafe || isUnitVeryMuchAlive)) {
-			UnitActions.attackEnemyUnit(explorer, enemyUnit);
-			return true;
-		}
-
-		if (enemyUnit == null) {
-			enemyUnit = xvr.getUnitNearestFromList(explorer, xvr.getEnemyBuildings());
-		}
-
-		if (enemyUnit != null) {
-			UnitActions.attackTo(explorer, enemyUnit);
-			return true;
-		}
-
-		// boolean isProperTargetSelected = nearestEnemyBuilding != null;
-		// boolean isNormalBuilding = isProperTargetSelected
-		// && (!nearestEnemyBuilding.isDefensiveGroundBuilding() ||
-		// !nearestEnemyBuilding
-		// .isCompleted());
-		// boolean isNeighborhoodQuiteSafe = (xvr.getEnemyUnitsInRadius(3,
-		// explorer).size() == 0 && xvr
-		// .getEnemyUnitsInRadius(6, explorer).size() <= 1);
-		// boolean isUnitVeryMuchAlive = explorer.getShields() >= 19;
-		//
-		// if (isProperTargetSelected && isNormalBuilding
-		// && (isNeighborhoodQuiteSafe || isUnitVeryMuchAlive)) {
-		// UnitActions.attackTo(explorer, nearestEnemyBuilding);
-		// return true;
-		// }
-		//
-		// // System.out.println(isNormalBuilding + " / " +
-		// isNeighborhoodQuiteSafe
-		// // + " / "
-		// // + isUnitVeryMuchAlive);
-		//
-		// if (explorer.isIdle() || (!_isDiscoveringEnemyBase &&
-		// nearestEnemyBuilding == null)) {
-		// Unit nearestEnemyUnit = xvr.getUnitNearestFromList(explorer,
-		// xvr.getBwapi()
-		// .getEnemyUnits());
-		// if (nearestEnemyUnit != null && xvr.getEnemyUnitsInRadius(6,
-		// explorer).size() <= 1) {
-		// UnitActions.attackTo(explorer, nearestEnemyUnit);
-		// return true;
-		// }
-		// }
-
-		return false;
-	}
-
-	private static boolean tryDiscoveringEnemyBaseLocation() {
-		boolean hasDiscoveredBaseLocation = !enemyBuildingsDiscovered.isEmpty();
-		if (!hasDiscoveredBaseLocation) {
-			BaseLocation goTo = null;
-
-			// Filter out visited bases.
-			ArrayList<BaseLocation> possibleBases = new ArrayList<BaseLocation>();
-			possibleBases.addAll(xvr.getBwapi().getMap().getStartLocations());
-			possibleBases.removeAll(baseLocationsDiscovered);
-			possibleBases.remove(getOurBaseLocation());
-
-			// If there is any unvisited base- go there. If no- go to the random
-			// base.
-			if (possibleBases.isEmpty()) {
-				goTo = (BaseLocation) RUtilities.getRandomListElement(xvr.getBwapi().getMap()
-						.getStartLocations());
-			} else {
-				goTo = (BaseLocation) RUtilities.getRandomListElement(possibleBases);
-			}
-
-			if (goTo != null) {
-				_isDiscoveringEnemyBase = true;
-				UnitActions.moveTo(explorer, goTo);
-				baseLocationsDiscovered.add(goTo);
-				return true;
-			}
-		}
-		return false;
-	}
-
-	private static boolean tryScoutingNextBaseLocation() {
-		if (!_exploredSecondBase) {
-			MapPoint secondBase = ProtossNexus.getSecondBaseLocation();
-			UnitActions.moveTo(explorer, secondBase);
-			Debug.message(xvr, "Scout next base 1");
-			_exploredSecondBase = true;
-			return true;
-		}
-
-		if (UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Nexus) >= 2) {
-			MapPoint tileForNextBase = ProtossNexus.getTileForNextBase(false);
-			if (!xvr.getBwapi().isVisible(tileForNextBase.getTx(), tileForNextBase.getTy())) {
-				Debug.message(xvr, "Scout next base 2");
-				UnitActions.moveTo(explorer, tileForNextBase);
-				return true;
-			}
-		}
-		return false;
-	}
 
 	public static synchronized void enemyUnitDiscovered(Unit enemyUnit) {
 		UnitType type = enemyUnit.getType();
@@ -361,7 +91,7 @@ public class MapExploration {
 		return result;
 	}
 
-	private static BaseLocation getOurBaseLocation() {
+	protected static BaseLocation getOurBaseLocation() {
 		List<BaseLocation> baseLocations = xvr.getBwapi().getMap().getBaseLocations();
 		Unit ourBase = xvr.getFirstBase();
 
@@ -478,9 +208,9 @@ public class MapExploration {
 		}
 	}
 
-	private static BaseLocation getRandomBaseLocation() {
+	public static BaseLocation getRandomBaseLocation() {
 		ArrayList<BaseLocation> list = new ArrayList<BaseLocation>();
-		for (BaseLocation base : baseLocationsDiscovered) {
+		for (BaseLocation base : xvr.getBwapi().getMap().getBaseLocations()) {
 			list.add(base);
 		}
 		if (list.isEmpty()) {

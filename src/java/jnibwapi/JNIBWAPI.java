@@ -30,6 +30,7 @@ import jnibwapi.types.UnitSizeType;
 import jnibwapi.types.UnitType;
 import jnibwapi.types.UpgradeType;
 import jnibwapi.types.WeaponType;
+import ai.handling.map.MapPoint;
 
 /**
  * JNI interface for the Brood War API.<br>
@@ -213,6 +214,9 @@ public class JNIBWAPI {
 	
 	// Extended Commands
 	public native boolean isVisible(int tileX, int tileY);
+	public boolean isVisible(MapPoint location) {
+		return isVisible(location.getX(), location.getY());
+	}
 	public native boolean isExplored(int tileX, int tileY);
 	public native boolean isBuildable(int tx, int ty, boolean includeBuildings);
 	public boolean isBuildable(int tx, int ty) { return isBuildable(tx, ty, false);}

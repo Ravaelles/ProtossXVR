@@ -249,8 +249,18 @@ public class Debug {
 					bwapi.drawCircle(u.getX(), u.getY(), 10, BWColor.PURPLE, false, false);
 				} else if (u.isConstructing()
 						|| u.getLastCommandID() == UnitCommandTypes.Build.ordinal()) {
-					bwapi.drawCircle(u.getX(), u.getY(), 12, BWColor.ORANGE, false, false);
-					bwapi.drawCircle(u.getX(), u.getY(), 11, BWColor.ORANGE, false, false);
+					if (u.getBuildTypeID() == UnitManager.BASE.ordinal()) {
+						bwapi.drawCircle(u.getX(), u.getY(), 16, BWColor.ORANGE, false, false);
+						bwapi.drawCircle(u.getX(), u.getY(), 14, BWColor.ORANGE, false, false);
+						bwapi.drawCircle(u.getX(), u.getY(), 12, BWColor.ORANGE, false, false);
+						bwapi.drawCircle(u.getX(), u.getY(), 10, BWColor.ORANGE, false, false);
+						bwapi.drawCircle(u.getX(), u.getY(), 8, BWColor.ORANGE, false, false);
+						bwapi.drawCircle(u.getX(), u.getY(), 6, BWColor.ORANGE, false, false);
+					}
+					else {
+						bwapi.drawCircle(u.getX(), u.getY(), 12, BWColor.ORANGE, false, false);
+						bwapi.drawCircle(u.getX(), u.getY(), 11, BWColor.ORANGE, false, false);
+					}
 				} else if (u.isStuck()) {
 					bwapi.drawCircle(u.getX(), u.getY(), 12, BWColor.TEAL, false, false);
 					bwapi.drawCircle(u.getX(), u.getY(), 11, BWColor.TEAL, false, false);

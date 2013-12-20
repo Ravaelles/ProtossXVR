@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import jnibwapi.model.Unit;
 import ai.core.XVR;
+import ai.handling.constructing.Constructing;
 import ai.handling.units.UnitCounter;
 import ai.protoss.ProtossGateway;
 import ai.protoss.ProtossNexus;
@@ -46,14 +47,18 @@ public class ArmyCreationManager {
 
 	public static boolean weShouldBuildBattleUnits() {
 		int battleUnits = UnitCounter.getNumberOfBattleUnits();
+		int bases = UnitCounter.getNumberOfUnits(UnitManager.BASE);
+
+		if (bases == 1
+				&& (ProtossNexus.shouldBuild() || Constructing.weAreBuilding(UnitManager.BASE))
+				&& !xvr.canAfford(525)) {
+			return false;
+		}
 
 		if (battleUnits <= 6 || (battleUnits < StrategyManager.getMinBattleUnits() + 2)) {
 			return true;
 		}
 		if (!xvr.canAfford(125)) {
-			return false;
-		}
-		if (ProtossNexus.shouldBuild() && !xvr.canAfford(525)) {
 			return false;
 		}
 		if (ProtossPhotonCannon.shouldBuild() && !xvr.canAfford(250)) {

@@ -105,9 +105,9 @@ public class ProtossPylon {
 		// &&
 		boolean shouldBuild = ((pylons == 0 && total <= 9 && free <= 3)
 				|| (total >= 10 && total <= 17 && free <= 4 && pylons <= 1)
-				|| (total >= 18 && total <= 25 && free <= 5)
-				|| (total > 25 && total <= 45 && free <= 8)
-				|| (total > 45 && free <= 10) || (total > 90 && total < 200 && free <= 20));
+				|| (total >= 18 && total <= 25 && free <= 7)
+				|| (total > 25 && total <= 45 && free <= 11)
+				|| (total > 45 && free <= 16) || (total > 90 && total < 200 && free <= 20));
 
 		ShouldBuildCache.cacheShouldBuildInfo(buildingType, shouldBuild);
 		return shouldBuild;
@@ -396,16 +396,11 @@ public class ProtossPylon {
 						// buildingType.ordinal()))
 						MapPointInstance point = new MapPointInstance(x, y);
 						if (!Constructing.isTooNearMineralAndBase(point)) {
-							ChokePoint choke = MapExploration
-									.getNearestChokePointFor(x, y);
 
 							// Damn, try NOT to build in the middle of narrow
 							// choke
 							// point.
-							if (choke.getRadius() < 192
-									|| xvr.getDistanceBetween(x, y,
-											choke.getCenterX(),
-											choke.getCenterY()) > 5) {
+							if (!Constructing.isTooCloseToAnyChokePoint(point)) {
 								return point;
 							}
 						}

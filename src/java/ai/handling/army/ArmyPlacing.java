@@ -87,7 +87,7 @@ public class ArmyPlacing {
 		if (runTo == null) {
 			return null;
 		} else {
-			return new MapPointInstance(runTo.getX(), runTo.getY());
+			return new MapPointInstance(runTo.getX(), runTo.getY()).translate(-4, 0);
 		}
 	}
 

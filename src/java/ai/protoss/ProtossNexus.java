@@ -26,7 +26,7 @@ public class ProtossNexus {
 
 	private static int MAX_DIST_OF_MINERAL_FROM_BASE = 12;
 	private static final int ARMY_UNITS_PER_NEW_BASE = 10;
-	private static final int MIN_WORKERS = 15;
+	private static final int MIN_WORKERS = 19;
 	public static final int WORKERS_PER_GEYSER = 4;
 
 	private static MapPoint _secondBase = null;
@@ -46,13 +46,19 @@ public class ProtossNexus {
 		int bases = UnitCounter.getNumberOfUnits(buildingType);
 		int gateways = UnitCounter.getNumberOfUnits(UnitTypes.Protoss_Gateway);
 		int battleUnits = UnitCounter.getNumberOfBattleUnits();
-		
+
 		if (xvr.canAfford(750)) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
 			return true;
 		}
 
-		if (bases >= 3 && !xvr.canAfford(700)) {
+		if (xvr.getTimeSecond() >= 380 && bases == 1
+				&& !Constructing.weAreBuilding(UnitManager.BASE)) {
+			ShouldBuildCache.cacheShouldBuildInfo(buildingType, true);
+			return true;
+		}
+
+		if (bases >= 2 && battleUnits <= bases * 9 && !xvr.canAfford(700)) {
 			ShouldBuildCache.cacheShouldBuildInfo(buildingType, false);
 			return false;
 		}
@@ -279,12 +285,15 @@ public class ProtossNexus {
 			// nearestFreeBaseLocation.getTy());
 			// Debug.message(xvr, "Tile for new base: " + point.getTx() + ","
 			// + point.getTy());
+			System.out.println("Tile for new base: " + point);
 			_cachedNextBaseTile = Constructing.getLegitTileToBuildNear(xvr.getRandomWorker(),
 					buildingType, point, 0, 30, false);
+			System.out.println(" processed: " + _cachedNextBaseTile);
+			System.out.println();
 		} else {
 			// if (UnitCounter.getNumberOfUnits(UnitManager.BASE) <= 1) {
 			// Debug.message(xvr, "Error! No place for next base!");
-			 System.out.println("Error! No place for next base!");
+			System.out.println("Error! No place for next base!");
 			// }
 			_cachedNextBaseTile = null;
 		}
@@ -308,6 +317,7 @@ public class ProtossNexus {
 			// If there's already a base there don't build. Check for both our
 			// and enemy bases.
 			if (existsBaseNear(location.getX(), location.getY())) {
+				// || !xvr.getBwapi().isVisible(location)
 				continue;
 			}
 
@@ -331,7 +341,7 @@ public class ProtossNexus {
 				nearestFreeBaseLocation = location;
 			}
 		}
-		
+
 		return nearestFreeBaseLocation;
 	}
 
