@@ -113,7 +113,7 @@ public class Explorer {
 		boolean isEnemyCloseAndUnitIsWounded = distToNearestEnemy > 0 && distToNearestEnemy <= 5
 				&& isWounded;
 		boolean isOverwhelmed = xvr.getEnemyUnitsInRadius(6, explorer).size() >= 2
-				|| xvr.getEnemyUnitsInRadius(3, explorer).size() >= 1;
+				&& xvr.getEnemyUnitsInRadius(3, explorer).size() >= 1;
 
 		// System.out.println("#### " + explorer.getID());
 		// System.out.println(isEnemyArmyUnitClose);
@@ -171,7 +171,10 @@ public class Explorer {
 
 		enemyUnit = xvr.getEnemyWorkerInRadius(300, explorer);
 		if (XVR.isEnemyTerran()) {
-			enemyUnit = xvr.getEnemyWorkerRepairingInRadius(300, explorer);
+			enemyUnit = xvr.getEnemyWorkerConstructingInRadius(300, explorer);
+			if (enemyUnit == null) {
+				enemyUnit = xvr.getEnemyWorkerInRadius(300, explorer);
+			}
 		}
 		if (enemyUnit != null && enemyUnit.distanceTo(xvr.getFirstBase()) < 20) {
 			enemyUnit = null;

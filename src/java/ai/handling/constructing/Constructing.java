@@ -35,7 +35,7 @@ import ai.utils.RUtilities;
 
 public class Constructing {
 
-	private static final int MIN_DIST_FROM_CHOKE_POINT = 5;
+	// private static final int MIN_DIST_FROM_CHOKE_POINT = 5;
 	private static final int PROLONGATED_CONSTRUCTION_TIME = 300; // in fps
 
 	private static XVR xvr = XVR.getInstance();
@@ -336,6 +336,7 @@ public class Constructing {
 		UnitType type = UnitType.getUnitTypeByID(buildingTypeID);
 		boolean isBase = type.isBase();
 		boolean isCannon = type.isPhotonCannon();
+		boolean isPylon = type.isPylon();
 
 		int currentDist = minimumDist;
 		while (currentDist <= maximumDist) {
@@ -352,8 +353,8 @@ public class Constructing {
 						if (optimalBuilder != null
 								&& (isCannon || isBase || isBuildTileFreeFromUnits(
 										optimalBuilder.getID(), i, j))) {
-							if ((isBase || !isTooNearMineralAndBase(place))
-									&& (isBase || isEnoughPlaceToOtherBuildings(place, type))
+							if (!isTooNearMineralAndBase(place)
+									&& (isPylon || isEnoughPlaceToOtherBuildings(place, type))
 									&& (isBase || !isOverlappingNextNexus(place, type))
 									&& (isBase || !isTooCloseToAnyChokePoint(place))) {
 
@@ -377,12 +378,13 @@ public class Constructing {
 	}
 
 	public static boolean isTooCloseToAnyChokePoint(MapPointInstance place) {
-//		for (ChokePoint choke : MapExploration.getChokePoints()) {
-//			if (choke.getRadius() < 210
-//					&& (xvr.getDistanceBetween(choke, place) - choke.getRadius() / 32) <= MIN_DIST_FROM_CHOKE_POINT) {
-//				return true;
-//			}
-//		}
+		// for (ChokePoint choke : MapExploration.getChokePoints()) {
+		// if (choke.getRadius() < 210
+		// && (xvr.getDistanceBetween(choke, place) - choke.getRadius() / 32) <=
+		// MIN_DIST_FROM_CHOKE_POINT) {
+		// return true;
+		// }
+		// }
 		return false;
 	}
 
@@ -396,7 +398,7 @@ public class Constructing {
 
 	private static boolean isEnoughPlaceToOtherBuildings(MapPoint place, UnitType type) {
 		// type.isPhotonCannon() ||
-		if (type.isBase() || type.isOnGeyser()) {
+		if (type.isBase() || type.isOnGeyser() || type.isPylon()) {
 			return true;
 		}
 
@@ -486,9 +488,10 @@ public class Constructing {
 				continue;
 			}
 			if (xvr.getDistanceBetween(u, point) <= 3) {
-				for (Unit unit : xvr.getUnitsInRadius(point, 4, xvr.getBwapi().getMyUnits())) {
-					UnitActions.moveAwayFromUnitIfPossible(unit, point, 6);
-				}
+				// for (Unit unit : xvr.getUnitsInRadius(point, 4,
+				// xvr.getBwapi().getMyUnits())) {
+				// UnitActions.moveAwayFromUnitIfPossible(unit, point, 6);
+				// }
 				unitsInWay = true;
 			}
 		}
@@ -527,6 +530,8 @@ public class Constructing {
 	private static void handleBaseConstruction(UnitTypes building, MapPoint buildTile) {
 		boolean baseInterrupted = false;
 
+//		System.out.println("Base build: " + buildTile);
+
 		// ==============================
 		// Ensure there's pylon nearby
 
@@ -540,7 +545,7 @@ public class Constructing {
 
 		ArrayList<Unit> pylons = xvr.getUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Pylon, 10,
 				choke, true);
-		int cannonsNearby = xvr.countUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon, 13,
+		int cannonsNearby = xvr.countUnitsOfGivenTypeInRadius(UnitTypes.Protoss_Photon_Cannon, 16,
 				point, true);
 
 		boolean pylonIsOkay = !pylons.isEmpty() && pylons.get(0).isCompleted();
@@ -552,7 +557,7 @@ public class Constructing {
 			// MapPoint base = ProtossNexus.getTileForNextBase(false);
 
 			// Refind proper place for pylon
-			buildTile = getLegitTileToBuildNear(xvr.getRandomWorker(), building, point, 0, 15, true);
+			buildTile = getLegitTileToBuildNear(xvr.getRandomWorker(), building, point, 0, 10, true);
 		}
 
 		// ==============================
@@ -570,7 +575,7 @@ public class Constructing {
 		// We can build the base
 		if (!baseInterrupted) {
 			if (buildTile == null || !Constructing.canBuildAt(buildTile, UnitManager.BASE)) {
-				System.out.println("TEST cant Build At: " + buildTile);
+//				System.out.println("TEST cant Build At: " + buildTile);
 				buildTile = ProtossNexus.getTileForNextBase(true);
 			}
 			// // System.out.println("BASE READY # pylonsNearby = " +
@@ -578,8 +583,9 @@ public class Constructing {
 			// // + ", cannonsNearby = " + cannonsNearby);
 		}
 
-		System.out.println((buildTile != null ? buildTile.toStringLocation() : "NULL") + " : "
-				+ Constructing.canBuildAt(buildTile, UnitManager.BASE));
+		// System.out.println((buildTile != null ? buildTile.toStringLocation()
+		// : buildTile) + " : "
+		// + Constructing.canBuildAt(buildTile, UnitManager.BASE));
 
 		constructBuilding(xvr, building, buildTile);
 	}

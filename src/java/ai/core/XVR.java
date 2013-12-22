@@ -957,6 +957,17 @@ public class XVR {
 		return null;
 	}
 
+	public Unit getEnemyWorkerConstructingInRadius(int tileRadius, Unit explorer) {
+		for (Unit enemy : getBwapi().getEnemyUnits()) {
+			if (enemy.getType().isWorker()) {
+				if (enemy.isConstructing() && getDistanceBetween(explorer, enemy) <= tileRadius) {
+					return enemy;
+				}
+			}
+		}
+		return null;
+	}
+
 	public Collection<Unit> getEnemyWorkersInRadius(int tileRadius, Unit explorer) {
 		ArrayList<Unit> result = new ArrayList<>();
 

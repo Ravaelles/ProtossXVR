@@ -277,6 +277,8 @@ public class ProtossNexus {
 
 		// ===============================
 		BaseLocation nearestFreeBaseLocation = getNearestFreeBaseLocation();
+		// System.out.println("BaseLocation nearestFreeBaseLocation = " +
+		// nearestFreeBaseLocation);
 		if (nearestFreeBaseLocation != null) {
 			MapPoint point = nearestFreeBaseLocation;
 
@@ -285,11 +287,11 @@ public class ProtossNexus {
 			// nearestFreeBaseLocation.getTy());
 			// Debug.message(xvr, "Tile for new base: " + point.getTx() + ","
 			// + point.getTy());
-			System.out.println("Tile for new base: " + point);
+			// System.out.println("Tile for new base: " + point);
 			_cachedNextBaseTile = Constructing.getLegitTileToBuildNear(xvr.getRandomWorker(),
 					buildingType, point, 0, 30, false);
-			System.out.println(" processed: " + _cachedNextBaseTile);
-			System.out.println();
+			// System.out.println(" processed: " + _cachedNextBaseTile);
+			// System.out.println();
 		} else {
 			// if (UnitCounter.getNumberOfUnits(UnitManager.BASE) <= 1) {
 			// Debug.message(xvr, "Error! No place for next base!");
